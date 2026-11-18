@@ -1,0 +1,97 @@
+{
+  "ad_slots": [
+    {
+      "id": 1,
+      "slot_key": "top_banner_728x90",
+      "title": "اوپری ہیڈر بینر (728x90)",
+      "ad_type": "image",
+      "image_url": "",
+      "target_url": "https://dailyafadiat.com",
+      "code_snippet": "",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "slot_key": "home_mid_banner",
+      "title": "صفحۂ اول درمیانی بینر (970x90)",
+      "ad_type": "image",
+      "image_url": "",
+      "target_url": "https://dailyafadiat.com",
+      "code_snippet": "",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "slot_key": "article_sidebar_300x250",
+      "title": "آرٹیکل سائیڈ بار بینر (300x250)",
+      "ad_type": "image",
+      "image_url": "",
+      "target_url": "https://dailyafadiat.com",
+      "code_snippet": "",
+      "is_active": true
+    },
+    {
+      "id": 4,
+      "slot_key": "article_inline_banner",
+      "title": "آرٹیکل کے اندر بینر (728x90)",
+      "ad_type": "image",
+      "image_url": "",
+      "target_url": "https://dailyafadiat.com",
+      "code_snippet": "",
+      "is_active": true
+    },
+    {
+      "id": 5,
+      "slot_key": "footer_banner",
+      "title": "فوٹر کے اوپر بینر (970x90)",
+      "ad_type": "image",
+      "image_url": "",
+      "target_url": "https://dailyafadiat.com",
+      "code_snippet": "",
+      "is_active": false
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "article_id": 1,
+      "author_name": "محمد بلال",
+      "author_email": "bilal@example.com",
+      "content": "بہت ہی شاندار اور تیز رفتار نیوز پورٹل ہے۔ ڈیلی افادیت کی ادارتی ٹیم کو مبارکباد!",
+      "status": "approved",
+      "created_at": "2026-11-18T18:48:04.040Z"
+    }
+  ],
+  "site_settings": {
+    "social_links": {
+      "youtube": "https://youtube.com/@dailyafadiat",
+      "whatsapp": "https://whatsapp.com/channel/dailyafadiat",
+      "facebook": "https://facebook.com/dailyafadiat",
+      "instagram": "https://instagram.com/dailyafadiat",
+      "twitter": "https://x.com/dailyafadiat",
+      "tiktok": "https://tiktok.com/@dailyafadiat"
+    },
+    "site_info": {
+      "title_ur": "ڈیلی افادیت",
+      "tagline_ur": "سچ کے ساتھ، ہر لمحہ باخبر — TRUST • FACTS • GLOBAL NEWS",
+      "contact_email": "editor@dailyafadiat.com",
+      "contact_phone": "+92 300 1234567"
+    },
+    "smtp_config": {
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "secure": false,
+      "user": "",
+      "pass": "",
+      "from": "ڈیلی افادیت <newsletter@dailyafadiat.com>"
+    }
+  },
+  "newsletter_subscribers": [
+    {
+      "id": 1,
+      "email": "reader@example.com",
+      "is_active": true,
+      "created_at": "2026-11-18T18:48:04.040Z"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-canvas: #f7f6f3;
+    --bg-subtle: #efeee9;
+    --border-paper: #dcd8cd;
+    --fg-text: #1a1a1a;
+  }
+
+  html {
+    direction: rtl;
+    font-family: "Noto Naskh Arabic", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    background-image: radial-gradient(rgba(17, 85, 51, 0.065) 1px, transparent 1.15px);
+    background-size: 22px 22px;
+    background-attachment: fixed;
+    color: var(--fg-text);
+    overflow-x: hidden;
+    line-height: 1.65;
+  }
+}
+
+/* 88% Broadsheet Container matching Daily Insaaf */
+.u-shell {
+  width: 100%;
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .u-shell {
+    width: 88%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* Naskh Editorial Typography */
+.urdu-headline {
+  font-family: "Noto Naskh Arabic", "Segoe UI", system-ui, sans-serif;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.urdu-body {
+  font-family: "Noto Naskh Arabic", "Segoe UI", system-ui, sans-serif;
+  line-height: 1.7;
+  font-size: 0.9375rem; /* 15px */
+}
+
+/* Marquee animation */
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}

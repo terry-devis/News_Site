@@ -48,24 +48,13 @@ export default function Header({ categories = [], breakingNews = [] }) {
     { text_ur: t("breakingDefault"), text_en: t("breakingDefault") }
   ];
 
-  // Professional TV-Newsroom Breaking News Rotator (Instant show, smooth slide, no awkward duplicates)
-  const [activeBreakingIdx, setActiveBreakingIdx] = useState(0);
-  const [isTickerPaused, setIsTickerPaused] = useState(false);
-
-  useEffect(() => {
-    if (isTickerPaused || breakingList.length <= 1) return;
-    const timer = setInterval(() => {
-      setActiveBreakingIdx((prev) => (prev + 1) % breakingList.length);
-    }, 4500);
-    return () => clearInterval(timer);
-  }, [isTickerPaused, breakingList.length]);
-
-  const handleNextBreaking = () => {
-    setActiveBreakingIdx((prev) => (prev + 1) % breakingList.length);
-  };
-  const handlePrevBreaking = () => {
-    setActiveBreakingIdx((prev) => (prev - 1 + breakingList.length) % breakingList.length);
-  };
+  // Prepare items for seamless continuous marquee (starts immediately at 0% with ZERO replay delay)
+  const tickerItems =
+    breakingList.length === 1
+      ? [...breakingList, ...breakingList, ...breakingList, ...breakingList]
+      : breakingList.length === 2
+      ? [...breakingList, ...breakingList]
+      : breakingList;
 
   const ratesList = [
     { ur: "سونا ۲۴K/تولہ:", en: "Gold 24K/tola:", val: "₨422,095" },
@@ -269,78 +258,99 @@ export default function Header({ categories = [], breakingNews = [] }) {
             <span>{t("marketRatesBadge")}</span>
           </Link>
           
-          {/* Animated Marquee Currency & Gold Rates (Starts immediately at 0% with ZERO initial delay) */}
+          {/* Animated Marquee Currency & Gold Rates (Starts immediately from start with ZERO replay delay) */}
           <div className="overflow-hidden whitespace-nowrap py-1 flex-1">
-            <div className="animate-marquee-reverse text-xs text-gray-700 font-sans cursor-pointer hover:text-emerald-800 transition inline-flex items-center">
-              {seamlessRatesList.map((r, idx) => (
-                <React.Fragment key={idx}>
-                  <span className="mx-3 whitespace-nowrap">
-                    {isUrdu ? r.ur : r.en} <strong className="text-gray-950 font-bold">{r.val}</strong>
+            <div
+              dir="ltr"
+              className="marquee-group overflow-hidden whitespace-nowrap flex items-center flex-1 h-full cursor-pointer"
+            >
+              <div className="marquee-track-reverse flex shrink-0 items-center gap-6 pr-6 text-xs text-gray-700 font-sans hover:text-emerald-800 transition">
+                {ratesList.map((r, idx) => (
+                  <span key={`r1-${idx}`} className="inline-flex items-center gap-2 shrink-0">
+                    <span dir={isUrdu ? "rtl" : "ltr"}>{isUrdu ? r.ur : r.en}</span>
+                    <strong className="text-gray-950 font-bold">{r.val}</strong>
+                    <span className="text-gray-400">·</span>
                   </span>
-                  <span className="text-gray-400">·</span>
-                </React.Fragment>
-              ))}
+                ))}
+              </div>
+
+              <div className="marquee-track-reverse flex shrink-0 items-center gap-6 pr-6 text-xs text-gray-700 font-sans hover:text-emerald-800 transition" aria-hidden="true">
+                {ratesList.map((r, idx) => (
+                  <span key={`r2-${idx}`} className="inline-flex items-center gap-2 shrink-0">
+                    <span dir={isUrdu ? "rtl" : "ltr"}>{isUrdu ? r.ur : r.en}</span>
+                    <strong className="text-gray-950 font-bold">{r.val}</strong>
+                    <span className="text-gray-400">·</span>
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 5. BREAKING NEWS RED TICKER: FULL WIDTH & FLUSH (Visible immediately on page open/refresh) */}
+      {/* 5. BREAKING NEWS RED TICKER: CONTINUOUS HORIZONTAL MARQUEE (Starts from start, zero delay, zero replay delay) */}
       <div className="w-full bg-[#b91c1c] text-white flex items-center overflow-hidden border-b border-red-900 h-9 sm:h-10">
         {/* Flame Badge */}
-        <div className="bg-[#881337] px-3 sm:px-4 h-full font-bold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 z-10 shadow-sm font-sans">
+        <div className="bg-[#881337] px-3.5 sm:px-4 h-full font-bold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 z-10 shadow-sm font-sans">
           <Flame size={15} className="text-yellow-300 animate-bounce shrink-0" />
           <span className="tracking-wide font-black">{t("breakingBadge")}</span>
         </div>
 
-        {/* Vertical Slide Ticker Area */}
+        {/* Seamless Dual-Track Continuous Marquee */}
         <div
-          className="overflow-hidden h-full flex-1 relative px-3 flex items-center"
-          onMouseEnter={() => setIsTickerPaused(true)}
-          onMouseLeave={() => setIsTickerPaused(false)}
+          dir="ltr"
+          className="marquee-group overflow-hidden whitespace-nowrap flex items-center flex-1 h-full select-none cursor-pointer"
         >
-          <div
-            className="w-full transition-transform duration-500 ease-in-out"
-            style={{ transform: `translateY(-${activeBreakingIdx * 100}%)` }}
-          >
-            {breakingList.map((b, idx) => {
+          {/* Track 1: Starts immediately from the start (translate3d(0,0,0)) */}
+          <div className="marquee-track flex shrink-0 items-center gap-8 pr-8">
+            {tickerItems.map((b, idx) => {
               const text = isEnglish ? (b.text_en || b.text_ur) : (b.text_ur || b.text_en);
               return (
-                <div key={b.id || idx} className="h-9 sm:h-10 flex items-center">
-                  <Link
-                    href={b.link_url || `/story/${b.article_id || ""}`}
-                    className="urdu-headline font-bold text-xs sm:text-[14px] text-yellow-100 hover:text-white transition line-clamp-1 block leading-snug tracking-tight"
-                  >
-                    {text}
-                  </Link>
-                </div>
+                <span key={`trk1-${b.id || idx}`} className="inline-flex items-center gap-3 shrink-0">
+                  {b.link_url || b.article_id ? (
+                    <Link
+                      href={b.link_url || `/story/${b.article_id}`}
+                      dir={isUrdu ? "rtl" : "ltr"}
+                      className="urdu-headline font-bold text-xs sm:text-[14px] text-yellow-100 hover:text-white hover:underline transition leading-snug tracking-tight"
+                    >
+                      {text}
+                    </Link>
+                  ) : (
+                    <span dir={isUrdu ? "rtl" : "ltr"} className="urdu-headline font-bold text-xs sm:text-[14px] text-yellow-100">
+                      {text}
+                    </span>
+                  )}
+                  <span className="text-yellow-400 font-bold opacity-80 text-xs select-none">★</span>
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Track 2: Seamless clone, directly behind Track 1, eliminating replay delay completely */}
+          <div className="marquee-track flex shrink-0 items-center gap-8 pr-8" aria-hidden="true">
+            {tickerItems.map((b, idx) => {
+              const text = isEnglish ? (b.text_en || b.text_ur) : (b.text_ur || b.text_en);
+              return (
+                <span key={`trk2-${b.id || idx}`} className="inline-flex items-center gap-3 shrink-0">
+                  {b.link_url || b.article_id ? (
+                    <Link
+                      href={b.link_url || `/story/${b.article_id}`}
+                      dir={isUrdu ? "rtl" : "ltr"}
+                      className="urdu-headline font-bold text-xs sm:text-[14px] text-yellow-100 hover:text-white hover:underline transition leading-snug tracking-tight"
+                    >
+                      {text}
+                    </Link>
+                  ) : (
+                    <span dir={isUrdu ? "rtl" : "ltr"} className="urdu-headline font-bold text-xs sm:text-[14px] text-yellow-100">
+                      {text}
+                    </span>
+                  )}
+                  <span className="text-yellow-400 font-bold opacity-80 text-xs select-none">★</span>
+                </span>
               );
             })}
           </div>
         </div>
-
-        {/* Breaking News Navigation Controls & Item Counter */}
-        {breakingList.length > 1 && (
-          <div className="flex items-center gap-1 px-2.5 shrink-0 select-none border-l rtl:border-r rtl:border-l-0 border-red-800">
-            <span className="text-[10px] text-red-200 bg-red-950/70 border border-red-800/80 px-1.5 py-0.5 rounded-none font-mono font-bold">
-              {activeBreakingIdx + 1}/{breakingList.length}
-            </span>
-            <button
-              onClick={handlePrevBreaking}
-              className="p-1 text-red-200 hover:text-white hover:bg-red-800/80 transition cursor-pointer"
-              title={isUrdu ? "پچھلی بریکنگ نیوز" : "Previous"}
-            >
-              {isUrdu ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
-            </button>
-            <button
-              onClick={handleNextBreaking}
-              className="p-1 text-red-200 hover:text-white hover:bg-red-800/80 transition cursor-pointer"
-              title={isUrdu ? "اگلی بریکنگ نیوز" : "Next"}
-            >
-              {isUrdu ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
-            </button>
-          </div>
-        )}
       </div>
 
       {/* 6. SLIDE-OUT MOBILE SIDEBAR DRAWER */}

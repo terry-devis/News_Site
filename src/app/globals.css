@@ -57,36 +57,42 @@
   font-size: 0.9375rem; /* 15px */
 }
 
-/* Continuous Seamless Marquee: Starts immediately at 0% on page load/refresh with ZERO delay */
-@keyframes marquee {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-50%); }
+/* Dual-Track Seamless Infinite Marquee: Starts immediately from the start with ZERO initial delay and ZERO replay delay */
+@keyframes marquee-flow-left {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-100%, 0, 0);
+  }
 }
 
-.animate-marquee {
-  display: inline-flex;
-  white-space: nowrap;
-  animation: marquee 28s linear infinite;
+@keyframes marquee-flow-right {
+  0% {
+    transform: translate3d(-100%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  animation: marquee-flow-left 34s linear infinite;
   will-change: transform;
 }
 
-.animate-marquee:hover {
-  animation-play-state: paused;
-}
-
-/* Continuous Seamless Reverse Marquee for Market Rates: Starts immediately at 0% with ZERO delay */
-@keyframes marquee-reverse {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(50%); }
-}
-
-.animate-marquee-reverse {
-  display: inline-flex;
-  white-space: nowrap;
-  animation: marquee-reverse 32s linear infinite;
+.marquee-track-reverse {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  animation: marquee-flow-right 36s linear infinite;
   will-change: transform;
 }
 
-.animate-marquee-reverse:hover {
+.marquee-group:hover .marquee-track,
+.marquee-group:hover .marquee-track-reverse {
   animation-play-state: paused;
 }

@@ -272,6 +272,11 @@ export default function Footer({ categories = [] }) {
               </Link>
             </li>
             <li>
+              <Link href="/video" className="hover:text-gray-200 transition-colors">
+                {t("videos")}
+              </Link>
+            </li>
+            <li>
               <Link href="/epaper" className="hover:text-gray-200 transition-colors">
                 {t("epaper")}
               </Link>

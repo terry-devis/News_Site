@@ -338,16 +338,22 @@ export default function Header({ categories = [], breakingNews = [] }) {
             </div>
 
             {/* Drawer Secondary Services Footer */}
-            <div className="p-4 border-t border-[#dcd8cd] bg-[#efeee9] flex items-center justify-around text-xs text-gray-600 font-medium">
-              <Link href="/live" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1 text-red-600 font-bold">
+            <div className="p-3 border-t border-[#dcd8cd] bg-[#efeee9] grid grid-cols-2 gap-2 text-xs text-gray-700 font-medium">
+              <Link href="/live" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 text-red-600 font-bold p-1 hover:bg-white rounded-lg transition">
                 <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-ping"></span>
                 <span>{t("liveTv")}</span>
               </Link>
-              <Link href="/epaper" onClick={() => setMobileDrawerOpen(false)} className="hover:text-emerald-700">
-                {t("epaper")}
+              <Link href="/video" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
+                <Video size={13} />
+                <span>{t("videos")}</span>
               </Link>
-              <Link href="/contact" onClick={() => setMobileDrawerOpen(false)} className="hover:text-emerald-700">
-                {t("contact")}
+              <Link href="/epaper" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
+                <Newspaper size={13} />
+                <span>{t("epaper")}</span>
+              </Link>
+              <Link href="/advertise" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
+                <Megaphone size={13} />
+                <span>{t("advertise")}</span>
               </Link>
             </div>
 

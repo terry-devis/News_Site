@@ -652,63 +652,10 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
               )}
             </div>
 
-            {/* F. OTHER MAJOR HEADLINES (دیگر اہم خبریں) — Broadsheet Grid */}
-            {remainingStories.length > 0 && (
-              <section className="u-block">
-                <div className="mb-4 flex items-center justify-between border-b-2 border-emerald-700 pb-1.5">
-                  <h2 className={`text-base sm:text-lg font-bold text-gray-900 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
-                    {t("otherHeadlines")}
-                  </h2>
-                  <span className="text-xs text-gray-500 font-sans">{t("allSections")}</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {remainingStories.map((story) => (
-                    <article
-                      key={story.id}
-                      className="border border-[#dcd8cd] rounded-none overflow-hidden hover:border-emerald-600 transition group bg-[#efeee9]/70 hover:bg-[#efeee9] shadow-2xs flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="relative w-full h-44 bg-[#dcd8cd]/40 overflow-hidden">
-                          <Image
-                            src={getFallbackImageForStory(story)}
-                            alt={getTitle(story)}
-                            fill
-                            className="object-cover group-hover:scale-105 transition duration-500"
-                          />
-                          <span className={`absolute top-2 ${isUrdu ? "right-2" : "left-2"} bg-black/75 text-white text-[11px] px-2 py-0.5 rounded-none font-sans`}>
-                            {getCatName(story.category)}
-                          </span>
-                        </div>
-                        <div className="p-3.5">
-                          <Link href={`/story/${story.id || story.slug}`}>
-                            <h3 className={`text-[15px] font-bold text-gray-900 group-hover:text-emerald-700 transition leading-snug line-clamp-2 mb-1.5 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
-                              {getTitle(story)}
-                            </h3>
-                          </Link>
-                          <p className={`text-xs text-gray-600 line-clamp-2 ${isUrdu ? "urdu-body leading-relaxed" : "font-sans leading-normal"}`}>
-                            {getSummary(story)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="px-3.5 pb-3 pt-1 text-[11px] text-gray-400 font-sans border-t border-[#dcd8cd]/40 flex items-center justify-between">
-                        <span>{getAuthor(story)}</span>
-                        <span className="flex items-center gap-1">
-                          <Clock size={11} />
-                          {new Date(story.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US")}
-                        </span>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            )}
-
           </div>
 
-          {/* Sidebar Stack (4 Cols): Namaz, Currency, Weather, Most Read, Poll, Ad, Newsletter */}
-          <aside className="lg:col-span-4 space-y-5">
+          {/* Sidebar Stack (4 Cols): Namaz, Currency, Weather, Most Read, Poll, Ad */}
+          <aside className="lg:col-span-4 space-y-5 self-start">
             {/* 1. Namaz Auqaat Card */}
             <NamazWidget />
 
@@ -726,16 +673,71 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
 
             {/* 6. Sidebar Ad Slot (Controllable from CMS) */}
             <AdSlot slotKey="home_sidebar" />
-
-            {/* 7. Compact Newsletter Box */}
-            <div className="border border-[#dcd8cd] bg-[#efeee9]/90 p-4 shadow-xs">
-              <NewsletterBox />
-            </div>
           </aside>
 
         </section>
 
-        {/* 6. PROMOTIONAL SLATE BANNER (ePaper Promo) */}
+        {/* 6. FULL-WIDTH NEWSLETTER SUBSCRIPTION RIBBON (Properly Placed Across Full Width) */}
+        <section className="my-8 w-full">
+          <NewsletterBox variant="ribbon" />
+        </section>
+
+        {/* 7. OTHER MAJOR HEADLINES (دیگر اہم خبریں) — FULL-WIDTH 12-COLUMN BROADSHEET GRID */}
+        {remainingStories.length > 0 && (
+          <section className="my-8 u-block" aria-label={t("otherHeadlines")}>
+            <div className="mb-5 flex items-center justify-between border-b-2 border-emerald-700 pb-2">
+              <h2 className={`text-lg sm:text-xl font-bold text-gray-950 flex items-center gap-2 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
+                <span className="w-2.5 h-2.5 bg-emerald-700 inline-block"></span>
+                <span>{t("otherHeadlines")}</span>
+              </h2>
+              <span className="text-xs text-gray-500 font-sans font-semibold">{t("allSections")}</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {remainingStories.map((story) => (
+                <article
+                  key={story.id}
+                  className="border border-[#dcd8cd] rounded-none overflow-hidden hover:border-emerald-700 transition group bg-[#efeee9]/70 hover:bg-[#efeee9] shadow-2xs flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative w-full aspect-[16/10] bg-[#dcd8cd]/40 overflow-hidden">
+                      <Image
+                        src={getFallbackImageForStory(story)}
+                        alt={getTitle(story)}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                        className="object-cover group-hover:scale-105 transition duration-500"
+                      />
+                      <span className={`absolute top-2 ${isUrdu ? "right-2" : "left-2"} bg-black/75 text-white text-[10px] px-2 py-0.5 rounded-none font-sans font-medium`}>
+                        {getCatName(story.category)}
+                      </span>
+                    </div>
+                    <div className="p-3.5">
+                      <Link href={`/story/${story.id || story.slug}`}>
+                        <h3 className={`text-[15px] font-bold text-gray-900 group-hover:text-emerald-700 transition leading-snug line-clamp-2 mb-2 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
+                          {getTitle(story)}
+                        </h3>
+                      </Link>
+                      <p className={`text-xs text-gray-600 line-clamp-2 ${isUrdu ? "urdu-body leading-relaxed" : "font-sans leading-normal"}`}>
+                        {getSummary(story)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="px-3.5 pb-3 pt-2 text-[11px] text-gray-400 font-sans border-t border-[#dcd8cd]/50 flex items-center justify-between">
+                    <span className="font-medium text-gray-600">{getAuthor(story)}</span>
+                    <span className="flex items-center gap-1">
+                      <Clock size={11} />
+                      {new Date(story.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US")}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 8. PROMOTIONAL SLATE BANNER (ePaper Promo) */}
         <section className="my-6 py-3.5 px-5 bg-[#0a1f13] rounded-none text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm border-t-2 border-emerald-500 font-sans">
           <div className="flex items-center gap-3">
             <div className="h-10 w-36 relative shrink-0">

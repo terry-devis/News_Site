@@ -21,6 +21,7 @@ import {
   Video,
   Newspaper,
   Layers,
+  Vote,
 } from "lucide-react";
 import { AdminLanguageProvider, useAdminLanguage } from "@/context/AdminLanguageContext";
 
@@ -37,6 +38,7 @@ function AdminLayoutInner({ children }) {
     { label: t("nav_videos"), href: "/admin/videos", icon: Video },
     { label: t("nav_epaper"), href: "/admin/epaper", icon: Newspaper },
     { label: t("nav_pages"), href: "/admin/pages", icon: Layers },
+    { label: lang === "ur" ? "رائے شماری (Poll)" : "Daily Poll", href: "/admin/poll", icon: Vote },
     { label: t("nav_comments"), href: "/admin/comments", icon: MessageSquare },
     { label: t("nav_ads"), href: "/admin/ads", icon: Megaphone },
     { label: t("nav_settings"), href: "/admin/settings", icon: Share2 },

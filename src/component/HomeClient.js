@@ -10,6 +10,8 @@ import NewsletterBox from "@/component/NewsletterBox";
 import NamazWidget from "@/component/widgets/NamazWidget";
 import CurrencyWidget from "@/component/widgets/CurrencyWidget";
 import WeatherWidget from "@/component/widgets/WeatherWidget";
+import PollWidget from "@/component/widgets/PollWidget";
+import MostReadWidget from "@/component/widgets/MostReadWidget";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 import { getFallbackImageForStory } from "@/lib/mockImages";
 
@@ -705,7 +707,7 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
 
           </div>
 
-          {/* Sidebar Stack (4 Cols): Namaz, Currency, Weather, Ad, Newsletter */}
+          {/* Sidebar Stack (4 Cols): Namaz, Currency, Weather, Most Read, Poll, Ad, Newsletter */}
           <aside className="lg:col-span-4 space-y-5">
             {/* 1. Namaz Auqaat Card */}
             <NamazWidget />
@@ -716,10 +718,16 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
             {/* 3. Weather Card */}
             <WeatherWidget />
 
-            {/* 4. Sidebar Ad Slot (Controllable from CMS) */}
+            {/* 4. Automated Most Read Stories Card */}
+            <MostReadWidget stories={articles} />
+
+            {/* 5. Daily Opinion & Voting Poll */}
+            <PollWidget />
+
+            {/* 6. Sidebar Ad Slot (Controllable from CMS) */}
             <AdSlot slotKey="home_sidebar" />
 
-            {/* 5. Compact Newsletter Box */}
+            {/* 7. Compact Newsletter Box */}
             <div className="border border-[#dcd8cd] bg-[#efeee9]/90 p-4 shadow-xs">
               <NewsletterBox />
             </div>

@@ -821,3 +821,54 @@ export async function deletePage(id) {
   }
   return { success: true };
 }
+
+// ----------------------------------------------------
+// DAILY VOTING POLL (رائے شماری) FUNCTIONS
+// ----------------------------------------------------
+
+export async function getActivePoll() {
+  const local = ensureLocalStore();
+  if (!local.daily_poll) {
+    local.daily_poll = {
+      id: 1,
+      question_ur: "کیا حالیہ معاشی و مالیاتی اصلاحات سے ملک میں مہنگائی میں کمی اور عوام کو حقیقی ریلیف ملے گا؟",
+      question_en: "Do you believe current macroeconomic reforms will provide genuine relief from inflation to the public?",
+      options: [
+        { id: "yes", label_ur: "ہاں، بہتری آئے گی", label_en: "Yes, definitely", votes: 384 },
+        { id: "no", label_ur: "نہیں، ریلیف نہیں ملے گا", label_en: "No, unlikely", votes: 142 },
+        { id: "undecided", label_ur: "کہہ نہیں سکتے / قبل از وقت", label_en: "Undecided / Too early", votes: 48 },
+      ],
+      total_votes: 574,
+      is_active: true,
+      created_at: new Date().toISOString(),
+    };
+    writeLocalStore(local);
+  }
+  return local.daily_poll;
+}
+
+export async function voteOnPoll(optionId) {
+  const local = ensureLocalStore();
+  const poll = await getActivePoll();
+
+  const opt = poll.options.find((o) => o.id === optionId);
+  if (!opt) return { error: "Option not found" };
+
+  opt.votes = (opt.votes || 0) + 1;
+  poll.total_votes = (poll.total_votes || 0) + 1;
+  local.daily_poll = poll;
+  writeLocalStore(local);
+  return poll;
+}
+
+export async function updatePoll(pollData) {
+  const local = ensureLocalStore();
+  const poll = await getActivePoll();
+  local.daily_poll = {
+    ...poll,
+    ...pollData,
+    updated_at: new Date().toISOString(),
+  };
+  writeLocalStore(local);
+  return local.daily_poll;
+}

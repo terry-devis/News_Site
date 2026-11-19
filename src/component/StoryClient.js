@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Clock, User, Share2, ArrowRight, ArrowLeft } from "lucide-react";
@@ -17,6 +17,16 @@ export default function StoryClient({
   breakingNews = [],
 }) {
   const { lang, isUrdu, isEnglish, dir, t } = useSiteLanguage();
+
+  // Automatic View Tracking
+  useEffect(() => {
+    if (!article?.id) return;
+    const viewKey = `afadiat_viewed_${article.id}`;
+    if (typeof window !== "undefined" && !sessionStorage.getItem(viewKey)) {
+      sessionStorage.setItem(viewKey, "1");
+      fetch(`/api/articles/${article.id}/view`, { method: "POST" }).catch(() => {});
+    }
+  }, [article?.id]);
 
   const title = isEnglish
     ? (article.title_en || article.title_ur)

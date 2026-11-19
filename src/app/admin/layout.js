@@ -1,147 +1,208 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  FileText,
-  PlusCircle,
-  MessageSquare,
-  Megaphone,
-  Share2,
-  Mail,
-  Home,
   LayoutDashboard,
+  FileText,
+  Columns,
+  Flame,
+  MessageSquare,
+  Mail,
+  BarChart2,
+  Megaphone,
+  FolderTree,
+  LayoutGrid,
+  Image as ImageIcon,
+  Newspaper,
+  Activity,
+  Users,
+  ShieldCheck,
+  Bell,
+  Settings,
   ExternalLink,
   Menu,
   X,
-  ShieldCheck,
-  Languages,
-  Flame,
-  Video,
-  Newspaper,
-  Layers,
-  Vote,
+  LogOut,
 } from "lucide-react";
-import { AdminLanguageProvider, useAdminLanguage } from "@/context/AdminLanguageContext";
+import { AdminLanguageProvider } from "@/context/AdminLanguageContext";
 
 function AdminLayoutInner({ children }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { lang, setLang, t, dir } = useAdminLanguage();
+  const [liveDate, setLiveDate] = useState("");
 
+  // Live Pakistan Standard Time (PKT) formatted date matching Daily Insaaf
+  useEffect(() => {
+    const updateDate = () => {
+      const now = new Date();
+      // Format as e.g. "Thursday, 19 November 2026 (PKT)"
+      const options = {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Asia/Karachi",
+      };
+      const formatted = new Intl.DateTimeFormat("en-GB", options).format(now);
+      setLiveDate(`${formatted} (PKT)`);
+    };
+
+    updateDate();
+    const interval = setInterval(updateDate, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Exact 17 operational modules matching Daily Insaaf Admin sequence
   const navItems = [
-    { label: t("nav_dashboard"), href: "/admin", icon: LayoutDashboard },
-    { label: t("nav_breaking"), href: "/admin/breaking", icon: Flame },
-    { label: t("nav_posts"), href: "/admin/posts", icon: FileText },
-    { label: t("nav_new_post"), href: "/admin/posts/new", icon: PlusCircle },
-    { label: t("nav_videos"), href: "/admin/videos", icon: Video },
-    { label: t("nav_epaper"), href: "/admin/epaper", icon: Newspaper },
-    { label: t("nav_pages"), href: "/admin/pages", icon: Layers },
-    { label: lang === "ur" ? "رائے شماری (Poll)" : "Daily Poll", href: "/admin/poll", icon: Vote },
-    { label: t("nav_comments"), href: "/admin/comments", icon: MessageSquare },
-    { label: t("nav_ads"), href: "/admin/ads", icon: Megaphone },
-    { label: t("nav_settings"), href: "/admin/settings", icon: Share2 },
-    { label: t("nav_newsletter"), href: "/admin/newsletter", icon: Mail },
+    { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { label: "Articles", href: "/admin/articles", altHref: "/admin/posts", icon: FileText },
+    { label: "Workflow board", href: "/admin/workflow", icon: Columns },
+    { label: "Breaking ticker", href: "/admin/breaking", icon: Flame },
+    { label: "Comments", href: "/admin/comments", icon: MessageSquare },
+    { label: "Inquiries", href: "/admin/inquiries", icon: Mail },
+    { label: "Polls", href: "/admin/polls", altHref: "/admin/poll", icon: BarChart2 },
+    { label: "Ads", href: "/admin/ads", icon: Megaphone },
+    { label: "Sections", href: "/admin/categories", icon: FolderTree },
+    { label: "Layout builder", href: "/admin/layout-builder", icon: LayoutGrid },
+    { label: "Media library", href: "/admin/media", icon: ImageIcon },
+    { label: "E-paper", href: "/admin/epaper", icon: Newspaper },
+    { label: "Services data", href: "/admin/widgets", icon: Activity },
+    { label: "Users", href: "/admin/users", icon: Users },
+    { label: "Roles & access", href: "/admin/roles", icon: ShieldCheck },
+    { label: "Email alerts", href: "/admin/notifications", icon: Bell },
+    { label: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f7f6f3] text-gray-900 flex flex-col font-sans" dir={dir}>
-      {/* Admin Top Navigation Bar */}
-      <header className="bg-[#07130c] text-white border-b border-emerald-950 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden text-gray-300 hover:text-white"
-          >
-            {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="relative h-9 w-32 sm:w-40">
-              <Image src="/logo.webp" alt="Daily Afadiat CMS" fill className="object-contain" />
-            </div>
-            <span className="hidden sm:inline bg-emerald-700/80 text-[11px] px-2 py-0.5 rounded font-bold uppercase tracking-wider text-emerald-100">
-              {t("cms_title")}
+    <div className="min-h-screen bg-[#f9f8f5] text-[#18221b] flex font-sans antialiased" dir="ltr">
+      {/* 1. Mobile Backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden backdrop-blur-xs"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* 2. Persistent Newsroom Sidebar (Exact Daily Insaaf Styling) */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0a2618] text-[#9ebba8] flex flex-col justify-between transform transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Masthead Header with Logo */}
+          <div className="px-5 py-4 border-b border-[#15452b] flex items-center justify-between">
+            <Link href="/admin" className="flex items-center gap-2.5">
+              <div className="relative h-8 w-36">
+                <Image src="/logo.webp" alt="Daily Afadiat Logo" fill className="object-contain" priority />
+              </div>
+            </Link>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-[#9ebba8] hover:text-white p-1 rounded"
+              aria-label="Close sidebar"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Section Tracking Header */}
+          <div className="px-5 pt-4 pb-1.5">
+            <span className="text-[10px] font-bold tracking-[0.18em] uppercase text-[#7da88d] block">
+              Newsroom
             </span>
           </div>
-        </div>
 
-        {/* Right Section: Language Switcher + Visit Site */}
-        <div className="flex items-center gap-2.5">
-          {/* Language Switcher Pill */}
-          <div className="flex items-center bg-emerald-950/80 border border-emerald-800 rounded-lg p-0.5 text-xs font-semibold">
-            <button
-              onClick={() => setLang("en")}
-              className={`px-2.5 py-1 rounded-md transition ${
-                lang === "en" ? "bg-emerald-600 text-white font-bold shadow-xs" : "text-emerald-300 hover:text-white"
-              }`}
-            >
-              English
-            </button>
-            <button
-              onClick={() => setLang("ur")}
-              className={`px-2.5 py-1 rounded-md transition ${
-                lang === "ur" ? "bg-emerald-600 text-white font-bold shadow-xs" : "text-emerald-300 hover:text-white"
-              }`}
-            >
-              اردو
-            </button>
-          </div>
-
-          <Link
-            href="/"
-            target="_blank"
-            className="text-xs text-emerald-300 hover:text-white flex items-center gap-1 font-medium bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-1.5 rounded-lg transition"
-          >
-            <ExternalLink size={13} />
-            <span className="hidden sm:inline">{t("visit_website")}</span>
-          </Link>
-        </div>
-      </header>
-
-      {/* Main Admin Body */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
-        <aside
-          className={`fixed inset-y-0 ${dir === "rtl" ? "right-0 border-l" : "left-0 border-r"} z-40 w-64 bg-[#efeee9] border-[#dcd8cd] pt-16 lg:pt-0 transform transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 flex flex-col justify-between ${
-            sidebarOpen ? "translate-x-0 shadow-2xl" : dir === "rtl" ? "translate-x-full" : "-translate-x-full"
-          }`}
-        >
-          <nav className="p-4 space-y-1 overflow-y-auto">
-            <div className="px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-              {t("editorial_departments")}
-            </div>
+          {/* 17 Navigation Items Menu */}
+          <nav className="flex-1 px-3 py-1 space-y-0.5 overflow-y-auto scrollbar-thin scrollbar-thumb-[#15452b]">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive =
+                pathname === item.href ||
+                (item.altHref && pathname.startsWith(item.altHref)) ||
+                (item.href !== "/admin" && pathname.startsWith(item.href));
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md text-xs sm:text-sm font-semibold transition ${
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition duration-150 ${
                     isActive
-                      ? "bg-emerald-800 text-white shadow-xs"
-                      : "text-gray-700 hover:bg-[#dcd8cd]/50 hover:text-gray-900"
+                      ? "bg-[#184e2d] text-white font-semibold shadow-2xs"
+                      : "text-[#9ebba8] hover:bg-[#0e3321] hover:text-white"
                   }`}
                 >
-                  <Icon size={17} className={isActive ? "text-emerald-200" : "text-emerald-700"} />
+                  <Icon
+                    size={16}
+                    className={`shrink-0 ${isActive ? "text-emerald-300" : "text-[#7da88d]"}`}
+                  />
                   <span>{item.label}</span>
                 </Link>
               );
             })}
           </nav>
+        </div>
 
-          <div className="p-4 border-t border-[#dcd8cd] text-[11px] text-gray-500 flex items-center justify-between">
-            <span className="flex items-center gap-1 font-semibold text-emerald-800">
-              <ShieldCheck size={14} />
-              <span>{t("verified_badge")}</span>
+        {/* Bottom User Card Matching Daily Insaaf */}
+        <div className="p-4 border-t border-[#15452b] bg-[#071d12]">
+          <div className="mb-2">
+            <p className="text-xs font-bold text-white truncate">admin@dailyafadiat.com</p>
+            <p className="text-[11px] text-[#88b299] font-medium">Super Admin</p>
+          </div>
+          <Link
+            href="/"
+            className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 border border-[#1f5637] hover:bg-[#143e26] text-white text-xs rounded font-medium transition cursor-pointer"
+          >
+            <LogOut size={13} className="text-[#88b299]" />
+            <span>Sign out</span>
+          </Link>
+        </div>
+      </aside>
+
+      {/* 3. Main Workspace Area */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen bg-[#f9f8f5]">
+        {/* Top Header Bar Matching Daily Insaaf */}
+        <header className="h-14 bg-[#f9f8f5] border-b border-[#e5e2da] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
+          {/* Left Side: Mobile Hamburger + Live PKT Date */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-1.5 rounded-md text-gray-700 hover:text-gray-900 hover:bg-[#e5e2da]/50"
+              aria-label="Open sidebar"
+            >
+              <Menu size={20} />
+            </button>
+            <span className="text-xs sm:text-sm font-medium text-[#5c635b]">
+              {liveDate || "Loading PKT date..."}
             </span>
           </div>
-        </aside>
+
+          {/* Right Side: View Site Pill + User Avatar Badge */}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              target="_blank"
+              className="border border-[#e5e2da] bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-950 px-3 py-1.5 rounded text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition"
+            >
+              <span>View site</span>
+              <ExternalLink size={12} className="text-gray-500" />
+            </Link>
+
+            {/* Circular User Avatar Badge (A for Admin) */}
+            <div
+              className="w-8 h-8 rounded-full bg-[#184e2d] text-white flex items-center justify-center text-xs font-bold shadow-2xs border border-[#1f5637]"
+              title="Super Admin"
+            >
+              A
+            </div>
+          </div>
+        </header>
 
         {/* Content Viewport */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
       </div>

@@ -96,3 +96,40 @@
 .marquee-group:hover .marquee-track-reverse {
   animation-play-state: paused;
 }
+
+/* ==========================================================================
+   Daily Insaaf Admin CMS Design System (1:1 Visual Parity Tokens)
+   ========================================================================== */
+:root {
+  --newsroom-sidebar-bg: #0a2618;
+  --newsroom-sidebar-surface: #0e3321;
+  --newsroom-sidebar-active: #184e2d;
+  --newsroom-sidebar-text: #9ebba8;
+  --newsroom-sidebar-border: #15452b;
+  --newsroom-canvas: #f9f8f5;
+  --newsroom-card-bg: #ffffff;
+  --newsroom-card-border: #e5e2da;
+  --newsroom-card-header: #f4f2ec;
+  --newsroom-primary: #124e2b;
+  --newsroom-primary-hover: #0b381e;
+  --newsroom-text-main: #18221b;
+  --newsroom-text-muted: #5e6b62;
+  --newsroom-text-faint: #8a968e;
+}
+
+.newsroom-canvas {
+  background-color: var(--newsroom-canvas);
+  color: var(--newsroom-text-main);
+}
+
+.newsroom-card {
+  background-color: var(--newsroom-card-bg);
+  border: 1px solid var(--newsroom-card-border);
+  border-radius: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.newsroom-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}

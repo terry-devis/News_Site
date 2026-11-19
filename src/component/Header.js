@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Menu, X, Globe, Tv, Newspaper, Flame, Home, Video, PhoneCall, Megaphone, ArrowUp, Lock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Menu, X, Globe, Tv, Newspaper, Flame, Home, Video, PhoneCall, Megaphone, ArrowUp, Lock, ChevronLeft, ChevronRight, Briefcase, Info, ShieldCheck, TrendingUp } from "lucide-react";
 import AdSlot from "@/component/AdSlot";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
@@ -79,24 +79,24 @@ export default function Header({ categories = [], breakingNews = [] }) {
             <span className="text-gray-700 font-sans font-medium whitespace-nowrap">{todayDate}</span>
             <span className="hidden sm:inline text-gray-300">|</span>
             <nav className="hidden md:flex items-center gap-4 text-gray-600 font-medium text-[13px]">
-              <Link href="/live" className="hover:text-emerald-700 transition flex items-center gap-1.5 whitespace-nowrap">
+              <Link href="/live" className="text-red-700 hover:text-red-800 transition flex items-center gap-1.5 whitespace-nowrap font-bold">
                 <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
                 <span>{t("liveTv")}</span>
               </Link>
-              <Link href="/video" className="hover:text-emerald-600 transition flex items-center gap-1 whitespace-nowrap">
-                <Video size={13} />
-                <span>{t("videos")}</span>
+              <Link href="/services" className="hover:text-emerald-700 transition flex items-center gap-1 whitespace-nowrap">
+                <Briefcase size={13} className="text-emerald-800" />
+                <span>{t("services")}</span>
               </Link>
-              <Link href="/epaper" className="hover:text-emerald-600 transition flex items-center gap-1 whitespace-nowrap">
-                <Newspaper size={13} />
-                <span>{t("epaper")}</span>
+              <Link href="/p/about-us" className="hover:text-emerald-700 transition flex items-center gap-1 whitespace-nowrap">
+                <Info size={13} className="text-emerald-800" />
+                <span>{t("aboutUs")}</span>
               </Link>
-              <Link href="/advertise" className="hover:text-emerald-600 transition flex items-center gap-1 whitespace-nowrap">
-                <Megaphone size={13} />
-                <span>{t("advertise")}</span>
+              <Link href="/p/editorial-policy" className="hover:text-emerald-700 transition flex items-center gap-1 whitespace-nowrap">
+                <ShieldCheck size={13} className="text-emerald-800" />
+                <span>{t("editorialPolicy")}</span>
               </Link>
-              <Link href="/contact" className="hover:text-emerald-600 transition flex items-center gap-1 whitespace-nowrap">
-                <PhoneCall size={13} />
+              <Link href="/contact" className="hover:text-emerald-700 transition flex items-center gap-1 whitespace-nowrap">
+                <PhoneCall size={13} className="text-emerald-800" />
                 <span>{t("contact")}</span>
               </Link>
             </nav>
@@ -157,25 +157,25 @@ export default function Header({ categories = [], breakingNews = [] }) {
         <AdSlot slotKey="top_banner_728x90" className="w-full max-w-[728px] mx-auto mt-2" />
       </div>
 
-      {/* Express News style Mobile Utility Bar (آج کا اخبار | لائیو ٹی وی | ویڈیوز | اشتہار دیں) */}
-      <div className="lg:hidden w-full bg-[#eceae3] border-y border-[#dcd8cd] px-2 py-2 flex items-center justify-around sm:justify-center sm:gap-6 text-[12px] sm:text-xs font-bold text-gray-800">
-        <Link href="/epaper" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
-          <Newspaper size={13} className="text-emerald-800" />
+      {/* Express News style Broad Utility Bar (آج کا اخبار | مارکیٹ ریٹس | ویڈیوز | اشتہار دیں) */}
+      <div className="w-full bg-[#eceae3] border-y border-[#dcd8cd] px-3 sm:px-6 py-2 flex items-center justify-around sm:justify-center sm:gap-8 text-xs sm:text-[13px] font-bold text-gray-800">
+        <Link href="/epaper" className="hover:text-emerald-700 flex items-center gap-1.5 shrink-0 transition">
+          <Newspaper size={14} className="text-emerald-800" />
           <span>{isUrdu ? "آج کا اخبار" : "ePaper"}</span>
         </Link>
         <span className="text-gray-300 select-none">|</span>
-        <Link href="/live" className="text-red-700 hover:text-red-800 flex items-center gap-1 shrink-0 transition font-extrabold">
-          <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-          <span>{t("liveTv")}</span>
+        <Link href="/rates" className="hover:text-emerald-700 flex items-center gap-1.5 shrink-0 transition">
+          <TrendingUp size={14} className="text-emerald-800" />
+          <span>{t("marketRatesNav")}</span>
         </Link>
         <span className="text-gray-300 select-none">|</span>
-        <Link href="/video" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
-          <Video size={13} className="text-emerald-800" />
+        <Link href="/video" className="hover:text-emerald-700 flex items-center gap-1.5 shrink-0 transition">
+          <Video size={14} className="text-emerald-800" />
           <span>{t("videos")}</span>
         </Link>
         <span className="text-gray-300 select-none">|</span>
-        <Link href="/advertise" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
-          <Megaphone size={13} className="text-emerald-800" />
+        <Link href="/advertise" className="hover:text-emerald-700 flex items-center gap-1.5 shrink-0 transition">
+          <Megaphone size={14} className="text-emerald-800" />
           <span>{t("advertise")}</span>
         </Link>
       </div>
@@ -424,19 +424,35 @@ export default function Header({ categories = [], breakingNews = [] }) {
             <div className="p-3 border-t border-[#dcd8cd] bg-[#efeee9] grid grid-cols-2 gap-2 text-xs text-gray-700 font-medium">
               <Link href="/live" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
                 <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
-                <span>{t("liveTv")}</span>
-              </Link>
-              <Link href="/video" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
-                <Video size={13} />
-                <span>{t("videos")}</span>
+                <span className="font-bold text-red-700">{t("liveTv")}</span>
               </Link>
               <Link href="/epaper" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
-                <Newspaper size={13} />
-                <span>{t("epaper")}</span>
+                <Newspaper size={13} className="text-emerald-800" />
+                <span>{isUrdu ? "آج کا اخبار" : "ePaper"}</span>
+              </Link>
+              <Link href="/rates" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
+                <TrendingUp size={13} className="text-emerald-800" />
+                <span>{t("marketRatesNav")}</span>
+              </Link>
+              <Link href="/video" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
+                <Video size={13} className="text-emerald-800" />
+                <span>{t("videos")}</span>
+              </Link>
+              <Link href="/services" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
+                <Briefcase size={13} className="text-emerald-800" />
+                <span>{t("services")}</span>
               </Link>
               <Link href="/advertise" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
-                <Megaphone size={13} />
+                <Megaphone size={13} className="text-emerald-800" />
                 <span>{t("advertise")}</span>
+              </Link>
+              <Link href="/p/about-us" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
+                <Info size={13} className="text-emerald-800" />
+                <span>{t("aboutUs")}</span>
+              </Link>
+              <Link href="/contact" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
+                <PhoneCall size={13} className="text-emerald-800" />
+                <span>{t("contact")}</span>
               </Link>
             </div>
 

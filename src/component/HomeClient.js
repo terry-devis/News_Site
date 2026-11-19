@@ -142,11 +142,12 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
 
                 {secondaryStories.map((story) => (
                   <article key={story.id} className="py-2.5 flex items-start gap-3 group">
-                    <div className="relative w-24 h-18 sm:w-28 sm:h-20 shrink-0 overflow-hidden rounded-none border border-[#dcd8cd] bg-[#dcd8cd]/40 shadow-2xs">
+                    <div className="relative w-24 sm:w-28 h-20 sm:h-20 shrink-0 overflow-hidden rounded-none border border-[#dcd8cd] bg-[#dcd8cd]/40 shadow-2xs">
                       <Image
                         src={getFallbackImageForStory(story)}
                         alt={getTitle(story)}
                         fill
+                        sizes="(max-width: 640px) 96px, 112px"
                         className="object-cover group-hover:scale-105 transition duration-300"
                       />
                     </div>
@@ -214,7 +215,7 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
                   <div>
                     <div className="relative w-full h-44 bg-[#dcd8cd]/40 overflow-hidden">
                       <Image
-                        src={story.cover_image || "/logo-light.webp"}
+                        src={getFallbackImageForStory(story)}
                         alt={getTitle(story)}
                         fill
                         className="object-cover group-hover:scale-105 transition duration-500"

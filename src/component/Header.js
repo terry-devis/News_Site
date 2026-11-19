@@ -157,67 +157,100 @@ export default function Header({ categories = [], breakingNews = [] }) {
         <AdSlot slotKey="top_banner_728x90" className="w-full max-w-[728px] mx-auto mt-2" />
       </div>
 
-      {/* 3. STICKY CATEGORY NAVBAR */}
-      <nav className="border-y-2 border-[#1a1a1a] bg-[#f7f6f3] sticky top-0 z-40 shadow-sm">
-        <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between">
+      {/* Express News style Mobile Utility Bar (آج کا اخبار | لائیو ٹی وی | ویڈیوز | اشتہار دیں) */}
+      <div className="lg:hidden w-full bg-[#eceae3] border-t border-[#dcd8cd] px-3 py-1.5 flex items-center justify-between text-xs font-bold text-gray-800">
+        <div className="flex items-center gap-3 overflow-x-auto scrollbar-none">
+          <Link href="/epaper" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
+            <Newspaper size={13} className="text-emerald-800" />
+            <span>{isUrdu ? "آج کا اخبار" : "Today's ePaper"}</span>
+          </Link>
+          <span className="text-gray-300">|</span>
+          <Link href="/live" className="text-red-700 hover:text-red-800 flex items-center gap-1 shrink-0 transition font-extrabold">
+            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+            <span>{t("liveTv")}</span>
+          </Link>
+          <span className="text-gray-300">|</span>
+          <Link href="/video" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
+            <Video size={13} className="text-emerald-800" />
+            <span>{t("videos")}</span>
+          </Link>
+          <span className="text-gray-300">|</span>
+          <Link href="/advertise" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
+            <Megaphone size={13} className="text-emerald-800" />
+            <span>{t("advertise")}</span>
+          </Link>
+        </div>
+
+        {/* Quick Language Toggle on Mobile */}
+        <button
+          onClick={toggleLanguage}
+          className="shrink-0 text-[11px] font-bold text-emerald-800 border border-[#dcd8cd] bg-white px-2 py-0.5 rounded-none flex items-center gap-1"
+          title="Switch Language"
+        >
+          <Globe size={11} />
+          <span>{isUrdu ? "EN" : "اردو"}</span>
+        </button>
+      </div>
+
+      {/* 3. STICKY CATEGORY NAVBAR (Both Desktop & Mobile with Horizontal Swipe & Search) */}
+      <nav className="border-y-2 border-[#1a1a1a] bg-[#f7f6f3] sticky top-0 z-40 shadow-xs">
+        <div className="w-full max-w-[1440px] mx-auto px-2 sm:px-6 lg:px-8 flex items-center justify-between gap-2">
           
-          {/* Main Category Links */}
-          <ul className="hidden lg:flex items-center gap-0 py-0 overflow-x-auto scrollbar-none text-sm font-semibold">
-            <li>
-              <Link
-                href="/"
-                className="px-3 py-2.5 text-gray-800 hover:text-emerald-600 transition block border-b-2 border-transparent hover:border-emerald-600"
-                aria-label={t("home")}
-              >
-                <Home size={17} />
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/latest"
-                className="px-3 py-2.5 text-gray-800 hover:text-emerald-600 transition whitespace-nowrap block border-b-2 border-transparent hover:border-emerald-600"
-              >
-                {t("latest")}
-              </Link>
-            </li>
+          {/* Main Category Links: Smooth Horizontal Scroll on Mobile, Full on Desktop */}
+          <div className="flex items-center overflow-x-auto scrollbar-none flex-1 py-0 text-xs sm:text-sm font-semibold select-none">
+            <Link
+              href="/"
+              className="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-900 hover:text-emerald-700 transition shrink-0 border-b-2 border-transparent hover:border-emerald-600 flex items-center"
+              aria-label={t("home")}
+            >
+              <Home size={16} />
+            </Link>
+
+            <Link
+              href="/latest"
+              className="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-900 hover:text-emerald-700 transition whitespace-nowrap shrink-0 border-b-2 border-transparent hover:border-emerald-600 font-bold"
+            >
+              {t("latest")}
+            </Link>
+
             {activeCategories.map((cat) => {
               const displayName = isEnglish ? (cat.name_en || cat.name_ur) : (cat.name_ur || cat.name_en);
               return (
-                <li key={cat.id}>
-                  <Link
-                    href={`/category/${cat.slug}`}
-                    className="px-3 py-2.5 text-gray-800 hover:text-emerald-600 transition whitespace-nowrap block border-b-2 border-transparent hover:border-emerald-600"
-                  >
-                    {displayName}
-                  </Link>
-                </li>
+                <Link
+                  key={cat.id}
+                  href={`/category/${cat.slug}`}
+                  className="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-900 hover:text-emerald-700 transition whitespace-nowrap shrink-0 border-b-2 border-transparent hover:border-emerald-600 font-bold"
+                >
+                  {displayName}
+                </Link>
               );
             })}
-          </ul>
+          </div>
 
-          {/* Search Button */}
-          <div className="flex items-center">
+          {/* Search Button & Expandable Box */}
+          <div className="flex items-center shrink-0">
             {searchOpen ? (
-              <div className="flex items-center gap-1 border border-emerald-600 rounded px-2.5 py-1 bg-[#f7f6f3] my-1 shadow-sm">
+              <div className="flex items-center gap-1 border border-emerald-600 rounded-none px-2 py-1 bg-white my-1 shadow-sm">
                 <input
                   type="text"
                   placeholder={t("searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`text-xs outline-none bg-transparent w-32 sm:w-44 ${isUrdu ? "text-right font-sans" : "text-left font-sans"}`}
+                  className={`text-xs outline-none bg-transparent w-28 sm:w-44 ${isUrdu ? "text-right font-sans" : "text-left font-sans"}`}
                   autoFocus
                 />
-                <button onClick={() => setSearchOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <button onClick={() => setSearchOpen(false)} className="text-gray-400 hover:text-gray-600 p-0.5">
                   <X size={14} />
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setSearchOpen(true)}
-                className="size-9 grid place-items-center text-gray-700 hover:text-emerald-600 transition"
+                className="size-8 sm:size-9 grid place-items-center text-gray-800 hover:text-emerald-700 transition border-l rtl:border-r rtl:border-l-0 border-[#dcd8cd] pl-2 rtl:pr-2 rtl:pl-0"
                 aria-label={t("searchAria")}
+                title={isUrdu ? "تلاش کریں" : "Search"}
               >
-                <Search size={18} />
+                <Search size={16} />
               </button>
             )}
           </div>

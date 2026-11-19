@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Clock, TrendingUp } from "lucide-react";
+import { Clock, TrendingUp, ArrowRight } from "lucide-react";
 import Header from "@/component/Header";
 import Footer from "@/component/Footer";
 import AdSlot from "@/component/AdSlot";
@@ -61,43 +61,71 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
         
         {/* HERO SECTION */}
         {leadStory && (
-          <section className="bg-[#efeee9] border border-[#dcd8cd] rounded p-4 sm:p-5 mb-6 shadow-sm">
+          <section className="bg-[#efeee9] border border-[#dcd8cd] rounded-none p-4 sm:p-5 mb-6 shadow-xs">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               
-              {/* Lead Featured Story (7 Cols) */}
+              {/* Lead Featured Story (7 Cols) - Express News Premier Broadsheet Style (HEADING ABOVE IMAGE) */}
               <article className="lg:col-span-7 flex flex-col justify-between group">
                 <div>
-                  <div className="relative w-full aspect-[16/10] overflow-hidden rounded bg-[#dcd8cd]/40 mb-3 shadow-inner">
-                    <Image
-                      src={leadStory.cover_image || "/logo-light.webp"}
-                      alt={getTitle(leadStory)}
-                      fill
-                      className="object-cover group-hover:scale-105 transition duration-500"
-                      priority
-                    />
-                    <span className={`absolute top-2.5 ${isUrdu ? "right-2.5" : "left-2.5"} bg-emerald-700 text-white text-[11px] px-2 py-0.5 rounded font-sans font-semibold shadow-sm`}>
+                  {/* Category Kicker & Status */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="bg-emerald-800 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-none uppercase font-sans tracking-wide">
                       {getCatName(leadStory.category)}
                     </span>
+                    {leadStory.is_breaking && (
+                      <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-none flex items-center gap-1 font-sans animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                        <span>{isUrdu ? "اہم خبر" : "BREAKING"}</span>
+                      </span>
+                    )}
                   </div>
-                  
-                  <Link href={`/story/${leadStory.id || leadStory.slug}`}>
-                    <h1 className={`text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-emerald-700 transition leading-snug mb-2 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
+
+                  {/* 1. PROMINENT HEADLINE ABOVE THE IMAGE (Express.pk Style) */}
+                  <Link href={`/story/${leadStory.id || leadStory.slug}`} className="block group-hover:text-emerald-800 transition">
+                    <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-black text-gray-950 tracking-tight leading-snug sm:leading-tight mb-3 ${isUrdu ? "urdu-headline" : "font-sans font-extrabold"}`}>
                       {getTitle(leadStory)}
                     </h1>
                   </Link>
 
-                  <p className={`text-gray-600 text-[14px] line-clamp-3 mb-3 ${isUrdu ? "urdu-body leading-relaxed" : "font-sans leading-normal"}`}>
+                  {/* 2. FEATURED IMAGE DIRECTLY UNDER HEADLINE */}
+                  <div className="relative w-full aspect-[16/10] overflow-hidden rounded-none border border-[#dcd8cd] bg-[#dcd8cd]/40 mb-3.5 shadow-xs">
+                    <Image
+                      src={leadStory.cover_image || "/logo-light.webp"}
+                      alt={getTitle(leadStory)}
+                      fill
+                      className="object-cover group-hover:scale-102 transition duration-500"
+                      priority
+                    />
+                  </div>
+
+                  {/* 3. EXCERPT / LEAD SUMMARY UNDER IMAGE */}
+                  <p className={`text-gray-700 text-sm sm:text-[15px] line-clamp-3 mb-3.5 ${isUrdu ? "urdu-body leading-relaxed text-justify" : "font-sans leading-normal"}`}>
                     {getSummary(leadStory)}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2.5 text-xs text-gray-500 font-sans border-t border-[#dcd8cd] pt-2.5">
-                  <span className="font-semibold text-gray-700">{getAuthor(leadStory)}</span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} />
-                    {new Date(leadStory.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US")}
-                  </span>
+                {/* Footer Byline & Timestamp */}
+                <div className="flex items-center justify-between text-xs text-gray-500 font-sans border-t border-[#dcd8cd] pt-2.5 mt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-800">{getAuthor(leadStory)}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 text-gray-500">
+                      <Clock size={12} />
+                      {new Date(leadStory.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+
+                  <Link
+                    href={`/story/${leadStory.id || leadStory.slug}`}
+                    className="text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1 group-hover:underline"
+                  >
+                    <span>{isUrdu ? "مکمل تفصیل پڑھیں" : "Read Full Story"}</span>
+                    <ArrowRight size={13} className="rtl:rotate-180" />
+                  </Link>
                 </div>
               </article>
 

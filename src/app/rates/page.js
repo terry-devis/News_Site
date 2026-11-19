@@ -31,7 +31,7 @@ export default function RatesServicesPage() {
           </div>
           <Link
             href="/"
-            className="text-xs text-emerald-800 hover:text-emerald-950 font-bold border border-[#dcd8cd] bg-white px-3 py-1.5 rounded transition"
+            className="text-xs text-[#0d3822] hover:text-black font-bold border border-[#dcd8cd] bg-white px-3 py-1.5 rounded-none transition"
           >
             {isUrdu ? "← صفحۂ اول" : "← Back to Home"}
           </Link>

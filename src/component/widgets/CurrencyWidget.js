@@ -6,15 +6,15 @@ import { useSiteLanguage } from "@/context/SiteLanguageContext";
 export default function CurrencyWidget({ className = "" }) {
   const { isUrdu, isEnglish, dir } = useSiteLanguage();
   const [rates, setRates] = useState([
-    { code: "USD", name_ur: "امریکی ڈالر", name_en: "US Dollar", buy: 277.50, sell: 279.00 },
-    { code: "SAR", name_ur: "سعودی ریال", name_en: "Saudi Riyal", buy: 73.85, sell: 74.50 },
-    { code: "AED", name_ur: "اماراتی درہم", name_en: "UAE Dirham", buy: 75.40, sell: 75.95 },
-    { code: "GBP", name_ur: "برطانوی پاؤنڈ", name_en: "British Pound", buy: 373.20, sell: 376.50 },
-    { code: "EUR", name_ur: "یورو", name_en: "Euro", buy: 308.80, sell: 312.40 },
-    { code: "CNY", name_ur: "چینی یوآن", name_en: "Chinese Yuan", buy: 41.20, sell: 41.65 },
+    { code: "USD", name_ur: "امریکی ڈالر", name_en: "US Dollar", buy: "277.50", sell: "279.00" },
+    { code: "SAR", name_ur: "سعودی ریال", name_en: "Saudi Riyal", buy: "73.85", sell: "74.50" },
+    { code: "AED", name_ur: "اماراتی درہم", name_en: "UAE Dirham", buy: "75.40", sell: "75.95" },
+    { code: "GBP", name_ur: "برطانوی پاؤنڈ", name_en: "British Pound", buy: "373.20", sell: "376.50" },
+    { code: "EUR", name_ur: "یورو", name_en: "Euro", buy: "308.80", sell: "312.40" },
+    { code: "CNY", name_ur: "چینی یوآن", name_en: "Chinese Yuan", buy: "41.20", sell: "41.65" },
   ]);
   const [timestamp, setTimestamp] = useState("19 Nov, 12:00");
-  const [goldRates, setGoldRates] = useState({
+  const [goldRates] = useState({
     gold24k: "422,095",
     gold22k: "386,920",
   });
@@ -61,7 +61,9 @@ export default function CurrencyWidget({ className = "" }) {
           ]);
 
           const d = new Date();
-          const timeStr = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " +
+          const timeStr =
+            d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) +
+            ", " +
             d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
           setTimestamp(timeStr);
         }
@@ -77,53 +79,62 @@ export default function CurrencyWidget({ className = "" }) {
 
   return (
     <div
-      className={`bg-white border border-[#dcd8cd] rounded shadow-2xs font-sans overflow-hidden ${className}`}
+      className={`bg-white border border-[#dcd8cd] rounded-none shadow-2xs font-sans overflow-hidden ${className}`}
       dir={dir}
     >
-      {/* Header Bar matching Daily Insaaf */}
-      <div className="p-3.5 border-b border-[#eceae3] flex items-center justify-between bg-[#fbfbfa]">
-        <div className="flex items-center gap-1.5 text-emerald-800">
-          <CircleDollarSign size={17} className="text-emerald-700" />
-          <h3 className={`font-bold text-sm text-gray-900 ${isUrdu ? "urdu-headline text-[15px]" : "font-sans"}`}>
-            {isUrdu ? "کرنسی ریٹ و سونا" : "Currency & Gold Rates"}
+      {/* Unified Forest Green Header matching Daily Insaaf Broadsheet Style */}
+      <div className="bg-[#0d3822] text-white px-3.5 py-2.5 flex items-center justify-between border-b border-[#072415]">
+        <div className="flex items-center gap-1.5">
+          <CircleDollarSign size={16} className="text-yellow-400" />
+          <h3 className={`font-bold text-sm text-white ${isUrdu ? "urdu-headline text-[15px]" : "font-sans"}`}>
+            {isUrdu ? "کرنسی و صرافہ ریٹس" : "Currency & Bullion Rates"}
           </h3>
         </div>
-        <div className="flex items-center gap-1 text-[11px] text-gray-400 font-sans">
+        <div className="flex items-center gap-1 text-[11px] text-emerald-200 font-sans">
           <Clock size={11} />
           <span>{timestamp}</span>
         </div>
       </div>
 
-      <div className="p-3.5 space-y-3.5">
-        {/* Gold Bullion Highlights (Daily Insaaf gold blocks) */}
-        <div className="grid grid-cols-2 gap-2 bg-[#fdfbf6] p-2.5 rounded border border-amber-200/80">
+      {/* Sub-bar: Market Status Strip (Matching NamazWidget Sub-bar) */}
+      <div className="px-3.5 py-2 bg-[#f7f6f3] border-b border-[#dcd8cd] flex items-center justify-between text-xs">
+        <span className="font-semibold text-gray-700">
+          {isUrdu ? "مارکیٹ پوزیشن:" : "Market Status:"}
+        </span>
+        <span className="text-[11px] font-bold text-[#0d3822] flex items-center gap-1 font-sans">
+          <span className="size-1.5 bg-[#0d3822] rounded-none inline-block" />
+          <span>{isUrdu ? "اوپن مارکیٹ و بین البینک" : "Interbank Live"}</span>
+        </span>
+      </div>
+
+      <div className="p-3.5 space-y-3">
+        {/* Gold Bullion Dual Callout Cards (Identical geometry to Suhoor/Iftar boxes) */}
+        <div className="grid grid-cols-2 gap-2">
           {/* 24K Gold */}
-          <div>
-            <div className="flex items-center gap-1 text-[11px] text-gray-600 font-medium mb-0.5">
-              <span className="w-2 h-2 rounded-2xs bg-amber-500 inline-block"></span>
-              <span>{isUrdu ? "سونا 24 قیراط / تولہ" : "Gold 24K / Tola"}</span>
+          <div className="bg-[#f7f6f3] border border-[#dcd8cd] p-2.5 rounded-none text-center">
+            <div className="text-[11px] font-bold text-[#0d3822] mb-0.5">
+              {isUrdu ? "سونا ۲۴ قیراط / تولہ" : "Gold 24K / Tola"}
             </div>
-            <div className="text-sm sm:text-[15px] font-extrabold text-amber-700 font-sans">
+            <div className="text-base font-extrabold text-gray-950 font-sans tracking-tight">
               ₨ {goldRates.gold24k}
             </div>
           </div>
 
           {/* 22K Gold */}
-          <div>
-            <div className="flex items-center gap-1 text-[11px] text-gray-600 font-medium mb-0.5">
-              <span className="w-2 h-2 rounded-2xs bg-amber-400 inline-block"></span>
-              <span>{isUrdu ? "سونا 22 قیراط / تولہ" : "Gold 22K / Tola"}</span>
+          <div className="bg-[#f7f6f3] border border-[#dcd8cd] p-2.5 rounded-none text-center">
+            <div className="text-[11px] font-bold text-[#0d3822] mb-0.5">
+              {isUrdu ? "سونا ۲۲ قیراط / تولہ" : "Gold 22K / Tola"}
             </div>
-            <div className="text-sm sm:text-[15px] font-extrabold text-amber-700 font-sans">
+            <div className="text-base font-extrabold text-gray-950 font-sans tracking-tight">
               ₨ {goldRates.gold22k}
             </div>
           </div>
         </div>
 
-        {/* Forex Exchange Rates Table */}
-        <div className="border border-[#eceae3] rounded overflow-hidden">
-          <table className="w-full text-xs text-right">
-            <thead className="bg-[#f7f6f3] text-gray-500 border-b border-[#eceae3] font-bold text-[11px]">
+        {/* Forex Exchange Rates Table (Classic Sharp Broadsheet Table) */}
+        <div className="border border-[#dcd8cd] rounded-none overflow-hidden">
+          <table className="w-full text-xs">
+            <thead className="bg-[#f7f6f3] text-gray-700 border-b border-[#dcd8cd] font-bold text-[11px]">
               <tr>
                 <th className={`py-2 px-3 ${isUrdu ? "text-right" : "text-left"}`}>
                   {isUrdu ? "کرنسی" : "Currency"}
@@ -132,19 +143,19 @@ export default function CurrencyWidget({ className = "" }) {
                 <th className="py-2 px-3 text-center">{isUrdu ? "فروخت" : "Sell"}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 font-sans">
+            <tbody className="divide-y divide-[#eceae3] font-sans">
               {rates.map((item) => (
                 <tr key={item.code} className="hover:bg-[#fbfbfa] transition-colors">
-                  <td className={`py-1.5 px-3 font-medium text-gray-800 ${isUrdu ? "text-right" : "text-left"}`}>
-                    <span className="font-bold text-gray-900">{item.code}</span>{" "}
+                  <td className={`py-2 px-3 font-medium text-gray-800 ${isUrdu ? "text-right" : "text-left"}`}>
+                    <span className="font-bold text-gray-950">{item.code}</span>{" "}
                     <span className="text-[11px] text-gray-500">
                       ({isUrdu ? item.name_ur : item.name_en})
                     </span>
                   </td>
-                  <td className="py-1.5 px-3 text-center font-bold text-emerald-800 tracking-tight">
+                  <td className="py-2 px-3 text-center font-bold text-[#0d3822] tracking-tight">
                     {item.buy}
                   </td>
-                  <td className="py-1.5 px-3 text-center font-bold text-gray-700 tracking-tight">
+                  <td className="py-2 px-3 text-center font-bold text-gray-800 tracking-tight">
                     {item.sell}
                   </td>
                 </tr>
@@ -154,10 +165,10 @@ export default function CurrencyWidget({ className = "" }) {
         </div>
 
         {/* Disclaimer Citation */}
-        <p className="text-[10px] text-gray-400 text-center font-sans">
+        <p className="text-[10px] text-gray-500 text-center font-sans leading-tight">
           {isUrdu
-            ? "کرنسی: اوپن مارکیٹ و بین البینک | سونا: صرافہ مارکیٹ کراچی"
-            : "Currency: Interbank & Open Market | Gold: Sarafa Market"}
+            ? "کرنسی ریٹس: اوپن مارکیٹ و بین البینک | سونا: صرافہ ایسوسی ایشن"
+            : "Currency: Open Market & Interbank | Gold: Bullion Association"}
         </p>
       </div>
     </div>

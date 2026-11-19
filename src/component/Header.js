@@ -59,9 +59,12 @@ export default function Header({ categories = [], breakingNews = [] }) {
             <span className="text-gray-700 font-sans font-medium whitespace-nowrap">{todayDate}</span>
             <span className="hidden sm:inline text-gray-300">|</span>
             <nav className="hidden md:flex items-center gap-4 text-gray-600 font-medium text-[13px]">
-              <Link href="/live" className="hover:text-emerald-600 transition flex items-center gap-1.5 whitespace-nowrap">
-                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+              <Link href="/live" className="hover:text-emerald-700 transition flex items-center gap-1.5 whitespace-nowrap">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                 <span>{t("liveTv")}</span>
+                <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.2 rounded-none font-bold uppercase tracking-wider font-sans">
+                  {isUrdu ? "عنقریب" : "Soon"}
+                </span>
               </Link>
               <Link href="/video" className="hover:text-emerald-600 transition flex items-center gap-1 whitespace-nowrap">
                 <Video size={13} />
@@ -339,9 +342,12 @@ export default function Header({ categories = [], breakingNews = [] }) {
 
             {/* Drawer Secondary Services Footer */}
             <div className="p-3 border-t border-[#dcd8cd] bg-[#efeee9] grid grid-cols-2 gap-2 text-xs text-gray-700 font-medium">
-              <Link href="/live" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 text-red-600 font-bold p-1 hover:bg-white rounded-lg transition">
-                <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-ping"></span>
+              <Link href="/live" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 text-amber-700 font-bold p-1 hover:bg-white rounded-none transition">
+                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping"></span>
                 <span>{t("liveTv")}</span>
+                <span className="text-[9px] bg-amber-100 text-amber-800 border border-amber-300 px-1 py-0.2 rounded-none font-bold font-sans">
+                  {isUrdu ? "عنقریب" : "Soon"}
+                </span>
               </Link>
               <Link href="/video" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
                 <Video size={13} />

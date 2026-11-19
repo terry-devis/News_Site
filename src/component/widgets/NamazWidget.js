@@ -59,7 +59,7 @@ export default function NamazWidget({ className = "" }) {
   // Format 24h to 12h AM/PM
   const formatTime = (time24) => {
     if (!time24) return "";
-    const cleanTime = time24.split(" ")[0]; // In case (PKT) is attached
+    const cleanTime = time24.split(" ")[0];
     const [hStr, mStr] = cleanTime.split(":");
     let h = parseInt(hStr, 10);
     const m = mStr;
@@ -105,32 +105,32 @@ export default function NamazWidget({ className = "" }) {
 
   return (
     <div
-      className={`bg-white border border-[#dcd8cd] rounded shadow-2xs font-sans overflow-hidden ${className}`}
+      className={`bg-white border border-[#dcd8cd] rounded-none shadow-2xs font-sans overflow-hidden ${className}`}
       dir={dir}
     >
-      {/* Top Header matching Daily Insaaf */}
-      <div className="p-3.5 border-b border-[#eceae3] flex items-center justify-between bg-[#fbfbfa]">
-        <div className="flex items-center gap-1.5 text-emerald-800">
-          <Moon size={17} className="text-emerald-700" />
-          <h3 className={`font-bold text-sm text-gray-900 ${isUrdu ? "urdu-headline text-[15px]" : "font-sans"}`}>
+      {/* Unified Forest Green Header matching Daily Insaaf Broadsheet Style */}
+      <div className="bg-[#0d3822] text-white px-3.5 py-2.5 flex items-center justify-between border-b border-[#072415]">
+        <div className="flex items-center gap-1.5">
+          <Moon size={16} className="text-yellow-400" />
+          <h3 className={`font-bold text-sm text-white ${isUrdu ? "urdu-headline text-[15px]" : "font-sans"}`}>
             {isUrdu ? "اوقاتِ نماز" : "Prayer Times"}
           </h3>
         </div>
-        <span className="text-[11px] text-gray-500 font-medium tracking-tight">
+        <span className="text-[11px] text-emerald-200 font-sans font-medium tracking-tight">
           {hijriDate}
         </span>
       </div>
 
-      {/* City Switcher Row */}
-      <div className="px-3.5 py-2 bg-[#f7f6f3] border-b border-[#eceae3] flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1 text-gray-600 font-medium">
-          <MapPin size={13} className="text-emerald-700" />
+      {/* City Switcher Row (Sharp Non-Round) */}
+      <div className="px-3.5 py-2 bg-[#f7f6f3] border-b border-[#dcd8cd] flex items-center justify-between text-xs">
+        <div className="flex items-center gap-1 text-gray-700 font-medium">
+          <MapPin size={13} className="text-[#0d3822]" />
           <span>{isUrdu ? "شہر:" : "City:"}</span>
         </div>
         <select
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          className="text-xs bg-white border border-[#dcd8cd] rounded px-2 py-0.5 text-gray-800 font-medium focus:outline-none focus:border-emerald-600 cursor-pointer"
+          className="text-xs bg-white border border-[#dcd8cd] rounded-none px-2 py-1 text-gray-900 font-medium focus:outline-none focus:border-[#0d3822] cursor-pointer font-sans"
         >
           {CITIES.map((c) => (
             <option key={c.id} value={c.id}>
@@ -140,34 +140,34 @@ export default function NamazWidget({ className = "" }) {
         </select>
       </div>
 
-      <div className="p-3.5">
-        {/* Suhoor & Iftar Dual Callout Cards (Daily Insaaf signature design) */}
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          {/* Suhoor / سحری */}
-          <div className="bg-[#1f5f3e] text-white p-2.5 rounded text-center shadow-2xs">
-            <div className="flex items-center justify-center gap-1 text-[11px] text-emerald-100 font-medium mb-0.5">
+      <div className="p-3.5 space-y-3">
+        {/* Suhoor & Iftar Dual Callout Cards (Harmonious Paper Tone & Sharp Edges) */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Suhoor */}
+          <div className="bg-[#f7f6f3] border border-[#dcd8cd] p-2.5 rounded-none text-center">
+            <div className="flex items-center justify-center gap-1 text-[11px] text-[#0d3822] font-bold mb-0.5">
               <Sunrise size={13} />
               <span>{isUrdu ? "سحری" : "Suhoor"}</span>
             </div>
-            <div className="text-base font-extrabold tracking-tight font-sans">
+            <div className="text-base font-extrabold text-gray-950 tracking-tight font-sans">
               {formatTime(timings.Fajr)}
             </div>
           </div>
 
-          {/* Iftar / افطار */}
-          <div className="bg-[#1f5f3e] text-white p-2.5 rounded text-center shadow-2xs">
-            <div className="flex items-center justify-center gap-1 text-[11px] text-emerald-100 font-medium mb-0.5">
+          {/* Iftar */}
+          <div className="bg-[#f7f6f3] border border-[#dcd8cd] p-2.5 rounded-none text-center">
+            <div className="flex items-center justify-center gap-1 text-[11px] text-[#0d3822] font-bold mb-0.5">
               <Sunset size={13} />
               <span>{isUrdu ? "افطار" : "Iftar"}</span>
             </div>
-            <div className="text-base font-extrabold tracking-tight font-sans">
+            <div className="text-base font-extrabold text-gray-950 tracking-tight font-sans">
               {formatTime(timings.Maghrib)}
             </div>
           </div>
         </div>
 
-        {/* Timetable List with Active Prayer Highlight */}
-        <div className="divide-y divide-gray-100 text-xs border border-[#eceae3] rounded overflow-hidden">
+        {/* Timetable List with Active Prayer Highlight (Classic Broadsheet Sharp Box) */}
+        <div className="divide-y divide-[#eceae3] text-xs border border-[#dcd8cd] rounded-none overflow-hidden">
           {prayerList.map((prayer) => {
             const isActive = activePrayer === prayer.key;
             return (
@@ -175,8 +175,8 @@ export default function NamazWidget({ className = "" }) {
                 key={prayer.key}
                 className={`flex items-center justify-between px-3 py-2 transition-colors ${
                   isActive
-                    ? "bg-[#1f5f3e] text-white font-bold"
-                    : "hover:bg-[#fbfbfa] text-gray-700"
+                    ? "bg-[#0d3822] text-white font-bold"
+                    : "hover:bg-[#fbfbfa] text-gray-800"
                 }`}
               >
                 <span className={isUrdu ? "urdu-body text-[13px]" : "font-sans font-medium"}>
@@ -190,8 +190,8 @@ export default function NamazWidget({ className = "" }) {
           })}
         </div>
 
-        {/* Authority / Calculation Method Citation */}
-        <p className="text-[10px] text-gray-500 text-center mt-2.5 font-sans leading-tight">
+        {/* Calculation Method Citation */}
+        <p className="text-[10px] text-gray-500 text-center font-sans leading-tight">
           {isUrdu
             ? "طریقۂ حساب: جامعہ علومِ اسلامیہ، علامہ بنوری ٹاؤن، کراچی"
             : "Method: Jamia Uloom-ul-Islamia Banuri Town, Karachi"}

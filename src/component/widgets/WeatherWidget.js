@@ -42,7 +42,9 @@ export default function WeatherWidget({ className = "" }) {
             code: data.current.weather_code,
           });
           const d = new Date();
-          const timeStr = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " +
+          const timeStr =
+            d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) +
+            ", " +
             d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
           setTimestamp(timeStr);
         }
@@ -58,40 +60,40 @@ export default function WeatherWidget({ className = "" }) {
     };
   }, [selectedCity]);
 
-  // Decode WMO code into Urdu/English description & icon
+  // Decode WMO code into description & harmonious icon
   const getWeatherInfo = (code) => {
     if (code === 0) {
       return {
-        text_ur: "صاف",
+        text_ur: "صاف موسم",
         text_en: "Clear Sky",
-        icon: <Sun size={38} className="text-amber-500 animate-spin-slow" />,
+        icon: <Sun size={36} className="text-yellow-500" />,
       };
     }
     if (code >= 1 && code <= 3) {
       return {
         text_ur: "جزوی ابر آلود",
         text_en: "Partly Cloudy",
-        icon: <CloudSun size={38} className="text-amber-500" />,
+        icon: <CloudSun size={36} className="text-[#0d3822]" />,
       };
     }
     if (code >= 45 && code <= 48) {
       return {
-        text_ur: "دھند",
+        text_ur: "دھند و کہر",
         text_en: "Foggy",
-        icon: <Cloud size={38} className="text-gray-400" />,
+        icon: <Cloud size={36} className="text-gray-500" />,
       };
     }
     if (code >= 51 && code <= 67) {
       return {
-        text_ur: "بارش",
+        text_ur: "بارش کا امکان",
         text_en: "Rainy",
-        icon: <CloudRain size={38} className="text-blue-500" />,
+        icon: <CloudRain size={36} className="text-blue-600" />,
       };
     }
     return {
       text_ur: "ابر آلود",
       text_en: "Overcast",
-      icon: <Cloud size={38} className="text-gray-400" />,
+      icon: <Cloud size={36} className="text-gray-500" />,
     };
   };
 
@@ -99,27 +101,27 @@ export default function WeatherWidget({ className = "" }) {
 
   return (
     <div
-      className={`bg-white border border-[#dcd8cd] rounded shadow-2xs font-sans overflow-hidden ${className}`}
+      className={`bg-white border border-[#dcd8cd] rounded-none shadow-2xs font-sans overflow-hidden ${className}`}
       dir={dir}
     >
-      {/* Header Bar matching Daily Insaaf */}
-      <div className="p-3.5 border-b border-[#eceae3] flex items-center justify-between bg-[#fbfbfa]">
-        <div className="flex items-center gap-1.5 text-emerald-800">
-          <CloudSun size={17} className="text-emerald-700" />
-          <h3 className={`font-bold text-sm text-gray-900 ${isUrdu ? "urdu-headline text-[15px]" : "font-sans"}`}>
-            {isUrdu ? "موسم" : "Weather"}
+      {/* Unified Forest Green Header matching Daily Insaaf Broadsheet Style */}
+      <div className="bg-[#0d3822] text-white px-3.5 py-2.5 flex items-center justify-between border-b border-[#072415]">
+        <div className="flex items-center gap-1.5">
+          <CloudSun size={16} className="text-yellow-400" />
+          <h3 className={`font-bold text-sm text-white ${isUrdu ? "urdu-headline text-[15px]" : "font-sans"}`}>
+            {isUrdu ? "موسم و درجۂ حرارت" : "Weather & Forecast"}
           </h3>
         </div>
-        <div className="flex items-center gap-1 text-[11px] text-gray-400 font-sans">
+        <div className="flex items-center gap-1 text-[11px] text-emerald-200 font-sans">
           <Clock size={11} />
           <span>{timestamp}</span>
         </div>
       </div>
 
-      {/* City Switcher Row */}
-      <div className="px-3.5 py-2 bg-[#f7f6f3] border-b border-[#eceae3] flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1 text-gray-600 font-medium">
-          <MapPin size={13} className="text-emerald-700" />
+      {/* City Switcher Row (Matching Namaz & Currency Widgets) */}
+      <div className="px-3.5 py-2 bg-[#f7f6f3] border-b border-[#dcd8cd] flex items-center justify-between text-xs">
+        <div className="flex items-center gap-1 text-gray-700 font-medium">
+          <MapPin size={13} className="text-[#0d3822]" />
           <span>{isUrdu ? "شہر:" : "City:"}</span>
         </div>
         <select
@@ -128,7 +130,7 @@ export default function WeatherWidget({ className = "" }) {
             const found = CITIES.find((c) => c.id === e.target.value);
             if (found) setSelectedCity(found);
           }}
-          className="text-xs bg-white border border-[#dcd8cd] rounded px-2 py-0.5 text-gray-800 font-medium focus:outline-none focus:border-emerald-600 cursor-pointer"
+          className="text-xs bg-white border border-[#dcd8cd] rounded-none px-2 py-1 text-gray-900 font-medium focus:outline-none focus:border-[#0d3822] cursor-pointer font-sans"
         >
           {CITIES.map((c) => (
             <option key={c.id} value={c.id}>
@@ -138,65 +140,65 @@ export default function WeatherWidget({ className = "" }) {
         </select>
       </div>
 
-      <div className="p-3.5">
-        {/* Main Temperature & Visual Display */}
-        <div className="flex items-center justify-between mb-4 px-1">
+      <div className="p-3.5 space-y-3">
+        {/* Main Temperature & Condition Display */}
+        <div className="flex items-center justify-between px-1">
           <div>
             <div className="text-3xl sm:text-4xl font-extrabold text-gray-950 font-sans tracking-tight">
               {weather.temp}°C
             </div>
-            <div className="text-xs text-gray-500 font-medium mt-0.5">
+            <div className="text-xs font-semibold text-gray-600 mt-0.5">
               {isUrdu ? selectedCity.name_ur : selectedCity.name_en}
             </div>
           </div>
 
           <div className="text-center flex flex-col items-center">
             {weatherInfo.icon}
-            <span className={`text-xs font-bold text-gray-700 mt-1 ${isUrdu ? "urdu-body text-[13px]" : "font-sans"}`}>
+            <span className={`text-xs font-bold text-gray-800 mt-1 ${isUrdu ? "urdu-body text-[13px]" : "font-sans"}`}>
               {isUrdu ? weatherInfo.text_ur : weatherInfo.text_en}
             </span>
           </div>
         </div>
 
-        {/* 3-Column Metric Grid matching Daily Insaaf */}
-        <div className="grid grid-cols-3 divide-x divide-x-reverse divide-[#eceae3] border border-[#eceae3] rounded bg-[#fbfbfa] text-center py-2 px-1 text-xs">
+        {/* 3-Column Metric Grid (Matching Broadsheet Sharp Box Geometry) */}
+        <div className="grid grid-cols-3 divide-x divide-x-reverse divide-[#dcd8cd] border border-[#dcd8cd] rounded-none bg-[#f7f6f3] text-center py-2.5 px-1 text-xs">
           {/* Feels Like */}
           <div className="px-1">
-            <div className="text-[10px] text-gray-500 font-medium mb-0.5 flex items-center justify-center gap-0.5">
-              <Thermometer size={10} className="text-amber-600" />
+            <div className="text-[10px] text-gray-600 font-medium mb-0.5 flex items-center justify-center gap-1">
+              <Thermometer size={11} className="text-[#0d3822]" />
               <span>{isUrdu ? "محسوس" : "Feels"}</span>
             </div>
-            <div className="font-extrabold text-gray-900 font-sans text-xs sm:text-[13px]">
-              {weather.apparent}°
+            <div className="font-extrabold text-gray-950 font-sans text-xs sm:text-[13px]">
+              {weather.apparent}°C
             </div>
           </div>
 
           {/* Humidity */}
           <div className="px-1">
-            <div className="text-[10px] text-gray-500 font-medium mb-0.5 flex items-center justify-center gap-0.5">
-              <Droplets size={10} className="text-blue-500" />
+            <div className="text-[10px] text-gray-600 font-medium mb-0.5 flex items-center justify-center gap-1">
+              <Droplets size={11} className="text-[#0d3822]" />
               <span>{isUrdu ? "نمی" : "Humidity"}</span>
             </div>
-            <div className="font-extrabold text-gray-900 font-sans text-xs sm:text-[13px]">
+            <div className="font-extrabold text-gray-950 font-sans text-xs sm:text-[13px]">
               {weather.humidity}%
             </div>
           </div>
 
           {/* Wind Speed */}
           <div className="px-1">
-            <div className="text-[10px] text-gray-500 font-medium mb-0.5 flex items-center justify-center gap-0.5">
-              <Wind size={10} className="text-emerald-600" />
+            <div className="text-[10px] text-gray-600 font-medium mb-0.5 flex items-center justify-center gap-1">
+              <Wind size={11} className="text-[#0d3822]" />
               <span>{isUrdu ? "ہوا" : "Wind"}</span>
             </div>
-            <div className="font-extrabold text-gray-900 font-sans text-xs sm:text-[13px]">
+            <div className="font-extrabold text-gray-950 font-sans text-xs sm:text-[13px]">
               {weather.wind} <span className="text-[9px] font-normal text-gray-500">km/h</span>
             </div>
           </div>
         </div>
 
         {/* Source citation */}
-        <p className="text-[10px] text-gray-400 text-center mt-2.5 font-sans">
-          {isUrdu ? "موسمی ڈیٹا: اوپن میٹیو (Open-Meteo)" : "Weather Data: Open-Meteo"}
+        <p className="text-[10px] text-gray-500 text-center font-sans leading-tight">
+          {isUrdu ? "موسمی ڈیٹا: اوپن میٹیو لائیو سیٹلائٹ فیڈ" : "Weather Data: Open-Meteo Satellite Feed"}
         </p>
       </div>
     </div>

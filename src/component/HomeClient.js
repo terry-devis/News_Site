@@ -188,7 +188,7 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
         </section>
 
         {/* NEWSLETTER SUBSCRIPTION RIBBON */}
-        <section className="my-10 w-full">
+        <section className="my-6 w-full">
           <NewsletterBox />
         </section>
 

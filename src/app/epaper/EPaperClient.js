@@ -440,6 +440,42 @@ export default function EPaperClient({
 
             </div>
 
+            {/* Lower Deck: Additional Stories / Columns (If 4 or more stories exist on this page) */}
+            {stories.length > 3 && (
+              <div className="pt-4 border-t-2 border-gray-300 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {stories.slice(3).map((extraStory, extraIdx) => (
+                  <div
+                    key={extraStory.id || extraIdx}
+                    onClick={() =>
+                      setActiveClip({
+                        title: isEnglish ? extraStory.headline_en || extraStory.headline_ur : extraStory.headline_ur,
+                        excerpt: isEnglish ? extraStory.excerpt_en || extraStory.excerpt_ur : extraStory.excerpt_ur,
+                        content: isEnglish ? extraStory.content_en || extraStory.content_ur : extraStory.content_ur,
+                        byline: isEnglish ? extraStory.byline_en || extraStory.byline_ur : extraStory.byline_ur,
+                        image_url: extraStory.image_url,
+                      })
+                    }
+                    className="p-3 border border-gray-300 bg-[#fcfbf9] hover:bg-emerald-50/50 cursor-pointer transition group"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[9px] font-bold text-emerald-800 uppercase block font-sans">
+                        {isUrdu ? "کالم و خصوصی تجزیہ" : "COLUMN & ANALYSIS"}
+                      </span>
+                      <span className="text-[10px] text-gray-500 font-bold">
+                        {isEnglish ? extraStory.byline_en : extraStory.byline_ur}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-xs sm:text-sm urdu-headline group-hover:text-emerald-900 leading-snug">
+                      {isEnglish ? extraStory.headline_en || extraStory.headline_ur : extraStory.headline_ur}
+                    </h4>
+                    <p className="text-[11px] text-gray-600 line-clamp-2 mt-1 font-sans">
+                      {isEnglish ? extraStory.excerpt_en || extraStory.excerpt_ur : extraStory.excerpt_ur}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Bottom Footer Stripe */}
             <div className="border-t-2 border-black pt-2 flex items-center justify-between text-[11px] text-gray-600 font-sans">
               <span>
@@ -556,20 +592,31 @@ export default function EPaperClient({
                 {activeClip.content}
               </p>
 
-              <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
-                <button
-                  onClick={() =>
-                    alert(
-                      isUrdu
-                        ? "کلپ تصویر کے طور پر محفوظ ہو گیا!"
-                        : "Clipping image saved to your downloads!"
-                    )
-                  }
-                  className="text-xs font-bold text-emerald-800 hover:underline flex items-center gap-1.5"
-                >
-                  <Download size={13} />
-                  <span>{isUrdu ? "کلپ محفوظ کریں (Save Clip)" : "Save Story Clipping"}</span>
-                </button>
+              <div className="pt-3 border-t border-gray-200 flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() =>
+                      alert(
+                        isUrdu
+                          ? "کلپ تصویر کے طور پر محفوظ ہو گیا!"
+                          : "Clipping image saved to your downloads!"
+                      )
+                    }
+                    className="text-xs font-bold text-emerald-800 hover:underline flex items-center gap-1.5"
+                  >
+                    <Download size={13} />
+                    <span>{isUrdu ? "کلپ محفوظ کریں (Save Clip)" : "Save Story Clipping"}</span>
+                  </button>
+
+                  <Link
+                    href="/admin/epaper"
+                    className="text-xs font-bold text-gray-700 hover:text-emerald-800 flex items-center gap-1 border border-gray-300 bg-gray-50 px-2.5 py-1"
+                  >
+                    <Edit size={12} />
+                    <span>{isUrdu ? "اس خبر میں ترمیم کریں (Studio)" : "Edit in Studio"}</span>
+                  </Link>
+                </div>
+
                 <button
                   onClick={() => setActiveClip(null)}
                   className="bg-gray-800 hover:bg-black text-white text-xs font-semibold px-4 py-1.5 rounded-none transition"

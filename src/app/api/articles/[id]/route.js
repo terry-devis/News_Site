@@ -83,6 +83,7 @@ export async function PUT(req, { params }) {
     try {
       revalidatePath("/");
       revalidatePath(`/story/${id}`);
+      revalidatePath("/rss.xml");
     } catch (e) {
       // ignore
     }
@@ -112,6 +113,7 @@ export async function DELETE(req, { params }) {
 
     try {
       revalidatePath("/");
+      revalidatePath("/rss.xml");
     } catch (e) {}
 
     return NextResponse.json({ success: true });

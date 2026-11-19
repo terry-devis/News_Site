@@ -17,6 +17,12 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="ڈیلی افادیت RSS Feed"
+          href="/rss.xml"
+        />
       </head>
       <body className="antialiased">
         <NextTopLoader

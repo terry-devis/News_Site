@@ -90,6 +90,7 @@ export async function POST(req) {
 
     try {
       revalidatePath("/");
+      revalidatePath("/rss.xml");
     } catch (e) {}
 
     return NextResponse.json({ success: true, article: data[0] });

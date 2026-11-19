@@ -299,6 +299,11 @@ export default function Footer({ categories = [] }) {
                 {t("advertise")}
               </Link>
             </li>
+            <li>
+              <a href="/rss.xml" target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
+                {isEnglish ? "RSS Feed" : "آر ایس ایس فیڈ"}
+              </a>
+            </li>
           </ul>
         </nav>
 

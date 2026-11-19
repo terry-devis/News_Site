@@ -7,6 +7,9 @@ import Header from "@/component/Header";
 import Footer from "@/component/Footer";
 import AdSlot from "@/component/AdSlot";
 import NewsletterBox from "@/component/NewsletterBox";
+import NamazWidget from "@/component/widgets/NamazWidget";
+import CurrencyWidget from "@/component/widgets/CurrencyWidget";
+import WeatherWidget from "@/component/widgets/WeatherWidget";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
 export default function HomeClient({ articles = [], categories = [], breakingNews = [] }) {
@@ -151,40 +154,75 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
           </Link>
         </section>
 
-        {/* MULTI-CATEGORY NEWS GRID */}
-        <div className="mb-3 flex items-center justify-between border-b-2 border-[#1a1a1a] pb-1.5">
-          <h2 className={`text-lg font-bold text-gray-900 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
-            {t("otherHeadlines")}
-          </h2>
-          <span className="text-xs text-gray-500 font-sans">{t("allSections")}</span>
-        </div>
+        {/* BROADSHEET EDITORIAL & UTILITY SECTION (Matching Daily Insaaf Layout) */}
+        <section className="my-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Main News Articles Grid (8 Cols) */}
+          <div className="lg:col-span-8">
+            <div className="mb-4 flex items-center justify-between border-b-2 border-emerald-700 pb-1.5">
+              <h2 className={`text-lg font-bold text-gray-900 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
+                {t("otherHeadlines")}
+              </h2>
+              <span className="text-xs text-gray-500 font-sans">{t("allSections")}</span>
+            </div>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 my-4">
-          {remainingStories.map((story) => (
-            <article key={story.id} className="border border-[#dcd8cd] rounded overflow-hidden hover:border-emerald-600 transition group bg-[#efeee9]/70 hover:bg-[#efeee9] shadow-sm">
-              <div className="relative w-full h-40 bg-[#dcd8cd]/40">
-                <Image
-                  src={story.cover_image || "/logo-light.webp"}
-                  alt={getTitle(story)}
-                  fill
-                  className="object-cover group-hover:scale-105 transition duration-500"
-                />
-                <span className={`absolute top-2 ${isUrdu ? "right-2" : "left-2"} bg-black/75 text-white text-[11px] px-2 py-0.5 rounded font-sans`}>
-                  {getCatName(story.category)}
-                </span>
-              </div>
-              <div className="p-3.5">
-                <Link href={`/story/${story.id || story.slug}`}>
-                  <h3 className={`text-[15px] font-bold text-gray-900 group-hover:text-emerald-700 transition leading-snug line-clamp-2 mb-1.5 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
-                    {getTitle(story)}
-                  </h3>
-                </Link>
-                <p className={`text-xs text-gray-500 line-clamp-2 ${isUrdu ? "urdu-body leading-relaxed" : "font-sans leading-normal"}`}>
-                  {getSummary(story)}
-                </p>
-              </div>
-            </article>
-          ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {remainingStories.map((story) => (
+                <article
+                  key={story.id}
+                  className="border border-[#dcd8cd] rounded overflow-hidden hover:border-emerald-600 transition group bg-[#efeee9]/70 hover:bg-[#efeee9] shadow-2xs flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative w-full h-44 bg-[#dcd8cd]/40 overflow-hidden">
+                      <Image
+                        src={story.cover_image || "/logo-light.webp"}
+                        alt={getTitle(story)}
+                        fill
+                        className="object-cover group-hover:scale-105 transition duration-500"
+                      />
+                      <span className={`absolute top-2 ${isUrdu ? "right-2" : "left-2"} bg-black/75 text-white text-[11px] px-2 py-0.5 rounded font-sans`}>
+                        {getCatName(story.category)}
+                      </span>
+                    </div>
+                    <div className="p-3.5">
+                      <Link href={`/story/${story.id || story.slug}`}>
+                        <h3 className={`text-[15px] font-bold text-gray-900 group-hover:text-emerald-700 transition leading-snug line-clamp-2 mb-1.5 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
+                          {getTitle(story)}
+                        </h3>
+                      </Link>
+                      <p className={`text-xs text-gray-600 line-clamp-2 ${isUrdu ? "urdu-body leading-relaxed" : "font-sans leading-normal"}`}>
+                        {getSummary(story)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="px-3.5 pb-3 pt-1 text-[11px] text-gray-400 font-sans border-t border-[#dcd8cd]/40 flex items-center justify-between">
+                    <span>{getAuthor(story)}</span>
+                    <span className="flex items-center gap-1">
+                      <Clock size={11} />
+                      {new Date(story.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US")}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          {/* Daily Insaaf Style Sidebar Stack (4 Cols): Namaz, Currency, Weather */}
+          <aside className="lg:col-span-4 space-y-5">
+            {/* 1. Namaz Auqaat Card */}
+            <NamazWidget />
+
+            {/* 2. Currency & Gold Rates Card */}
+            <CurrencyWidget />
+
+            {/* 3. Weather Card */}
+            <WeatherWidget />
+
+            {/* Sidebar Ad Slot (Controllable from CMS) */}
+            <AdSlot slotKey="home_sidebar" />
+          </aside>
+
         </section>
 
         {/* NEWSLETTER SUBSCRIPTION RIBBON */}

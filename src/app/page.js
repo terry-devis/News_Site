@@ -70,6 +70,71 @@ const fallbackArticles = [
     author_name: "ٹیک ڈیسک",
     author_name_en: "Tech Desk",
   },
+  {
+    id: 6,
+    title_ur: "ملک بھر میں موسم سرما کی پہلی بارش اور برف باری، سردی کی لہر میں اضافہ",
+    title_en: "First Winter Rain and Snowfall Across the Country, Temperature Drops Noticeably",
+    summary_ur: "محکمہ موسمیات نے شمالی علاقہ جات اور بالائی علاقوں میں بارش اور برف باری کی پیشگوئی کی ہے۔",
+    summary_en: "Meteorological department forecasts widespread rain and snowfall across northern regions and mountainous valleys.",
+    slug: "winter-rain-snowfall-forecast",
+    cover_image: "https://images.unsplash.com/photo-1517495306984-f84210f9daa8?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 18000000).toISOString(),
+    category: { name_ur: "پاکستان", name_en: "Pakistan", slug: "pakistan" },
+    author_name: "موسمیات ڈیسک",
+    author_name_en: "Weather Desk",
+  },
+  {
+    id: 7,
+    title_ur: "صحت کے شعبے میں بڑی کامیابی: دل کے امراض کے علاج کے لیے نئی تحقیق",
+    title_en: "Cardiovascular Medical Breakthrough: Landmark Clinical Trial Shows Promising Results",
+    summary_ur: "طبی ماہرین نے دل کے دورے کے خطرے کو نصف تک کم کرنے کے لیے نئی احتیاطی تدابیر دریافت کر لیں۔",
+    summary_en: "Cardiologists and research teams discover novel therapeutic pathways to substantially reduce heart attack risks.",
+    slug: "cardiovascular-health-breakthrough",
+    cover_image: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 21600000).toISOString(),
+    category: { name_ur: "صحت", name_en: "Health", slug: "health" },
+    author_name: "ہیلتھ ڈیسک",
+    author_name_en: "Health Desk",
+  },
+  {
+    id: 8,
+    title_ur: "پاکستان اسٹاک ایکسچینج میں زبردست تیزی، ہنڈریڈ انڈیکس میں تاریخی ریکارڈ اضافہ",
+    title_en: "Pakistan Stock Exchange Surges to Historic All-Time Highs with Heavy Trading Volumes",
+    summary_ur: "سرمایہ کاروں کے اعتماد میں اضافے کے باعث مارکیٹ میں مثبت رجحان برقرار رہا۔",
+    summary_en: "Surging investor confidence and macroeconomic stability propel the benchmark index to record territory.",
+    slug: "psx-historic-record-surge",
+    cover_image: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 25200000).toISOString(),
+    category: { name_ur: "بزنس", name_en: "Business", slug: "business" },
+    author_name: "مارکیٹ رپورٹر",
+    author_name_en: "Market Reporter",
+  },
+  {
+    id: 9,
+    title_ur: "تعلیمی اداروں میں ڈیجیٹل اسکلز پروگرام کا آغاز، طلباء کے لیے شاندار مواقع",
+    title_en: "Nationwide Digital Skills Initiative Launched to Empower Youth and Modernize Classrooms",
+    summary_ur: "حکومت کا نوجوانوں کو جدید آئی ٹی اور فری لانسنگ ہنر سکھانے کے لیے نیا پراجیکٹ۔",
+    summary_en: "Government unveils nationwide program equipping youth with in-demand software engineering and IT freelancing skills.",
+    slug: "digital-skills-program-launch",
+    cover_image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 28800000).toISOString(),
+    category: { name_ur: "سائنس و ٹیکنالوجی", name_en: "Science & Tech", slug: "tech" },
+    author_name: "ایجوکیشن ڈیسک",
+    author_name_en: "Education Desk",
+  },
+  {
+    id: 10,
+    title_ur: "غاروں میں چھپے قدیم شہر کا انکشاف، ماہرین آثار قدیمہ حیران رہ گئے",
+    title_en: "Centuries-Old Underground City Discovered by International Archaeologists",
+    summary_ur: "صدیوں پرانی تہذیب کے نوادرات اور حیرت انگیز تعمیراتی نمونے دریافت۔",
+    summary_en: "Remarkable relics and subterranean engineering uncover a lost civilization dating back over a thousand years.",
+    slug: "ancient-underground-city-discovery",
+    cover_image: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 32400000).toISOString(),
+    category: { name_ur: "دلچسپ و عجیب", name_en: "Odd & Curious", slug: "weird" },
+    author_name: "فیچر ڈیسک",
+    author_name_en: "Feature Desk",
+  },
 ];
 
 export default async function Home() {
@@ -92,7 +157,7 @@ export default async function Home() {
   }
 
   // Merge database articles with bilingual fallbacks
-  const newsList = articles.length >= 8 
+  const newsList = articles.length >= 10 
     ? articles 
     : [...articles, ...fallbackArticles.slice(articles.length)];
 

@@ -103,7 +103,7 @@ export default function CategoryClient({ slug, category, articles = [], categori
 
         {/* Newsletter Box */}
         <div className="my-10">
-          <NewsletterBox variant="dark" />
+          <NewsletterBox />
         </div>
       </main>
 

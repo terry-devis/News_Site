@@ -415,7 +415,7 @@ export default function ContactPage() {
             </div>
 
             {/* 3. Newsletter Box */}
-            <NewsletterBox variant="light" />
+            <NewsletterBox variant="sidebar" />
 
           </aside>
 

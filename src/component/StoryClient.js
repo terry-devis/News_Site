@@ -173,7 +173,7 @@ export default function StoryClient({
             <AdSlot slotKey="article_sidebar_300x250" />
 
             {/* Newsletter Box in Sidebar */}
-            <NewsletterBox variant="light" />
+            <NewsletterBox variant="sidebar" />
           </aside>
 
         </div>

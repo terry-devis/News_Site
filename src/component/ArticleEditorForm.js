@@ -18,8 +18,12 @@ import {
   Star,
   Globe,
   FileText,
+  Sparkles,
+  Check,
+  Camera,
 } from "lucide-react";
 import { useAdminLanguage } from "@/context/AdminLanguageContext";
+import { MOCK_NEWS_IMAGES } from "@/lib/mockImages";
 
 export default function ArticleEditorForm({ initialData = null, isEdit = false }) {
   const router = useRouter();
@@ -671,8 +675,8 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
             )}
 
             {coverImage ? (
-              <div className="space-y-2">
-                <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden border border-[#dcd8cd] bg-gray-100">
+              <div className="space-y-2.5">
+                <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden border border-[#dcd8cd] bg-gray-100 group">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={coverImage}
@@ -682,11 +686,22 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                   <button
                     type="button"
                     onClick={() => setCoverImage("")}
-                    className="absolute top-2 left-2 size-6 rounded-full bg-red-600 text-white grid place-items-center hover:bg-red-700 shadow-sm cursor-pointer"
+                    className="absolute top-2 left-2 size-6 rounded-full bg-red-600 text-white grid place-items-center hover:bg-red-700 shadow-sm cursor-pointer transition"
                     title={lang === "ur" ? "تصویر ہٹائیں" : "Remove Photo"}
                   >
                     <X size={14} />
                   </button>
+                  <label className="absolute bottom-2 right-2 bg-black/75 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition shadow-xs">
+                    <Camera size={12} />
+                    <span>{lang === "ur" ? "تبدیل کریں" : "Replace Photo"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploadingImage}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
                 <input
                   type="text"
@@ -699,8 +714,8 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
               </div>
             ) : (
               <div>
-                <label className="border-2 border-dashed border-[#dcd8cd] hover:border-emerald-600 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer bg-white transition">
-                  <Upload size={24} className="text-emerald-700 mb-1" />
+                <label className="border-2 border-dashed border-[#dcd8cd] hover:border-emerald-600 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer bg-white transition group">
+                  <Upload size={24} className="text-emerald-700 mb-1 group-hover:scale-110 transition" />
                   <span className="text-xs font-bold text-gray-800 text-center">
                     {uploadingImage ? (lang === "ur" ? "تصویر اپلوڈ ہو رہی ہے..." : "Uploading Photo...") : t("btn_pick_file")}
                   </span>
@@ -726,6 +741,51 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                 />
               </div>
             )}
+
+            {/* Curated News Mock Presets Selector in Editor */}
+            <div className="pt-2.5 border-t border-[#dcd8cd] space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-gray-700 flex items-center gap-1">
+                  <Sparkles size={12} className="text-amber-600" />
+                  <span>{lang === "ur" ? "تیار شدہ ماک تصاویر (1-کلک انتخاب):" : "Curated Mock Presets (1-Click):"}</span>
+                </span>
+                <span className="text-[10px] text-gray-400 font-sans">{MOCK_NEWS_IMAGES.length} Presets</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto p-1 bg-white rounded-xl border border-[#dcd8cd]">
+                {MOCK_NEWS_IMAGES.map((preset) => {
+                  const isSelected = coverImage === preset.url;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => setCoverImage(preset.url)}
+                      className={`relative rounded-lg overflow-hidden border p-1 text-left flex flex-col gap-0.5 transition cursor-pointer ${
+                        isSelected
+                          ? "bg-emerald-100/70 border-emerald-600 ring-2 ring-emerald-600 shadow-2xs"
+                          : "border-gray-200 hover:border-emerald-500 hover:shadow-2xs"
+                      }`}
+                    >
+                      <div className="relative w-full aspect-[16/10] rounded overflow-hidden bg-gray-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={preset.url}
+                          alt={preset.title_en}
+                          className="w-full h-full object-cover"
+                        />
+                        {isSelected && (
+                          <div className="absolute top-0.5 right-0.5 size-4 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                            <Check size={10} strokeWidth={3} />
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[9px] font-bold text-gray-800 truncate block">
+                        {lang === "en" ? preset.title_en : preset.title_ur}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Visibility & Ticker Flags */}

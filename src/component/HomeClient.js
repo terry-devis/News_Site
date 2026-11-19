@@ -11,6 +11,7 @@ import NamazWidget from "@/component/widgets/NamazWidget";
 import CurrencyWidget from "@/component/widgets/CurrencyWidget";
 import WeatherWidget from "@/component/widgets/WeatherWidget";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
+import { getFallbackImageForStory } from "@/lib/mockImages";
 
 export default function HomeClient({ articles = [], categories = [], breakingNews = [] }) {
   const { lang, isUrdu, isEnglish, dir, t } = useSiteLanguage();
@@ -90,7 +91,7 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
                   {/* 2. FEATURED IMAGE DIRECTLY UNDER HEADLINE */}
                   <div className="relative w-full aspect-[16/10] overflow-hidden rounded-none border border-[#dcd8cd] bg-[#dcd8cd]/40 mb-3.5 shadow-xs">
                     <Image
-                      src={leadStory.cover_image || "/logo-light.webp"}
+                      src={getFallbackImageForStory(leadStory)}
                       alt={getTitle(leadStory)}
                       fill
                       className="object-cover group-hover:scale-102 transition duration-500"
@@ -141,9 +142,9 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
 
                 {secondaryStories.map((story) => (
                   <article key={story.id} className="py-2.5 flex items-start gap-3 group">
-                    <div className="relative w-24 h-18 sm:w-28 sm:h-20 shrink-0 overflow-hidden rounded bg-[#dcd8cd]/40">
+                    <div className="relative w-24 h-18 sm:w-28 sm:h-20 shrink-0 overflow-hidden rounded-none border border-[#dcd8cd] bg-[#dcd8cd]/40 shadow-2xs">
                       <Image
-                        src={story.cover_image || "/logo-light.webp"}
+                        src={getFallbackImageForStory(story)}
                         alt={getTitle(story)}
                         fill
                         className="object-cover group-hover:scale-105 transition duration-300"

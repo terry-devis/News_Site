@@ -202,63 +202,123 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
         {/* Left Column (8 Cols): Language Tabs & Article Fields */}
         <div className="lg:col-span-8 space-y-5">
           
-          {/* Top Language Edition Selector Tabs */}
-          <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-2.5 flex items-center justify-between shadow-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-700 px-2 flex items-center gap-1.5">
-                <Globe size={15} className="text-emerald-700" />
+          {/* Top Language Edition Selector & View Mode Bar */}
+          <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-2.5 sm:p-3 shadow-xs space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+            {/* Mobile Top Row: Edition Label on Left, View Mode Switcher on Right */}
+            {/* Desktop: Becomes part of the left flex container */}
+            <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
+              <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5 shrink-0">
+                <Globe size={15} className="text-emerald-700 shrink-0" />
                 <span>{lang === "ur" ? "ایڈیشن منتخب کریں:" : "Content Edition:"}</span>
               </span>
 
-              {/* Urdu Tab */}
+              {/* View Mode Switcher: visible on mobile right here in row 1, hidden on desktop here */}
+              <div className="flex sm:hidden items-center gap-1 bg-[#dcd8cd]/60 p-1 rounded-xl shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("editor")}
+                  className={`text-xs px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition cursor-pointer whitespace-nowrap ${
+                    viewMode === "editor" ? "bg-white text-emerald-800 shadow-xs" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Edit size={12} className="shrink-0" />
+                  <span>{t("tab_editor")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("preview")}
+                  className={`text-xs px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition cursor-pointer whitespace-nowrap ${
+                    viewMode === "preview" ? "bg-white text-emerald-800 shadow-xs" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Eye size={12} className="shrink-0" />
+                  <span>{t("tab_preview")}</span>
+                </button>
+              </div>
+
+              {/* Desktop Language Tabs (hidden on mobile, inline flex on desktop) */}
+              <div className="hidden sm:flex items-center gap-2">
+                {/* Urdu Tab */}
+                <button
+                  type="button"
+                  onClick={() => setContentLangTab("ur")}
+                  className={`text-xs px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
+                    contentLangTab === "ur"
+                      ? "bg-emerald-700 text-white shadow-xs"
+                      : "bg-white text-gray-700 hover:bg-gray-100 border border-[#dcd8cd]"
+                  }`}
+                >
+                  <span>اردو مواد (Urdu)</span>
+                  {titleUr && <span className="size-1.5 rounded-full bg-emerald-300 shrink-0" />}
+                </button>
+
+                {/* English Tab */}
+                <button
+                  type="button"
+                  onClick={() => setContentLangTab("en")}
+                  className={`text-xs px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
+                    contentLangTab === "en"
+                      ? "bg-emerald-700 text-white shadow-xs"
+                      : "bg-white text-gray-700 hover:bg-gray-100 border border-[#dcd8cd]"
+                  }`}
+                >
+                  <span>English Edition (انگریزی)</span>
+                  {titleEn && <span className="size-1.5 rounded-full bg-blue-300 shrink-0" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Language Tabs: 2-column grid taking full width */}
+            <div className="grid grid-cols-2 gap-2 sm:hidden">
+              {/* Urdu Tab Mobile */}
               <button
                 type="button"
                 onClick={() => setContentLangTab("ur")}
-                className={`text-xs px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                className={`text-xs px-2 py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
                   contentLangTab === "ur"
                     ? "bg-emerald-700 text-white shadow-xs"
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-[#dcd8cd]"
                 }`}
               >
                 <span>اردو مواد (Urdu)</span>
-                {titleUr && <span className="size-1.5 rounded-full bg-emerald-300" />}
+                {titleUr && <span className="size-1.5 rounded-full bg-emerald-300 shrink-0" />}
               </button>
 
-              {/* English Tab */}
+              {/* English Tab Mobile */}
               <button
                 type="button"
                 onClick={() => setContentLangTab("en")}
-                className={`text-xs px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                className={`text-xs px-2 py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
                   contentLangTab === "en"
                     ? "bg-emerald-700 text-white shadow-xs"
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-[#dcd8cd]"
                 }`}
               >
-                <span>English Edition (انگریزی)</span>
-                {titleEn && <span className="size-1.5 rounded-full bg-blue-300" />}
+                <span>English Edition</span>
+                {titleEn && <span className="size-1.5 rounded-full bg-blue-300 shrink-0" />}
               </button>
             </div>
 
-            {/* View Mode (Editor vs Preview) */}
-            <div className="flex items-center gap-1 bg-[#dcd8cd]/50 p-1 rounded-xl">
+            {/* Desktop View Mode Switcher (hidden on mobile, visible on sm and up) */}
+            <div className="hidden sm:flex items-center gap-1 bg-[#dcd8cd]/50 p-1 rounded-xl shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode("editor")}
-                className={`text-xs px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition cursor-pointer ${
-                  viewMode === "editor" ? "bg-white text-emerald-800 shadow-xs" : "text-gray-600"
+                className={`text-xs px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition cursor-pointer whitespace-nowrap ${
+                  viewMode === "editor" ? "bg-white text-emerald-800 shadow-xs" : "text-gray-600 hover:text-gray-900"
                 }`}
               >
-                <Edit size={13} />
+                <Edit size={13} className="shrink-0" />
                 <span>{t("tab_editor")}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("preview")}
-                className={`text-xs px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition cursor-pointer ${
-                  viewMode === "preview" ? "bg-white text-emerald-800 shadow-xs" : "text-gray-600"
+                className={`text-xs px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition cursor-pointer whitespace-nowrap ${
+                  viewMode === "preview" ? "bg-white text-emerald-800 shadow-xs" : "text-gray-600 hover:text-gray-900"
                 }`}
               >
-                <Eye size={13} />
+                <Eye size={13} className="shrink-0" />
                 <span>{t("tab_preview")}</span>
               </button>
             </div>
@@ -270,8 +330,8 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
           {contentLangTab === "ur" && (
             <div className="space-y-4">
               {/* Urdu Headline */}
-              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-4 shadow-xs">
-                <div className="flex items-center justify-between mb-1.5">
+              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-3.5 sm:p-4 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-1 mb-1.5">
                   <label className="text-xs font-bold text-gray-800">
                     {t("field_urdu_title")} <span className="text-red-600">*</span>
                   </label>
@@ -289,7 +349,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
               </div>
 
               {/* Urdu Summary / Excerpt */}
-              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-4 shadow-xs">
+              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-3.5 sm:p-4 shadow-xs">
                 <label className="block text-xs font-bold text-gray-800 mb-1.5">
                   {t("field_excerpt")} (اردو خلاصہ)
                 </label>
@@ -304,8 +364,8 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
               </div>
 
               {/* Urdu Rich Content Editor */}
-              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-4 shadow-xs">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#dcd8cd]">
+              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-3.5 sm:p-4 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-1 pb-2 mb-2 border-b border-[#dcd8cd]">
                   <label className="text-xs font-bold text-gray-800">
                     {t("field_content")} (اردو تفصیل) <span className="text-red-600">*</span>
                   </label>
@@ -319,7 +379,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                         type="button"
                         onClick={() => insertFormatting("<strong>", "</strong>")}
                         title="جلی (Bold)"
-                        className="p-1.5 text-gray-700 hover:bg-gray-100 rounded"
+                        className="p-1.5 sm:p-2 text-gray-700 hover:bg-gray-100 rounded touch-manipulation"
                       >
                         <Bold size={14} />
                       </button>
@@ -327,7 +387,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                         type="button"
                         onClick={() => insertFormatting("<em>", "</em>")}
                         title="ترچھا (Italic)"
-                        className="p-1.5 text-gray-700 hover:bg-gray-100 rounded"
+                        className="p-1.5 sm:p-2 text-gray-700 hover:bg-gray-100 rounded touch-manipulation"
                       >
                         <Italic size={14} />
                       </button>
@@ -335,7 +395,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                         type="button"
                         onClick={() => insertFormatting("<h2 class='text-xl font-bold my-3'>", "</h2>")}
                         title="ذیلی سرخی ۲"
-                        className="p-1.5 text-gray-700 hover:bg-gray-100 rounded font-bold text-xs"
+                        className="p-1.5 sm:p-2 text-gray-700 hover:bg-gray-100 rounded font-bold text-xs touch-manipulation"
                       >
                         <Heading2 size={15} />
                       </button>
@@ -343,7 +403,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                         type="button"
                         onClick={() => insertFormatting("<h3 class='text-lg font-bold my-2'>", "</h3>")}
                         title="ذیلی سرخی ۳"
-                        className="p-1.5 text-gray-700 hover:bg-gray-100 rounded font-bold text-xs"
+                        className="p-1.5 sm:p-2 text-gray-700 hover:bg-gray-100 rounded font-bold text-xs touch-manipulation"
                       >
                         <Heading3 size={15} />
                       </button>
@@ -351,7 +411,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                         type="button"
                         onClick={() => insertFormatting("<blockquote class='border-r-4 border-emerald-600 pr-3 my-3 italic text-gray-700'>", "</blockquote>")}
                         title="اقتباس (Quote)"
-                        className="p-1.5 text-gray-700 hover:bg-gray-100 rounded"
+                        className="p-1.5 sm:p-2 text-gray-700 hover:bg-gray-100 rounded touch-manipulation"
                       >
                         <Quote size={14} />
                       </button>
@@ -365,16 +425,16 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                       value={contentUr}
                       onChange={(e) => setContentUr(e.target.value)}
                       placeholder="خبر کا مکمل تفصیلی مواد یہاں تحریر کریں..."
-                      className="w-full p-4 rounded-xl bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none urdu-body leading-loose text-base text-right"
+                      className="w-full p-3 sm:p-4 rounded-xl bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none urdu-body leading-loose text-sm sm:text-base text-right"
                     />
                   </div>
                 ) : (
-                  <div className="bg-white border border-[#dcd8cd] rounded-xl p-5 min-h-[350px] overflow-y-auto" dir="rtl">
-                    <h1 className="text-xl sm:text-2xl font-bold urdu-headline text-gray-900 mb-4 pb-2 border-b border-[#dcd8cd]">
+                  <div className="bg-white border border-[#dcd8cd] rounded-xl p-4 sm:p-5 min-h-[350px] overflow-y-auto" dir="rtl">
+                    <h1 className="text-lg sm:text-2xl font-bold urdu-headline text-gray-900 mb-4 pb-2 border-b border-[#dcd8cd]">
                       {titleUr || "سرخی کا پیش منظر"}
                     </h1>
                     <div
-                      className="urdu-body text-gray-800 leading-loose text-base space-y-4"
+                      className="urdu-body text-gray-800 leading-loose text-sm sm:text-base space-y-4"
                       dangerouslySetInnerHTML={{ __html: contentUr || "<p class='text-gray-400'>تفصیلی خبر کا پیش منظر...</p>" }}
                     />
                   </div>
@@ -389,8 +449,8 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
           {contentLangTab === "en" && (
             <div className="space-y-4">
               {/* English Headline */}
-              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-4 shadow-xs">
-                <div className="flex items-center justify-between mb-1.5">
+              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-3.5 sm:p-4 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-1 mb-1.5">
                   <label className="text-xs font-bold text-gray-800">
                     English Headline (انگریزی سرخی)
                   </label>
@@ -407,7 +467,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
               </div>
 
               {/* English Summary / Excerpt */}
-              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-4 shadow-xs">
+              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-3.5 sm:p-4 shadow-xs">
                 <label className="block text-xs font-bold text-gray-800 mb-1.5">
                   English Summary / Excerpt (انگریزی خلاصہ)
                 </label>
@@ -422,8 +482,8 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
               </div>
 
               {/* English Dedicated Content Editor */}
-              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-4 shadow-xs">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#dcd8cd]">
+              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-3.5 sm:p-4 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-1 pb-2 mb-2 border-b border-[#dcd8cd]">
                   <label className="text-xs font-bold text-gray-800">
                     English Article Content (مکمل انگریزی خبر)
                   </label>
@@ -438,7 +498,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                         type="button"
                         onClick={() => insertFormatting("<strong>", "</strong>")}
                         title="Bold"
-                        className="p-1.5 text-gray-700 hover:bg-gray-100 rounded"
+                        className="p-1.5 sm:p-2 text-gray-700 hover:bg-gray-100 rounded touch-manipulation"
                       >
                         <Bold size={14} />
                       </button>
@@ -446,7 +506,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                         type="button"
                         onClick={() => insertFormatting("<em>", "</em>")}
                         title="Italic"
-                        className="p-1.5 text-gray-700 hover:bg-gray-100 rounded"
+                        className="p-1.5 sm:p-2 text-gray-700 hover:bg-gray-100 rounded touch-manipulation"
                       >
                         <Italic size={14} />
                       </button>
@@ -454,7 +514,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                         type="button"
                         onClick={() => insertFormatting("<h2 class='text-xl font-bold my-3'>", "</h2>")}
                         title="Heading 2"
-                        className="p-1.5 text-gray-700 hover:bg-gray-100 rounded font-bold text-xs"
+                        className="p-1.5 sm:p-2 text-gray-700 hover:bg-gray-100 rounded font-bold text-xs touch-manipulation"
                       >
                         <Heading2 size={15} />
                       </button>
@@ -462,7 +522,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                         type="button"
                         onClick={() => insertFormatting("<h3 class='text-lg font-bold my-2'>", "</h3>")}
                         title="Heading 3"
-                        className="p-1.5 text-gray-700 hover:bg-gray-100 rounded font-bold text-xs"
+                        className="p-1.5 sm:p-2 text-gray-700 hover:bg-gray-100 rounded font-bold text-xs touch-manipulation"
                       >
                         <Heading3 size={15} />
                       </button>
@@ -470,7 +530,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                         type="button"
                         onClick={() => insertFormatting("<blockquote class='border-l-4 border-blue-600 pl-3 my-3 italic text-gray-700'>", "</blockquote>")}
                         title="Quote"
-                        className="p-1.5 text-gray-700 hover:bg-gray-100 rounded"
+                        className="p-1.5 sm:p-2 text-gray-700 hover:bg-gray-100 rounded touch-manipulation"
                       >
                         <Quote size={14} />
                       </button>
@@ -483,16 +543,16 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                       value={contentEn}
                       onChange={(e) => setContentEn(e.target.value)}
                       placeholder="Write or paste full English article body here..."
-                      className="w-full p-4 rounded-xl bg-white border border-[#dcd8cd] focus:border-blue-600 outline-none font-sans text-sm leading-relaxed text-left"
+                      className="w-full p-3 sm:p-4 rounded-xl bg-white border border-[#dcd8cd] focus:border-blue-600 outline-none font-sans text-xs sm:text-sm leading-relaxed text-left"
                     />
                   </div>
                 ) : (
-                  <div className="bg-white border border-[#dcd8cd] rounded-xl p-5 min-h-[350px] overflow-y-auto" dir="ltr">
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 pb-2 border-b border-[#dcd8cd] font-sans">
+                  <div className="bg-white border border-[#dcd8cd] rounded-xl p-4 sm:p-5 min-h-[350px] overflow-y-auto" dir="ltr">
+                    <h1 className="text-lg sm:text-2xl font-bold text-gray-900 mb-4 pb-2 border-b border-[#dcd8cd] font-sans">
                       {titleEn || "English Headline Preview"}
                     </h1>
                     <div
-                      className="font-sans text-gray-800 leading-relaxed text-sm space-y-4"
+                      className="font-sans text-gray-800 leading-relaxed text-xs sm:text-sm space-y-4"
                       dangerouslySetInnerHTML={{ __html: contentEn || "<p class='text-gray-400'>English article body preview...</p>" }}
                     />
                   </div>
@@ -640,11 +700,11 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
             </h4>
 
             {/* Interactive Breaking News Toggle Switch */}
-            <div className="p-2.5 rounded-xl bg-white border border-[#dcd8cd] space-y-1">
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center gap-1.5">
-                  <Flame size={15} className={isBreaking ? "text-red-600" : "text-gray-400"} />
-                  <span className={`text-xs font-bold ${isBreaking ? "text-red-700" : "text-gray-700"}`}>
+            <div className="p-3 rounded-xl bg-white border border-[#dcd8cd] space-y-1">
+              <label className="flex items-center justify-between cursor-pointer gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Flame size={15} className={`shrink-0 ${isBreaking ? "text-red-600" : "text-gray-400"}`} />
+                  <span className={`text-xs font-bold truncate ${isBreaking ? "text-red-700" : "text-gray-700"}`}>
                     {t("flag_breaking")}
                   </span>
                 </div>
@@ -655,7 +715,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                   onChange={(e) => setIsBreaking(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600 relative cursor-pointer"></div>
+                <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600 relative cursor-pointer shrink-0"></div>
               </label>
               <p className="text-[10px] text-gray-500 font-sans leading-tight">
                 {lang === "ur"
@@ -665,11 +725,11 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
             </div>
 
             {/* Featured Story Toggle */}
-            <div className="p-2.5 rounded-xl bg-white border border-[#dcd8cd] space-y-1">
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center gap-1.5">
-                  <Star size={15} className={isFeatured ? "text-amber-500 fill-amber-500" : "text-gray-400"} />
-                  <span className={`text-xs font-bold ${isFeatured ? "text-amber-800" : "text-gray-700"}`}>
+            <div className="p-3 rounded-xl bg-white border border-[#dcd8cd] space-y-1">
+              <label className="flex items-center justify-between cursor-pointer gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Star size={15} className={`shrink-0 ${isFeatured ? "text-amber-500 fill-amber-500" : "text-gray-400"}`} />
+                  <span className={`text-xs font-bold truncate ${isFeatured ? "text-amber-800" : "text-gray-700"}`}>
                     {t("flag_featured")}
                   </span>
                 </div>
@@ -679,7 +739,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                   onChange={(e) => setIsFeatured(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600 relative cursor-pointer"></div>
+                <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600 relative cursor-pointer shrink-0"></div>
               </label>
               <p className="text-[10px] text-gray-500 font-sans leading-tight">
                 {lang === "ur"

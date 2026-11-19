@@ -6,7 +6,7 @@ const translations = {
     // Header & Brand
     cms_title: "Editorial CMS Panel",
     visit_website: "View Website",
-    verified_badge: "Verified System Active · v2.1 R2",
+    verified_badge: "Editorial System Active",
     editorial_departments: "Editorial Management",
 
     // Navigation Items
@@ -22,7 +22,7 @@ const translations = {
     // Dashboard
     dashboard_welcome_title: "Daily Afadiat — Editorial CMS",
     dashboard_welcome_desc:
-      "Manage breaking news, Cloudflare R2 media, advertisement banners, reader comments, and contact inquiries.",
+      "Manage news publishing, photo uploads, advertisement banners, reader comments, and inquiries.",
     dashboard_publish_btn: "Publish New Article",
     stat_published_articles: "Published Articles",
     stat_pending_comments: "Pending Comments",
@@ -56,10 +56,10 @@ const translations = {
     // Post Editor
     new_post_title: "Write New Article",
     edit_post_title: "Edit Article",
-    new_post_desc: "Draft content, upload cover photo to Cloudflare R2, and publish instantly.",
+    new_post_desc: "Draft content, upload cover photo, and publish instantly.",
     back_to_posts: "Back to Articles",
     field_urdu_title: "Urdu Headline",
-    field_english_title: "English Headline (Optional)",
+    field_english_title: "English Headline",
     field_slug: "URL Slug",
     field_excerpt: "Summary / Excerpt",
     field_content: "Full Article Content",
@@ -67,8 +67,8 @@ const translations = {
     tab_preview: "Live Preview",
     btn_insert_image: "Insert Image",
     category_label: "Select Category",
-    cover_image_label: "Cover Image (Cloudflare R2 Storage)",
-    btn_pick_file: "Pick Image from Computer (Uploads to R2)",
+    cover_image_label: "Cover Photo",
+    btn_pick_file: "Choose Photo from Computer",
     or_paste_url: "or paste image URL below",
     flags_heading: "Special Placement & Ticker Flags",
     flag_breaking: "Breaking News (Show in Red Marquee Ticker)",
@@ -88,12 +88,12 @@ const translations = {
 
     // Ads Manager
     ads_page_title: "Advertisement Banners Controller (Ads Manager)",
-    ads_page_desc: "Control banner placements, upload banners to Cloudflare R2, or paste custom Google AdSense scripts.",
+    ads_page_desc: "Control banner placements, upload banners, or paste custom Google AdSense scripts.",
     status_active: "Active",
     status_disabled: "Disabled",
-    tab_image_banner: "Image Banner (R2 Storage)",
+    tab_image_banner: "Image Banner",
     tab_code_snippet: "AdSense / Custom Script",
-    field_banner_image_url: "Banner Image URL (R2)",
+    field_banner_image_url: "Banner Image URL",
     field_target_url: "Target Click URL",
     field_adsense_snippet: "Google AdSense or HTML Script Code",
     preview_banner_text: "Live Banner Preview",
@@ -137,7 +137,7 @@ const translations = {
     // Header & Brand
     cms_title: "CMS ایڈمن پینل",
     visit_website: "ویب سائٹ دیکھیں",
-    verified_badge: "مصدقہ سسٹم فعال · v2.1 R2",
+    verified_badge: "ادارتی سسٹم فعال",
     editorial_departments: "ادارتی شعبہ جات",
 
     // Navigation Items
@@ -153,7 +153,7 @@ const translations = {
     // Dashboard
     dashboard_welcome_title: "ڈیلی افادیت — ادارتی کنٹرول پینل (CMS)",
     dashboard_welcome_desc:
-      "یہاں سے آپ خبروں کی اشاعت، تصاویر کی Cloudflare R2 پر منتقلی، اشتہارات اور قارئین کے تبصروں کو کنٹرول کر سکتے ہیں۔",
+      "یہاں سے آپ خبروں کی اشاعت، تصاویر کی اپلوڈنگ، اشتہارات اور قارئین کے تبصروں کو کنٹرول کر سکتے ہیں۔",
     dashboard_publish_btn: "نیا مضمون شائع کریں",
     stat_published_articles: "شائع شدہ مضامین",
     stat_pending_comments: "زیرِ التواء تبصرے",
@@ -187,10 +187,10 @@ const translations = {
     // Post Editor
     new_post_title: "نیا مضمون تحریر کریں",
     edit_post_title: "مضمون میں ترمیم کریں",
-    new_post_desc: "مضمون لکھیں، تصویر Cloudflare R2 پر اپلوڈ کریں اور فوری شائع کریں۔",
+    new_post_desc: "مضمون لکھیں، تصویر اپلوڈ کریں اور فوری شائع کریں۔",
     back_to_posts: "واپس مضامین پر جائیں",
     field_urdu_title: "خبر کا اردو عنوان",
-    field_english_title: "انگریزی عنوان (اختیاری)",
+    field_english_title: "انگریزی عنوان",
     field_slug: "یو آر ایل سلگ (URL Slug)",
     field_excerpt: "مختصر خلاصہ (Excerpt)",
     field_content: "مکمل تفصیلی خبر کا متن",
@@ -198,8 +198,8 @@ const translations = {
     tab_preview: "پیش منظر (Preview)",
     btn_insert_image: "تصویر شامل کریں",
     category_label: "شعبہ منتخب کریں (Category)",
-    cover_image_label: "سرورق کی تصویر (Cover Image — Cloudflare R2)",
-    btn_pick_file: "کمپیوٹر سے تصویر منتخب کریں (R2 پر فوری اپلوڈ)",
+    cover_image_label: "سرورق کی تصویر (Cover Photo)",
+    btn_pick_file: "کمپیوٹر سے تصویر منتخب کریں",
     or_paste_url: "یا نیچے یو آر ایل درج کریں",
     flags_heading: "خصوصی اشاعت اور بینرز",
     flag_breaking: "بریکنگ نیوز (ریڈ مارکی ٹکر میں دکھائیں)",
@@ -219,12 +219,12 @@ const translations = {
 
     // Ads Manager
     ads_page_title: "اشتہارات اور پلیس ہولڈرز کا کنٹرول (Ads Manager)",
-    ads_page_desc: "پورٹل پر تمام بینرز کو فعال/غیر فعال کریں، Cloudflare R2 سے بینر اپلوڈ کریں، یا گوگل ایڈسینس کوڈ لگائیں۔",
+    ads_page_desc: "پورٹل پر تمام بینرز کو فعال/غیر فعال کریں، بینر اپلوڈ کریں، یا گوگل ایڈسینس کوڈ لگائیں۔",
     status_active: "فعال (Active)",
     status_disabled: "غیر فعال (Disabled)",
-    tab_image_banner: "تصویری بینر (R2 Storage)",
+    tab_image_banner: "تصویری بینر",
     tab_code_snippet: "ایڈسینس / کسٹم ایچ ٹی ایم ایل کوڈ",
-    field_banner_image_url: "بینر تصویر کا URL (R2)",
+    field_banner_image_url: "بینر تصویر کا لنک",
     field_target_url: "منزل کا لنک (Target Destination URL)",
     field_adsense_snippet: "گوگل ایڈسینس یا کسٹم اشتہاری سکرپٹ",
     preview_banner_text: "بینر کا براہ راست پیش منظر",

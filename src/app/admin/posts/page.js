@@ -50,6 +50,26 @@ export default function PostsAdmin() {
     }
   };
 
+  const handleToggleBreaking = async (art) => {
+    try {
+      const nextState = !art.is_breaking;
+      setArticles(articles.map((a) => (a.id === art.id ? { ...a, is_breaking: nextState } : a)));
+
+      const res = await fetch(`/api/articles/${art.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_breaking: nextState, title_ur: art.title_ur, title_en: art.title_en }),
+      });
+
+      if (!res.ok) {
+        setArticles(articles.map((a) => (a.id === art.id ? { ...a, is_breaking: !nextState } : a)));
+        alert("Failed to update breaking news status");
+      }
+    } catch (e) {
+      alert("Error toggling breaking status");
+    }
+  };
+
   const filtered = articles.filter((a) => {
     const matchSearch =
       a.title_ur.toLowerCase().includes(search.toLowerCase()) ||
@@ -161,15 +181,25 @@ export default function PostsAdmin() {
                     </td>
                     <td className="p-3 text-gray-600">{art.author_name}</td>
                     <td className="p-3">
-                      <div className="flex items-center gap-1.5">
-                        {art.is_breaking && (
-                          <span className="inline-flex items-center gap-0.5 bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
-                            <Flame size={10} /> Breaking
-                          </span>
-                        )}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Interactive Breaking News Toggle Switch Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleBreaking(art)}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 transition cursor-pointer border ${
+                            art.is_breaking
+                              ? "bg-red-600 text-white border-red-700 shadow-2xs"
+                              : "bg-white text-gray-500 border-gray-300 hover:border-red-400 hover:text-red-600"
+                          }`}
+                          title={lang === "ur" ? "بریکنگ نیوز آن یا آف کریں" : "Click to toggle Breaking News ticker"}
+                        >
+                          <Flame size={10} className={art.is_breaking ? "text-yellow-300 animate-pulse" : "text-gray-400"} />
+                          <span>{art.is_breaking ? (lang === "ur" ? "بریکنگ آن" : "Breaking ON") : (lang === "ur" ? "بریکنگ لگائیں" : "Set Breaking")}</span>
+                        </button>
+
                         {art.is_featured && (
-                          <span className="inline-flex items-center gap-0.5 bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
-                            <Star size={10} /> Featured
+                          <span className="inline-flex items-center gap-0.5 bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-bold border border-amber-200">
+                            <Star size={10} /> {lang === "ur" ? "اہم خبر" : "Featured"}
                           </span>
                         )}
                       </div>

@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "./supabaseServer";
+import { supabaseAdmin } from "./supabaseServer.js";
 import fs from "fs";
 import path from "path";
 
@@ -114,10 +114,217 @@ function ensureLocalStore() {
           created_at: new Date().toISOString(),
         },
       ],
+      videos: [],
+      epaper_editions: [],
+      pages: [],
     };
     fs.writeFileSync(localStorePath, JSON.stringify(defaultData, null, 2));
   }
-  return JSON.parse(fs.readFileSync(localStorePath, "utf-8"));
+  const currentData = JSON.parse(fs.readFileSync(localStorePath, "utf-8"));
+  let modified = false;
+
+  if (!currentData.videos || currentData.videos.length === 0) {
+    currentData.videos = [
+      {
+        id: 1,
+        title_ur: "خصوصی ڈاکومنٹری: پاکستان کی معدنی دولت اور عالمی سرمایہ کاری کے نئے مواقع",
+        title_en: "Special Documentary: Pakistan Mineral Wealth and Novel Global Investment Routes",
+        summary_ur: "بلوچستان اور شمالی علاقہ جات کے قدرتی وسائل، ریکوڈک منصوبہ اور جدید ٹیکنالوجی سے معاشی کایا پلٹ کا جامع جائزہ۔",
+        summary_en: "In-depth investigation exploring natural reserves, Reko Diq copper-gold deposits, and national transformation.",
+        category: "special",
+        video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        duration: "18:45",
+        views_count: "125K",
+        cover_image: "https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?w=800&auto=format&fit=crop",
+        author_name: "تحقیقاتی ڈیسک",
+        is_featured: true,
+        is_active: true,
+        created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+      },
+      {
+        id: 2,
+        title_ur: "ڈیلی افادیت 9 PM بلیٹن: قومی معیشت میں استحکام اور نئے ترقیاتی منصوبوں کی منظوری",
+        title_en: "Daily Afadiat 9 PM Bulletin: Economic Stabilization and Major Infrastructure Approvals",
+        summary_ur: "ملک بھر کے تمام اہم واقعات کا لمحہ بہ لمحہ احوال اور مستند تجزیہ۔",
+        summary_en: "Nightly comprehensive broadcast covering fiscal metrics, cabinet decisions, and regional developments.",
+        category: "bulletin",
+        video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        duration: "34:20",
+        views_count: "88K",
+        cover_image: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&auto=format&fit=crop",
+        author_name: "نیوز روم",
+        is_featured: false,
+        is_active: true,
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+      },
+      {
+        id: 3,
+        title_ur: "معاشی تجزیہ: اسٹاک ایکسچینج میں ریکارڈ تیزی، روپے کی قدر اور آئندہ مالیاتی پالیسی",
+        title_en: "Market Outlook: KSE-100 Historic Highs, Rupee Stability, and Upcoming Monetary Policy",
+        summary_ur: "معاشی ماہرین اور فنانشل تجزیہ کاروں کے ساتھ خصوصی تبادلہ خیال۔",
+        summary_en: "Dialogue with seasoned market strategists regarding interest rate trajectory and foreign inflows.",
+        category: "economy",
+        video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        duration: "14:10",
+        views_count: "42K",
+        cover_image: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=600&auto=format&fit=crop",
+        author_name: "بزنس ڈیسک",
+        is_featured: false,
+        is_active: true,
+        created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+      },
+      {
+        id: 4,
+        title_ur: "کرکٹ فیور: دورۂ پاکستان کے دوران کھلاڑیوں کی ٹریننگ اور کیمپ سے خصوصی رپورٹ",
+        title_en: "Cricket Fever: Exclusive Practice Session Coverage and Head Coach Press Conference",
+        summary_ur: "قومی ٹیم کی حکمت عملی اور شائقینِ کرکٹ کے پرجوش تاثرات۔",
+        summary_en: "Inside training camp footage and fan interviews ahead of the decisive clash.",
+        category: "sports",
+        video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        duration: "08:35",
+        views_count: "210K",
+        cover_image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=600&auto=format&fit=crop",
+        author_name: "اسپورٹس ڈیسک",
+        is_featured: false,
+        is_active: true,
+        created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+      },
+    ];
+    modified = true;
+  }
+
+  if (!currentData.epaper_editions || currentData.epaper_editions.length === 0) {
+    const today = new Date().toISOString().split("T")[0];
+    currentData.epaper_editions = [
+      {
+        id: 1,
+        edition_date: today,
+        city_slug: "islamabad",
+        city_name_ur: "اسلام آباد / راولپنڈی",
+        city_name_en: "Islamabad / Rawalpindi",
+        page_number: 1,
+        page_title_ur: "صفحۂ اول (اہم سرخیاں)",
+        page_title_en: "Front Page",
+        page_image: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop",
+        pdf_url: "",
+        is_active: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 2,
+        edition_date: today,
+        city_slug: "islamabad",
+        city_name_ur: "اسلام آباد / راولپنڈی",
+        city_name_en: "Islamabad / Rawalpindi",
+        page_number: 2,
+        page_title_ur: "قومی و علاقائی خبریں",
+        page_title_en: "National News",
+        page_image: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop",
+        pdf_url: "",
+        is_active: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 3,
+        edition_date: today,
+        city_slug: "islamabad",
+        city_name_ur: "اسلام آباد / راولپنڈی",
+        city_name_en: "Islamabad / Rawalpindi",
+        page_number: 3,
+        page_title_ur: "اداریہ، کالم و تجارت",
+        page_title_en: "Editorial & Business",
+        page_image: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=1200&auto=format&fit=crop",
+        pdf_url: "",
+        is_active: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 4,
+        edition_date: today,
+        city_slug: "islamabad",
+        city_name_ur: "اسلام آباد / راولپنڈی",
+        city_name_en: "Islamabad / Rawalpindi",
+        page_number: 4,
+        page_title_ur: "بین الاقوامی و کھیل",
+        page_title_en: "World & Sports",
+        page_image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1200&auto=format&fit=crop",
+        pdf_url: "",
+        is_active: true,
+        created_at: new Date().toISOString(),
+      },
+    ];
+    modified = true;
+  }
+
+  if (!currentData.pages || currentData.pages.length === 0) {
+    currentData.pages = [
+      {
+        id: 1,
+        slug: "about-us",
+        title_ur: "ہمارے بارے میں",
+        title_en: "About Daily Afadiat",
+        summary_ur: "ڈیلی افادیت پاکستان کا معتبر، غیر جانبدار اور تیز رفتار ڈیجیٹل و پرنٹ نیوز نیٹ ورک ہے۔",
+        summary_en: "Daily Afadiat is Pakistan's premier authentic, non-partisan digital and broadsheet news media network.",
+        content_ur: `<p>روزنامہ افادیت (Daily Afadiat) پاکستان کے صحافتی افق پر سچائی، دیانت داری اور عوامی فلاح کا علمبردار ہے۔ ہمارا مقصد قارئین کو بروقت، مصدقہ اور غیر جانبدارانہ خبریں فراہم کرنا ہے۔</p>
+<h3>ہمارا مشن</h3>
+<p>ہم پاکستان اور دنیا بھر کے تازہ ترین حالات و واقعات، اقتصادی تجزیات، کھیل، سائنس اور ٹیکنالوجی کی خبریں بغیر کسی سنسنی خیزی کے پیش کرتے ہیں۔ صحافتی اقدار کی پاسداری اور عوامی اعتماد ہمارا بنیادی سرمایہ ہے۔</p>
+<h3>ہماری تحقیقاتی ٹیم</h3>
+<p>ملک بھر میں ہمارے سینئر صحافیوں، فیلڈ رپورٹرز اور محققین کا وسیع نیٹ ورک ہر لمحہ متحرک رہتا ہے تاکہ آپ تک مستند خبریں سب سے پہلے پہنچ سکیں۔</p>`,
+        content_en: `<p>Daily Afadiat is a prominent Pakistani digital news organization and broadsheet newspaper committed to truth, journalistic integrity, and civic empowerment.</p>
+<h3>Our Editorial Mission</h3>
+<p>We deliver timely, verified, and objective coverage spanning national politics, global diplomacy, business economics, scientific breakthroughs, sports, and cultural affairs without sensationalism.</p>
+<h3>Our Investigative Network</h3>
+<p>With bureau correspondents across major metropolitan hubs and regional districts, our newsroom provides rigorous fact-checking and deep analytical reporting.</p>`,
+        is_published: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 2,
+        slug: "editorial-policy",
+        title_ur: "ادارتی پالیسی اور صحافتی ضابطۂ اخلاق",
+        title_en: "Editorial Policy & Code of Ethics",
+        summary_ur: "ڈیلی افادیت کی ادارتی آزادی، حقائق کی جانچ پڑتال اور رپورٹنگ کے رہنما اصول۔",
+        summary_en: "Core journalistic principles, rigorous verification criteria, and conflict of interest standards.",
+        content_ur: `<p>ڈیلی افادیت کے تمام صحافی اور کالم نگار عالمی معیار کے صحافتی ضابطۂ اخلاق کے پابند ہیں۔</p>
+<ul>
+<li><strong>حقائق کی تصدیق:</strong> کسی بھی خبر کی اشاعت سے قبل کم از کم دو آزاد ذرائع سے تصدیق کی جاتی ہے۔</li>
+<li><strong>غیر جانبداری:</strong> خبروں میں ذاتی رائے یا سیاسی وابستگی سے مکمل گریز کیا جاتا ہے۔ رائے اور اداریہ کے لیے الگ حصے مختص ہیں۔</li>
+<li><strong>تصحیح اور شفافیت:</strong> اگر کسی رپورٹ میں سہواً غلطی ہو جائے تو شفافیت کے ساتھ فوری تصحیح جاری کی جاتی ہے۔</li>
+</ul>`,
+        content_en: `<p>All journalists, editors, and contributors at Daily Afadiat adhere strictly to internationally recognized journalistic ethics.</p>
+<ul>
+<li><strong>Dual Verification:</strong> Sensitive news events require independent verification from at least two reputable sources before dissemination.</li>
+<li><strong>Impartiality:</strong> News coverage remains strictly separate from editorial opinion and commentary.</li>
+<li><strong>Corrections Policy:</strong> We uphold transparent accountability; factual inaccuracies are corrected promptly and conspicuously.</li>
+</ul>`,
+        is_published: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 3,
+        slug: "privacy-policy",
+        title_ur: "پرائیویسی پالیسی",
+        title_en: "Privacy Policy",
+        summary_ur: "قارئین کے ذاتی ڈیٹا کے تحفظ، کوکیز اور معلومات کے استعمال سے متعلق ہماری پالیسی۔",
+        summary_en: "Information collection standards, cookies policy, and reader privacy protection frameworks.",
+        content_ur: `<p>ڈیلی افادیت اپنے تمام قارئین کی پرائیویسی کا احترام کرتا ہے۔ ہم آپ کی ذاتی معلومات کو کسی بھی تیسرے فریق کے ساتھ فروخت یا شیئر نہیں کرتے۔</p>
+<p>ہماری ویب سائٹ بہتر کارکردگی اور اینالیٹکس کے لیے کوکیز کا محدود استعمال کرتی ہے تاکہ قارئین کو معیاری تجربہ فراہم کیا جا سکے۔</p>`,
+        content_en: `<p>Daily Afadiat respects and protects reader privacy. We never sell, lease, or distribute personal information to third parties.</p>
+<p>We use standard analytics and functional cookies strictly to enhance reading speed, user experience, and delivery of targeted breaking notifications.</p>`,
+        is_published: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ];
+    modified = true;
+  }
+
+  if (modified) {
+    fs.writeFileSync(localStorePath, JSON.stringify(currentData, null, 2));
+  }
+  return currentData;
 }
 
 function writeLocalStore(data) {
@@ -359,6 +566,257 @@ export async function deleteContactMessage(id) {
   const local = ensureLocalStore();
   if (local.contact_messages) {
     local.contact_messages = local.contact_messages.filter((m) => m.id !== Number(id));
+    writeLocalStore(local);
+  }
+  return { success: true };
+}
+
+// ==========================================
+// 6. VIDEOS API
+// ==========================================
+export async function getVideos(category = null) {
+  try {
+    let q = supabaseAdmin.from("videos").select("*").order("created_at", { ascending: false });
+    if (category && category !== "all") {
+      q = q.eq("category", category);
+    }
+    const { data, error } = await q;
+    if (!error && data && data.length > 0) return data;
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  let list = local.videos || [];
+  if (category && category !== "all") {
+    list = list.filter((v) => v.category === category);
+  }
+  return list;
+}
+
+export async function getVideoById(id) {
+  try {
+    const { data, error } = await supabaseAdmin.from("videos").select("*").eq("id", id).maybeSingle();
+    if (!error && data) return data;
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  return (local.videos || []).find((v) => String(v.id) === String(id));
+}
+
+export async function saveVideo(videoData) {
+  const isUpdate = Boolean(videoData.id);
+  const now = new Date().toISOString();
+
+  if (isUpdate) {
+    const id = videoData.id;
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("videos")
+        .update({ ...videoData, updated_at: now })
+        .eq("id", id)
+        .select();
+      if (!error && data) return data[0];
+    } catch (e) {}
+
+    const local = ensureLocalStore();
+    const idx = (local.videos || []).findIndex((v) => String(v.id) === String(id));
+    if (idx !== -1) {
+      local.videos[idx] = { ...local.videos[idx], ...videoData, updated_at: now };
+      writeLocalStore(local);
+      return local.videos[idx];
+    }
+  }
+
+  // Create new
+  const newVideo = {
+    ...videoData,
+    id: videoData.id || Date.now(),
+    created_at: now,
+    updated_at: now,
+  };
+
+  try {
+    const { data, error } = await supabaseAdmin.from("videos").insert(newVideo).select();
+    if (!error && data) return data[0];
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  if (!local.videos) local.videos = [];
+  local.videos.unshift(newVideo);
+  writeLocalStore(local);
+  return newVideo;
+}
+
+export async function deleteVideo(id) {
+  try {
+    await supabaseAdmin.from("videos").delete().eq("id", id);
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  if (local.videos) {
+    local.videos = local.videos.filter((v) => String(v.id) !== String(id));
+    writeLocalStore(local);
+  }
+  return { success: true };
+}
+
+// ==========================================
+// 7. EPAPER API
+// ==========================================
+export async function getEpaperEditions(date = null, city = null) {
+  try {
+    let q = supabaseAdmin.from("epaper_editions").select("*").order("page_number", { ascending: true });
+    if (date) q = q.eq("edition_date", date);
+    if (city && city !== "all") q = q.eq("city_slug", city);
+    const { data, error } = await q;
+    if (!error && data && data.length > 0) return data;
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  let list = local.epaper_editions || [];
+  if (date) list = list.filter((e) => e.edition_date === date);
+  if (city && city !== "all") list = list.filter((e) => e.city_slug === city);
+  return list.sort((a, b) => (Number(a.page_number) || 1) - (Number(b.page_number) || 1));
+}
+
+export async function saveEpaperEdition(editionData) {
+  const isUpdate = Boolean(editionData.id);
+  const now = new Date().toISOString();
+
+  if (isUpdate) {
+    const id = editionData.id;
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("epaper_editions")
+        .update({ ...editionData, updated_at: now })
+        .eq("id", id)
+        .select();
+      if (!error && data) return data[0];
+    } catch (e) {}
+
+    const local = ensureLocalStore();
+    const idx = (local.epaper_editions || []).findIndex((e) => String(e.id) === String(id));
+    if (idx !== -1) {
+      local.epaper_editions[idx] = { ...local.epaper_editions[idx], ...editionData, updated_at: now };
+      writeLocalStore(local);
+      return local.epaper_editions[idx];
+    }
+  }
+
+  // Create new
+  const newEdition = {
+    ...editionData,
+    id: editionData.id || Date.now(),
+    page_number: Number(editionData.page_number) || 1,
+    created_at: now,
+    updated_at: now,
+  };
+
+  try {
+    const { data, error } = await supabaseAdmin.from("epaper_editions").insert(newEdition).select();
+    if (!error && data) return data[0];
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  if (!local.epaper_editions) local.epaper_editions = [];
+  local.epaper_editions.push(newEdition);
+  writeLocalStore(local);
+  return newEdition;
+}
+
+export async function deleteEpaperEdition(id) {
+  try {
+    await supabaseAdmin.from("epaper_editions").delete().eq("id", id);
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  if (local.epaper_editions) {
+    local.epaper_editions = local.epaper_editions.filter((e) => String(e.id) !== String(id));
+    writeLocalStore(local);
+  }
+  return { success: true };
+}
+
+// ==========================================
+// 8. PAGES API (Standalone CMS Pages)
+// ==========================================
+export async function getPages() {
+  try {
+    const { data, error } = await supabaseAdmin.from("pages").select("*").order("created_at", { ascending: false });
+    if (!error && data && data.length > 0) return data;
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  return local.pages || [];
+}
+
+export async function getPageBySlug(slug) {
+  try {
+    const { data, error } = await supabaseAdmin.from("pages").select("*").eq("slug", slug).maybeSingle();
+    if (!error && data) return data;
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  return (local.pages || []).find((p) => p.slug === slug);
+}
+
+export async function savePage(pageData) {
+  const isUpdate = Boolean(pageData.id);
+  const now = new Date().toISOString();
+
+  if (isUpdate) {
+    const id = pageData.id;
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("pages")
+        .update({ ...pageData, updated_at: now })
+        .eq("id", id)
+        .select();
+      if (!error && data) return data[0];
+    } catch (e) {}
+
+    const local = ensureLocalStore();
+    const idx = (local.pages || []).findIndex((p) => String(p.id) === String(id));
+    if (idx !== -1) {
+      local.pages[idx] = { ...local.pages[idx], ...pageData, updated_at: now };
+      writeLocalStore(local);
+      return local.pages[idx];
+    }
+  }
+
+  // Create new
+  const cleanSlug = pageData.slug
+    ? pageData.slug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-")
+    : `page-${Date.now()}`;
+
+  const newPage = {
+    ...pageData,
+    slug: cleanSlug,
+    id: pageData.id || Date.now(),
+    is_published: pageData.is_published !== undefined ? Boolean(pageData.is_published) : true,
+    created_at: now,
+    updated_at: now,
+  };
+
+  try {
+    const { data, error } = await supabaseAdmin.from("pages").insert(newPage).select();
+    if (!error && data) return data[0];
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  if (!local.pages) local.pages = [];
+  local.pages.unshift(newPage);
+  writeLocalStore(local);
+  return newPage;
+}
+
+export async function deletePage(id) {
+  try {
+    await supabaseAdmin.from("pages").delete().eq("id", id);
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  if (local.pages) {
+    local.pages = local.pages.filter((p) => String(p.id) !== String(id));
     writeLocalStore(local);
   }
   return { success: true };

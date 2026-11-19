@@ -1,5 +1,6 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
+import { getVideos } from "@/lib/cmsDb";
 import VideoClient from "./VideoClient";
 
 export const dynamic = "force-dynamic";
@@ -13,15 +14,18 @@ export const metadata = {
 export default async function VideoPage() {
   let categories = [];
   let breakingNews = [];
+  let videos = [];
 
   try {
-    const [catRes, breakRes, breakingArtsRes] = await Promise.all([
+    const [catRes, breakRes, breakingArtsRes, videoList] = await Promise.all([
       supabase.from("categories").select("*").order("display_order"),
       supabase.from("breaking_news").select("*").eq("is_active", true),
       supabase.from("articles").select("id, title_ur, title_en, slug, is_breaking").eq("is_breaking", true),
+      getVideos(),
     ]);
 
     if (catRes.data) categories = catRes.data;
+    if (videoList) videos = videoList;
 
     const artBreaking = (breakingArtsRes.data || []).map((a) => ({
       id: `art-${a.id}`,
@@ -45,5 +49,5 @@ export default async function VideoPage() {
     console.error("Video page fetch error:", err);
   }
 
-  return <VideoClient categories={categories} breakingNews={breakingNews} />;
+  return <VideoClient categories={categories} breakingNews={breakingNews} initialVideos={videos} />;
 }

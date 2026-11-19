@@ -1,5 +1,6 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
+import { getEpaperEditions } from "@/lib/cmsDb";
 import EPaperClient from "./EPaperClient";
 
 export const dynamic = "force-dynamic";
@@ -13,15 +14,18 @@ export const metadata = {
 export default async function EPaperPage() {
   let categories = [];
   let breakingNews = [];
+  let editions = [];
 
   try {
-    const [catRes, breakRes, breakingArtsRes] = await Promise.all([
+    const [catRes, breakRes, breakingArtsRes, epaperData] = await Promise.all([
       supabase.from("categories").select("*").order("display_order"),
       supabase.from("breaking_news").select("*").eq("is_active", true),
       supabase.from("articles").select("id, title_ur, title_en, slug, is_breaking").eq("is_breaking", true),
+      getEpaperEditions(),
     ]);
 
     if (catRes.data) categories = catRes.data;
+    if (epaperData) editions = epaperData;
 
     const artBreaking = (breakingArtsRes.data || []).map((a) => ({
       id: `art-${a.id}`,
@@ -45,5 +49,5 @@ export default async function EPaperPage() {
     console.error("EPaper page fetch error:", err);
   }
 
-  return <EPaperClient categories={categories} breakingNews={breakingNews} />;
+  return <EPaperClient categories={categories} breakingNews={breakingNews} initialEditions={editions} />;
 }

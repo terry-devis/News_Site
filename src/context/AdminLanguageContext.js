@@ -18,6 +18,9 @@ const translations = {
     nav_settings: "Site & Contact Settings",
     nav_newsletter: "Newsletter & SMTP",
     nav_breaking: "Breaking News Ticker",
+    nav_videos: "Videos Portal",
+    nav_epaper: "E-Paper Editions",
+    nav_pages: "Page Management",
 
     // Dashboard
     dashboard_welcome_title: "Daily Afadiat — Editorial CMS",
@@ -149,6 +152,9 @@ const translations = {
     nav_settings: "سوشل میڈیا اور رابطہ",
     nav_newsletter: "نیوز لیٹر اور SMTP",
     nav_breaking: "بریکنگ نیوز ٹکر",
+    nav_videos: "ویڈیوز مینیجر",
+    nav_epaper: "ای پیپر ایڈیشنز",
+    nav_pages: "صفحات مینیجر (Pages)",
 
     // Dashboard
     dashboard_welcome_title: "ڈیلی افادیت — ادارتی کنٹرول پینل (CMS)",

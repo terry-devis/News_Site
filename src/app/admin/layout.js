@@ -18,6 +18,9 @@ import {
   ShieldCheck,
   Languages,
   Flame,
+  Video,
+  Newspaper,
+  Layers,
 } from "lucide-react";
 import { AdminLanguageProvider, useAdminLanguage } from "@/context/AdminLanguageContext";
 
@@ -31,6 +34,9 @@ function AdminLayoutInner({ children }) {
     { label: t("nav_breaking"), href: "/admin/breaking", icon: Flame },
     { label: t("nav_posts"), href: "/admin/posts", icon: FileText },
     { label: t("nav_new_post"), href: "/admin/posts/new", icon: PlusCircle },
+    { label: t("nav_videos"), href: "/admin/videos", icon: Video },
+    { label: t("nav_epaper"), href: "/admin/epaper", icon: Newspaper },
+    { label: t("nav_pages"), href: "/admin/pages", icon: Layers },
     { label: t("nav_comments"), href: "/admin/comments", icon: MessageSquare },
     { label: t("nav_ads"), href: "/admin/ads", icon: Megaphone },
     { label: t("nav_settings"), href: "/admin/settings", icon: Share2 },

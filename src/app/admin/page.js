@@ -11,6 +11,9 @@ import {
   CheckCircle,
   XCircle,
   ExternalLink,
+  Video,
+  Newspaper,
+  Layers,
 } from "lucide-react";
 import { useAdminLanguage } from "@/context/AdminLanguageContext";
 
@@ -19,6 +22,9 @@ export default function AdminDashboard() {
 
   const [stats, setStats] = useState({
     articlesCount: 0,
+    videosCount: 0,
+    epaperCount: 0,
+    pagesCount: 0,
     pendingCommentsCount: 0,
     activeAdsCount: 0,
     subscribersCount: 0,
@@ -30,11 +36,14 @@ export default function AdminDashboard() {
   async function loadData() {
     setLoading(true);
     try {
-      const [artRes, comRes, adRes, subRes] = await Promise.all([
+      const [artRes, comRes, adRes, subRes, vidRes, epRes, pgRes] = await Promise.all([
         fetch("/api/articles?limit=5").then((r) => r.json()),
         fetch("/api/comments?all=true").then((r) => r.json()),
         fetch("/api/ads").then((r) => r.json()),
         fetch("/api/newsletter").then((r) => r.json()),
+        fetch("/api/videos").then((r) => r.json()).catch(() => ({ videos: [] })),
+        fetch("/api/epaper").then((r) => r.json()).catch(() => ({ editions: [] })),
+        fetch("/api/pages").then((r) => r.json()).catch(() => ({ pages: [] })),
       ]);
 
       const allComments = comRes.comments || [];
@@ -43,6 +52,9 @@ export default function AdminDashboard() {
 
       setStats({
         articlesCount: artRes.articles?.length || 0,
+        videosCount: vidRes.videos?.length || 0,
+        epaperCount: epRes.editions?.length || 0,
+        pagesCount: pgRes.pages?.length || 0,
         pendingCommentsCount: pending.length,
         activeAdsCount: activeAds.length,
         subscribersCount: subRes.subscribers?.length || 0,
@@ -161,6 +173,81 @@ export default function AdminDashboard() {
           <Link href="/admin/newsletter" className="text-[11px] text-emerald-700 hover:underline mt-2 inline-block font-semibold">
             {t("view_all")} →
           </Link>
+        </div>
+      </div>
+
+      {/* Row 2: Multimedia & Content Management Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Videos Hub */}
+        <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-700">
+              {lang === "ur" ? "ویڈیوز اور ڈاکومنٹریز" : "Video Packages"}
+            </span>
+            <div className="p-2 rounded-lg bg-emerald-100 text-emerald-800">
+              <Video size={18} />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-gray-900 mt-2 font-sans">
+            {loading ? "..." : stats.videosCount}
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <Link href="/admin/videos" className="text-[11px] text-emerald-700 hover:underline font-semibold">
+              {t("view_all")} →
+            </Link>
+            <Link href="/video" target="_blank" className="text-[11px] text-gray-500 hover:text-emerald-700 font-sans flex items-center gap-1">
+              <span>Live /video</span>
+              <ExternalLink size={10} />
+            </Link>
+          </div>
+        </div>
+
+        {/* ePaper Editions */}
+        <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-700">
+              {lang === "ur" ? "ڈیجیٹل ای پیپر صفحات" : "ePaper Page Editions"}
+            </span>
+            <div className="p-2 rounded-lg bg-emerald-100 text-emerald-800">
+              <Newspaper size={18} />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-gray-900 mt-2 font-sans">
+            {loading ? "..." : stats.epaperCount}
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <Link href="/admin/epaper" className="text-[11px] text-emerald-700 hover:underline font-semibold">
+              {t("view_all")} →
+            </Link>
+            <Link href="/epaper" target="_blank" className="text-[11px] text-gray-500 hover:text-emerald-700 font-sans flex items-center gap-1">
+              <span>Live /epaper</span>
+              <ExternalLink size={10} />
+            </Link>
+          </div>
+        </div>
+
+        {/* Standalone Pages */}
+        <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-700">
+              {lang === "ur" ? "ویب سائٹ مستقل صفحات" : "Static Content Pages"}
+            </span>
+            <div className="p-2 rounded-lg bg-emerald-100 text-emerald-800">
+              <Layers size={18} />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-gray-900 mt-2 font-sans">
+            {loading ? "..." : stats.pagesCount}
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <Link href="/admin/pages" className="text-[11px] text-emerald-700 hover:underline font-semibold">
+              {t("view_all")} →
+            </Link>
+            <Link href="/p/about-us" target="_blank" className="text-[11px] text-gray-500 hover:text-emerald-700 font-sans flex items-center gap-1">
+              <span>Preview /p/about-us</span>
+              <ExternalLink size={10} />
+            </Link>
+          </div>
         </div>
       </div>
 

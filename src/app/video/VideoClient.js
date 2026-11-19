@@ -19,100 +19,38 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-export default function VideoClient({ categories = [], breakingNews = [] }) {
+function getEmbedUrl(url) {
+  if (!url) return "https://www.youtube.com/embed/dQw4w9WgXcQ";
+  if (url.includes("youtube.com/embed/")) return url;
+  const matchWatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (matchWatch) return `https://www.youtube.com/embed/${matchWatch[1]}`;
+  const matchShort = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (matchShort) return `https://www.youtube.com/embed/${matchShort[1]}`;
+  return url;
+}
+
+export default function VideoClient({ categories = [], breakingNews = [], initialVideos = [] }) {
   const { isUrdu, isEnglish, dir } = useSiteLanguage();
   const [selectedCat, setSelectedCat] = useState("all");
   const [search, setSearch] = useState("");
   const [activeVideoModal, setActiveVideoModal] = useState(null);
 
-  // Video catalog
-  const videoList = [
-    {
-      id: "v1",
-      category: "special",
-      title_ur: "خصوصی ڈاکومنٹری: پاکستان کی معدنی دولت اور عالمی سرمایہ کاری کے نئے مواقع",
-      title_en: "Special Documentary: Pakistan Mineral Wealth and Novel Global Investment Routes",
-      summary_ur: "بلوچستان اور شمالی علاقہ جات کے قدرتی وسائل، ریکوڈک منصوبہ اور جدید ٹیکنالوجی سے معاشی کایا پلٹ کا جامع جائزہ۔",
-      summary_en: "In-depth investigation exploring natural reserves, Reko Diq copper-gold deposits, and national transformation.",
-      duration: "18:45",
-      views: "125K",
-      date: "2 days ago",
-      thumb: "https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?w=800&auto=format&fit=crop",
-      author: "تحقیقاتی ڈیسک",
-      featured: true,
-      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    },
-    {
-      id: "v2",
-      category: "bulletin",
-      title_ur: "ڈیلی افادیت 9 PM بلیٹن: قومی معیشت میں استحکام اور نئے ترقیاتی منصوبوں کی منظوری",
-      title_en: "Daily Afadiat 9 PM Bulletin: Economic Stabilization and Major Infrastructure Approvals",
-      summary_ur: "ملک بھر کے تمام اہم واقعات کا لمحہ بہ لمحہ احوال اور مستند تجزیہ۔",
-      summary_en: "Nightly comprehensive broadcast covering fiscal metrics, cabinet decisions, and regional developments.",
-      duration: "34:20",
-      views: "88K",
-      date: "Yesterday",
-      thumb: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&auto=format&fit=crop",
-      author: "نیوز روم",
-      featured: false,
-    },
-    {
-      id: "v3",
-      category: "tech",
-      title_ur: "مصنوعی ذہانت کا نیا انقلاب: پاکستانی نوجوانوں کے لیے مفت اے آئی اسکلز اور مستقبل",
-      title_en: "The AI Revolution: Free Artificial Intelligence Education for Emerging Pakistani Youth",
-      summary_ur: "جدید ٹولز، مشین لرننگ اور فری لانسنگ کے ذریعے عالمی مارکیٹ میں جگہ بنانے کی عملی رہنمائی۔",
-      summary_en: "Hands-on guide to mastering modern machine learning pipelines and competing globally.",
-      duration: "12:15",
-      views: "64K",
-      date: "3 days ago",
-      thumb: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600&auto=format&fit=crop",
-      author: "ٹیک ڈیسک",
-      featured: false,
-    },
-    {
-      id: "v4",
-      category: "sports",
-      title_ur: "میچ ہائی لائٹس: قومی کرکٹ ٹیم کا تاریخ ساز کم بیک، آخری اوور کا سنسنی خیز اختتام",
-      title_en: "Match Highlights: National Cricket Team Thrilling Last-Over Historic Victory",
-      summary_ur: "فاسٹ بولنگ کا جادو اور فیصلہ کن لمحات کی خصوصی ویڈیو جھلکیاں۔",
-      summary_en: "Decisive overs, pace bowling mastery, and post-match victory celebrations.",
-      duration: "09:50",
-      views: "210K",
-      date: "4 days ago",
-      thumb: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=600&auto=format&fit=crop",
-      author: "اسپورٹس ڈیسک",
-      featured: false,
-    },
-    {
-      id: "v5",
-      category: "economy",
-      title_ur: "اسٹاک ایکسچینج انڈیکس نئی بلندیوں پر: سرمایہ کاروں کے لیے اہم مشورے اور فنانشل تجزیہ",
-      title_en: "Stock Exchange Surges: Critical Financial Advisory & Market Momentum Insights",
-      summary_ur: "سرمایہ کاروں کو کس شعبے میں منافع کی توقع رکھنی چاہیے؟ معاشی ماہرین کی گفتگو۔",
-      summary_en: "Leading macroeconomic strategists analyze equity inflows and future interest rate trajectories.",
-      duration: "15:10",
-      views: "45K",
-      date: "5 days ago",
-      thumb: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&auto=format&fit=crop",
-      author: "معاشی نامہ نگار",
-      featured: false,
-    },
-    {
-      id: "v6",
-      category: "special",
-      title_ur: "تاریخی نوادرات کی بازیافت: صدیوں پرانے زیرِ زمین شہر سے کیا ملا؟ خصوصی کیمرہ رپورٹ",
-      title_en: "Ancient Subterranean Ruins: What Archaeologists Discovered on Camera",
-      summary_ur: "کھدائی کی جگہ سے براہ راست فوٹیج اور بین الاقوامی ماہرین کا مؤقف۔",
-      summary_en: "Rare footage from subterranean archaeological sites dating back over a millennium.",
-      duration: "21:30",
-      views: "93K",
-      date: "1 week ago",
-      thumb: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop",
-      author: "اسپیشل فیچر",
-      featured: false,
-    },
-  ];
+  // Dynamic Video catalog from CMS / Database
+  const videoList = (initialVideos && initialVideos.length > 0 ? initialVideos : []).map((v) => ({
+    id: v.id,
+    category: v.category || "special",
+    title_ur: v.title_ur || "",
+    title_en: v.title_en || v.title_ur || "",
+    summary_ur: v.summary_ur || "",
+    summary_en: v.summary_en || v.summary_ur || "",
+    duration: v.duration || "15:00",
+    views: v.views_count || v.views || "10K",
+    date: v.created_at ? new Date(v.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "Today",
+    thumb: v.cover_image || v.thumb || "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&auto=format&fit=crop",
+    author: v.author_name || v.author || "ڈیلی افادیت نیوز روم",
+    featured: Boolean(v.is_featured !== undefined ? v.is_featured : v.featured),
+    videoUrl: getEmbedUrl(v.video_url || v.videoUrl),
+  }));
 
   const catTabs = [
     { key: "all", name_ur: "تمام ویڈیوز", name_en: "All Videos" },

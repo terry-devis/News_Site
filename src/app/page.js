@@ -136,6 +136,84 @@ const fallbackArticles = [
     author_name: "فیچر ڈیسک",
     author_name_en: "Feature Desk",
   },
+  {
+    id: 11,
+    title_ur: "انڈر 19 ایشیا کپ: روایتی حریف کے خلاف فائنل معرکے کے لیے قومی اسکواڈ پرعزم",
+    title_en: "Under-19 Asia Cup: National Squad Confident Ahead of Thrilling Tournament Final",
+    summary_ur: "ٹیم مینجمنٹ کے مطابق کھلاڑی مکمل فٹ ہیں اور فتح کے لیے پرجوش حکمت عملی تیار کر لی گئی ہے۔",
+    summary_en: "Team management confirms all players are match-fit and high in morale ahead of the high-stakes final.",
+    slug: "under-19-asia-cup-final-showdown",
+    cover_image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 36000000).toISOString(),
+    category: { name_ur: "کھیل", name_en: "Sports", slug: "sports" },
+    author_name: "اسپورٹس ڈیسک",
+    author_name_en: "Sports Desk",
+  },
+  {
+    id: 12,
+    title_ur: "درآمدی ایل پی جی اور پٹرولیم ترسیلات کے مثبت اثرات، صارفین کو ریلیف کی نوید",
+    title_en: "Macroeconomic Recovery and Energy Supplies Signal Relief for Domestic Consumers",
+    summary_ur: "عالمی منڈی میں خام تیل کی قیمتوں میں استحکام کے بعد مقامی سطح پر ریلیف کی امید ظاہر کی گئی ہے۔",
+    summary_en: "Stability across international commodity and energy markets translates into positive outlooks for consumer indices.",
+    slug: "energy-supplies-relief-forecast",
+    cover_image: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 39600000).toISOString(),
+    category: { name_ur: "بزنس", name_en: "Business", slug: "business" },
+    author_name: "بزنس ڈیسک",
+    author_name_en: "Business Desk",
+  },
+  {
+    id: 13,
+    title_ur: "پنجاب میں سولر پینل اسکیم کا دائرہ وسیع کرنے کا فیصلہ، لاکھوں خاندان مستفید ہوں گے",
+    title_en: "Expansion of Renewable Solar Power Initiative to Benefit Hundreds of Thousands of Families",
+    summary_ur: "صاف توانائی کے فروغ اور بجلی کے بلوں میں کمی کے لیے صوبائی حکومت کا انقلابی منصوبہ۔",
+    summary_en: "Provincial leadership launches landmark solar transition program to boost green energy adoption and reduce household bills.",
+    slug: "solar-energy-transition-program",
+    cover_image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 43200000).toISOString(),
+    category: { name_ur: "پاکستان", name_en: "Pakistan", slug: "pakistan" },
+    author_name: "قومی بیورو",
+    author_name_en: "National Bureau",
+  },
+  {
+    id: 14,
+    title_ur: "جی سیون وزرائے خارجہ کا پیرس میں اہم اجلاس، عالمی سلامتی اور تجارتی راہداریوں پر مذاکرات",
+    title_en: "G7 Foreign Ministers Convene in Paris for Critical High-Level Global Security Summit",
+    summary_ur: "عالمی راہنماؤں نے اقتصادی استحکام اور بین الاقوامی تجارتی راستوں کے تحفظ پر اتفاق کیا۔",
+    summary_en: "World leaders reach consensus on maritime security, strategic transit corridors, and macroeconomic resilience.",
+    slug: "g7-foreign-ministers-paris-summit",
+    cover_image: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 46800000).toISOString(),
+    category: { name_ur: "انٹرنیشنل", name_en: "World", slug: "world" },
+    author_name: "عالمی نمائندہ",
+    author_name_en: "Foreign Correspondent",
+  },
+  {
+    id: 15,
+    title_ur: "پاکستانی فلم اور ڈرامہ انڈسٹری کی نئی پیش رفت، بین الاقوامی اسکریننگ میں پذیرائی",
+    title_en: "Pakistani Cinema and Drama Production Receives Global Acclaim at Film Festival",
+    summary_ur: "مقامی ہدایت کاروں کے منفرد شاہکار نے عالمی نقادوں اور شائقین کے دل جیت لیے۔",
+    summary_en: "Artistic filmmaking from Pakistani directors earns standing ovations and critical honors across international film platforms.",
+    slug: "pakistani-cinema-international-acclaim",
+    cover_image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 50400000).toISOString(),
+    category: { name_ur: "انٹرٹینمنٹ", name_en: "Entertainment", slug: "entertainment" },
+    author_name: "شوبز رپورٹر",
+    author_name_en: "Entertainment Desk",
+  },
+  {
+    id: 16,
+    title_ur: "زرعی شعبے میں جدید سمارٹ ڈرونز اور آئی ٹی ٹیکنالوجی کے استعمال کا پائلٹ پراجیکٹ",
+    title_en: "Precision Agriculture Initiative: Smart Drones and Crop Sensing Deployed Nationwide",
+    summary_ur: "کسانوں کے لیے فی ایکڑ پیداوار بڑھانے اور پانی کی بچت کے لیے سمارٹ آلات متعارف۔",
+    summary_en: "Innovative drone mapping and precision irrigation tools launched to maximize crop yields for agrarian communities.",
+    slug: "smart-drones-precision-agriculture",
+    cover_image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop",
+    created_at: new Date(Date.now() - 54000000).toISOString(),
+    category: { name_ur: "سائنس و ٹیکنالوجی", name_en: "Science & Tech", slug: "tech" },
+    author_name: "ٹیک ڈیسک",
+    author_name_en: "Tech Desk",
+  },
 ];
 
 export default async function Home() {
@@ -147,7 +225,7 @@ export default async function Home() {
     const [catRes, breakRes, artRes] = await Promise.all([
       supabase.from("categories").select("*").order("display_order"),
       supabase.from("breaking_news").select("*").eq("is_active", true).order("priority"),
-      supabase.from("articles").select("*, categories(*)").order("created_at", { ascending: false }).limit(20),
+      supabase.from("articles").select("*, categories(*)").order("created_at", { ascending: false }).limit(30),
     ]);
 
     if (catRes.data && catRes.data.length > 0) categories = catRes.data;
@@ -158,7 +236,7 @@ export default async function Home() {
   }
 
   // Merge database articles with bilingual fallbacks
-  const mergedList = articles.length >= 10 
+  const mergedList = articles.length >= 16 
     ? articles 
     : [...articles, ...fallbackArticles.slice(articles.length)];
 

@@ -70,6 +70,13 @@ export const MOCK_NEWS_IMAGES = [
     url: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop",
   },
   {
+    id: "entertainment_showbiz",
+    title_ur: "شوبز و فلم انڈسٹری",
+    title_en: "Entertainment & Cinema",
+    category: "entertainment",
+    url: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop",
+  },
+  {
     id: "broadsheet_lead",
     title_ur: "ڈیلی افادیت ہیڈ کوارٹر و پریس",
     title_en: "Daily Afadiat Broadsheet Press",

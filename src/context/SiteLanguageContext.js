@@ -98,7 +98,7 @@ export const siteTranslations = {
     newsletterTitle: "Daily Afadiat Newsletter",
     newsletterSubtitle: "Receive verified top stories, market movements, and breaking alerts directly in your inbox every morning.",
     newsletterPlaceholder: "Enter your email address...",
-    subscribeBtn: "Subscribe Free",
+    subscribeBtn: "Subscribe",
     subscribing: "Subscribing...",
     subscribedSuccess: "✓ Thank you for subscribing! You will receive our next morning edition.",
 

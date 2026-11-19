@@ -72,3 +72,19 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* Opposite direction Marquee animation for Market Rates */
+@keyframes marquee-reverse {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-marquee-reverse {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee-reverse 35s linear infinite;
+}
+
+.animate-marquee-reverse:hover {
+  animation-play-state: paused;
+}

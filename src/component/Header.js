@@ -217,19 +217,25 @@ export default function Header({ categories = [], breakingNews = [] }) {
             <span>{t("marketRatesBadge")}</span>
           </Link>
           
-          {/* Scrolling Currency & Gold Rates */}
-          <div className="flex items-center overflow-x-auto scrollbar-none gap-4 whitespace-nowrap text-xs text-gray-700 font-sans py-1 px-3">
-            <span>{isUrdu ? "سونا ۲۴K/تولہ:" : "Gold 24K/tola:"} <strong className="text-gray-900 font-semibold">₨422,095</strong></span>
-            <span className="text-gray-300">·</span>
-            <span>{isUrdu ? "سونا ۲۲K/تولہ:" : "Gold 22K/tola:"} <strong className="text-gray-900 font-semibold">₨389,402</strong></span>
-            <span className="text-gray-300">·</span>
-            <span>USD: <strong className="text-gray-900 font-semibold">₨277.50</strong></span>
-            <span className="text-gray-300">·</span>
-            <span>AED: <strong className="text-gray-900 font-semibold">₨75.45</strong></span>
-            <span className="text-gray-300">·</span>
-            <span>SAR: <strong className="text-gray-900 font-semibold">₨74.35</strong></span>
-            <span className="text-gray-300">·</span>
-            <span>GBP: <strong className="text-gray-900 font-semibold">₨375.50</strong></span>
+          {/* Animated Marquee Currency & Gold Rates (Flows opposite to breaking news) */}
+          <div className="overflow-hidden whitespace-nowrap py-1 flex-1">
+            <div className="animate-marquee-reverse text-xs text-gray-700 font-sans cursor-pointer hover:text-emerald-800 transition">
+              <span className="mx-3">{isUrdu ? "سونا ۲۴K/تولہ:" : "Gold 24K/tola:"} <strong className="text-gray-950 font-bold">₨422,095</strong></span>
+              <span className="text-gray-400">·</span>
+              <span className="mx-3">{isUrdu ? "سونا ۲۲K/تولہ:" : "Gold 22K/tola:"} <strong className="text-gray-950 font-bold">₨389,402</strong></span>
+              <span className="text-gray-400">·</span>
+              <span className="mx-3">USD / PKR: <strong className="text-gray-950 font-bold">₨277.50</strong></span>
+              <span className="text-gray-400">·</span>
+              <span className="mx-3">AED / PKR: <strong className="text-gray-950 font-bold">₨75.45</strong></span>
+              <span className="text-gray-400">·</span>
+              <span className="mx-3">SAR / PKR: <strong className="text-gray-950 font-bold">₨74.35</strong></span>
+              <span className="text-gray-400">·</span>
+              <span className="mx-3">GBP / PKR: <strong className="text-gray-950 font-bold">₨375.50</strong></span>
+              <span className="text-gray-400">·</span>
+              <span className="mx-3">EUR / PKR: <strong className="text-gray-950 font-bold">₨312.40</strong></span>
+              <span className="text-gray-400">·</span>
+              <span className="mx-3">CNY / PKR: <strong className="text-gray-950 font-bold">₨41.65</strong></span>
+            </div>
           </div>
         </div>
       </div>

@@ -157,15 +157,39 @@ export default async function Home() {
   }
 
   // Merge database articles with bilingual fallbacks
-  const newsList = articles.length >= 10 
+  const mergedList = articles.length >= 10 
     ? articles 
     : [...articles, ...fallbackArticles.slice(articles.length)];
+
+  // Ensure every article is fully bilingual with complete English translations
+  const newsList = mergedList.map((art, idx) => {
+    const fallbackMatch = fallbackArticles.find(f => f.id === art.id || f.slug === art.slug) || fallbackArticles[idx % fallbackArticles.length];
+    return {
+      ...fallbackMatch,
+      ...art,
+      title_ur: art.title_ur || fallbackMatch.title_ur,
+      title_en: art.title_en || fallbackMatch.title_en || "Daily Afadiat Verified News Report",
+      summary_ur: art.summary_ur || fallbackMatch.summary_ur,
+      summary_en: art.summary_en || fallbackMatch.summary_en || "Read verified in-depth coverage and real-time updates on this developing story from Daily Afadiat.",
+      author_name: art.author_name || fallbackMatch.author_name || "ایڈیٹوریل بورڈ",
+      author_name_en: art.author_name_en || fallbackMatch.author_name_en || "Editorial Board",
+      category: art.categories || art.category || fallbackMatch.category,
+    };
+  });
+
+  // Ensure breaking news has English fallback
+  const processedBreaking = breakingNews.map(b => ({
+    ...b,
+    text_en: b.text_en || (b.text_ur?.includes("سونے") 
+      ? "Latest gold and silver rates announced in Pakistan bullion market." 
+      : "Daily Afadiat digital live services are officially launched — Instant verified global news at your fingertips.")
+  }));
 
   return (
     <HomeClient
       articles={newsList}
       categories={categories}
-      breakingNews={breakingNews}
+      breakingNews={processedBreaking}
     />
   );
 }

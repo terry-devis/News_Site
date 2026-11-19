@@ -158,38 +158,26 @@ export default function Header({ categories = [], breakingNews = [] }) {
       </div>
 
       {/* Express News style Mobile Utility Bar (آج کا اخبار | لائیو ٹی وی | ویڈیوز | اشتہار دیں) */}
-      <div className="lg:hidden w-full bg-[#eceae3] border-t border-[#dcd8cd] px-3 py-1.5 flex items-center justify-between text-xs font-bold text-gray-800">
-        <div className="flex items-center gap-3 overflow-x-auto scrollbar-none">
-          <Link href="/epaper" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
-            <Newspaper size={13} className="text-emerald-800" />
-            <span>{isUrdu ? "آج کا اخبار" : "Today's ePaper"}</span>
-          </Link>
-          <span className="text-gray-300">|</span>
-          <Link href="/live" className="text-red-700 hover:text-red-800 flex items-center gap-1 shrink-0 transition font-extrabold">
-            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-            <span>{t("liveTv")}</span>
-          </Link>
-          <span className="text-gray-300">|</span>
-          <Link href="/video" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
-            <Video size={13} className="text-emerald-800" />
-            <span>{t("videos")}</span>
-          </Link>
-          <span className="text-gray-300">|</span>
-          <Link href="/advertise" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
-            <Megaphone size={13} className="text-emerald-800" />
-            <span>{t("advertise")}</span>
-          </Link>
-        </div>
-
-        {/* Quick Language Toggle on Mobile */}
-        <button
-          onClick={toggleLanguage}
-          className="shrink-0 text-[11px] font-bold text-emerald-800 border border-[#dcd8cd] bg-white px-2 py-0.5 rounded-none flex items-center gap-1"
-          title="Switch Language"
-        >
-          <Globe size={11} />
-          <span>{isUrdu ? "EN" : "اردو"}</span>
-        </button>
+      <div className="lg:hidden w-full bg-[#eceae3] border-y border-[#dcd8cd] px-2 py-2 flex items-center justify-around sm:justify-center sm:gap-6 text-[12px] sm:text-xs font-bold text-gray-800">
+        <Link href="/epaper" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
+          <Newspaper size={13} className="text-emerald-800" />
+          <span>{isUrdu ? "آج کا اخبار" : "ePaper"}</span>
+        </Link>
+        <span className="text-gray-300 select-none">|</span>
+        <Link href="/live" className="text-red-700 hover:text-red-800 flex items-center gap-1 shrink-0 transition font-extrabold">
+          <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+          <span>{t("liveTv")}</span>
+        </Link>
+        <span className="text-gray-300 select-none">|</span>
+        <Link href="/video" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
+          <Video size={13} className="text-emerald-800" />
+          <span>{t("videos")}</span>
+        </Link>
+        <span className="text-gray-300 select-none">|</span>
+        <Link href="/advertise" className="hover:text-emerald-700 flex items-center gap-1 shrink-0 transition">
+          <Megaphone size={13} className="text-emerald-800" />
+          <span>{t("advertise")}</span>
+        </Link>
       </div>
 
       {/* 3. STICKY CATEGORY NAVBAR (Both Desktop & Mobile with Horizontal Swipe & Search) */}

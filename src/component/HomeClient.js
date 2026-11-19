@@ -26,7 +26,17 @@ export default function HomeClient({ articles = [], categories = [], breakingNew
 
   const getSummary = (story) => {
     if (!story) return "";
-    return isEnglish ? (story.summary_en || story.summary_ur) : (story.summary_ur || story.summary_en);
+    if (isEnglish) {
+      if (story.summary_en) return story.summary_en;
+      if (story.content_en) {
+        const m = story.content_en.match(/<!--excerpt:([\s\S]*?)-->/);
+        if (m) return m[1].trim();
+        const clean = story.content_en.replace(/<[^>]+>/g, " ").trim();
+        if (clean) return clean.substring(0, 140) + "...";
+      }
+      return story.summary_ur || "";
+    }
+    return story.summary_ur || story.summary_en || "";
   };
 
   const getCatName = (cat) => {

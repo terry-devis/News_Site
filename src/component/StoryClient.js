@@ -22,9 +22,12 @@ export default function StoryClient({
     ? (article.title_en || article.title_ur)
     : (article.title_ur || article.title_en);
 
-  const content = isEnglish
+  const rawContent = isEnglish
     ? (article.content_en || article.content_ur)
     : (article.content_ur || article.content_en);
+
+  // Clean out any metadata comment tags
+  const content = rawContent ? rawContent.replace(/<!--excerpt:[\s\S]*?-->\n?/, "") : "";
 
   const authorName = isEnglish
     ? (article.author_name_en || "Daily Afadiat Editorial Board")

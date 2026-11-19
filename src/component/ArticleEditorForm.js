@@ -25,6 +25,21 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
   const router = useRouter();
   const { t, lang, dir } = useAdminLanguage();
 
+  // Extract initial summary and clean content if excerpt tag is present
+  const extractExcerpt = (raw) => {
+    if (!raw) return { excerpt: "", content: "" };
+    const match = raw.match(/<!--excerpt:([\s\S]*?)-->/);
+    if (match) {
+      return {
+        excerpt: match[1].trim(),
+        content: raw.replace(/<!--excerpt:[\s\S]*?-->\n?/, "").trim(),
+      };
+    }
+    return { excerpt: "", content: raw };
+  };
+
+  const parsedEn = extractExcerpt(initialData?.content_en);
+
   // Content states
   const [contentLangTab, setContentLangTab] = useState("ur"); // 'ur' or 'en'
   const [titleUr, setTitleUr] = useState(initialData?.title_ur || "");
@@ -32,8 +47,9 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
   const [slug, setSlug] = useState(initialData?.slug || "");
   const [categoryId, setCategoryId] = useState(initialData?.category_id || 1);
   const [summaryUr, setSummaryUr] = useState(initialData?.summary_ur || "");
+  const [summaryEn, setSummaryEn] = useState(initialData?.summary_en || parsedEn.excerpt || "");
   const [contentUr, setContentUr] = useState(initialData?.content_ur || "");
-  const [contentEn, setContentEn] = useState(initialData?.content_en || "");
+  const [contentEn, setContentEn] = useState(parsedEn.content || initialData?.content_en || "");
   const [coverImage, setCoverImage] = useState(initialData?.cover_image || "");
   const [isBreaking, setIsBreaking] = useState(Boolean(initialData?.is_breaking));
   const [isFeatured, setIsFeatured] = useState(Boolean(initialData?.is_featured));
@@ -129,6 +145,11 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
     setSubmitting(true);
     setErrorMsg("");
 
+    // Pack English summary with content_en so it is safely stored in database
+    const finalContentEn = contentEn.trim()
+      ? (summaryEn.trim() ? `<!--excerpt:${summaryEn.trim()}-->\n${contentEn.trim()}` : contentEn.trim())
+      : null;
+
     const payload = {
       title_ur: titleUr.trim(),
       title_en: titleEn.trim() || null,
@@ -136,7 +157,7 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
       category_id: Number(categoryId),
       summary_ur: summaryUr.trim() || titleUr.trim().substring(0, 150),
       content_ur: contentUr.trim(),
-      content_en: contentEn.trim() || null,
+      content_en: finalContentEn,
       cover_image: coverImage || null,
       is_breaking: isBreaking,
       is_featured: isFeatured,
@@ -382,6 +403,21 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
                   onChange={(e) => setTitleEn(e.target.value)}
                   placeholder="Enter full English headline for international & English readers..."
                   className="w-full text-base sm:text-lg font-bold p-3 rounded-xl bg-white border border-[#dcd8cd] focus:border-blue-600 outline-none text-left font-sans"
+                />
+              </div>
+
+              {/* English Summary / Excerpt */}
+              <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-4 shadow-xs">
+                <label className="block text-xs font-bold text-gray-800 mb-1.5">
+                  English Summary / Excerpt (انگریزی خلاصہ)
+                </label>
+                <textarea
+                  rows={2}
+                  dir="ltr"
+                  value={summaryEn}
+                  onChange={(e) => setSummaryEn(e.target.value)}
+                  placeholder="Short 2-3 sentence overview that appears on news cards in the English edition..."
+                  className="w-full text-xs p-2.5 rounded-xl bg-white border border-[#dcd8cd] focus:border-blue-600 outline-none font-sans leading-relaxed text-left"
                 />
               </div>
 

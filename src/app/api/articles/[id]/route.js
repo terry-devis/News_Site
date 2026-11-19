@@ -84,6 +84,7 @@ export async function PUT(req, { params }) {
       revalidatePath("/");
       revalidatePath(`/story/${id}`);
       revalidatePath("/rss.xml");
+      revalidatePath("/sitemap.xml");
     } catch (e) {
       // ignore
     }

@@ -266,12 +266,9 @@ export default function Footer({ categories = [] }) {
               </li>
             ))}
             <li>
-              <Link href="/live" className="text-amber-400 hover:text-amber-300 font-semibold transition-colors flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-none bg-amber-500 animate-pulse"></span>
+              <Link href="/live" className="hover:text-gray-200 transition-colors flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
                 <span>{t("liveTv")}</span>
-                <span className="text-[9px] bg-amber-900/60 text-amber-200 border border-amber-700/80 px-1 py-0.2 rounded-none font-bold font-sans">
-                  {isUrdu ? "عنقریب" : "Soon"}
-                </span>
               </Link>
             </li>
             <li>

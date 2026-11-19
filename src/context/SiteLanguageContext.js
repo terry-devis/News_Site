@@ -34,6 +34,7 @@ export const siteTranslations = {
     marketRatesBadge: "MARKET RATES",
     gold24k: "Gold 24K",
     gold22k: "Gold 22K",
+    silverTola: "Silver",
 
     // Categories
     home: "Home",
@@ -148,6 +149,7 @@ export const siteTranslations = {
     marketRatesBadge: "مارکیٹ ریٹس",
     gold24k: "سونا ۲۴K",
     gold22k: "سونا ۲۲K",
+    silverTola: "چاندی",
 
     // Categories
     home: "صفحۂ اول",

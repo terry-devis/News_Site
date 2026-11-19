@@ -57,14 +57,15 @@ export default function Header({ categories = [], breakingNews = [] }) {
       : breakingList;
 
   const ratesList = [
-    { ur: "سونا ۲۴K/تولہ:", en: "Gold 24K/tola:", val: "₨422,095" },
-    { ur: "سونا ۲۲K/تولہ:", en: "Gold 22K/tola:", val: "₨389,402" },
-    { ur: "USD / PKR:", en: "USD / PKR:", val: "₨277.50" },
-    { ur: "AED / PKR:", en: "AED / PKR:", val: "₨75.45" },
-    { ur: "SAR / PKR:", en: "SAR / PKR:", val: "₨74.35" },
-    { ur: "GBP / PKR:", en: "GBP / PKR:", val: "₨375.50" },
-    { ur: "EUR / PKR:", en: "EUR / PKR:", val: "₨312.40" },
-    { ur: "CNY / PKR:", en: "CNY / PKR:", val: "₨41.65" },
+    { ur: "سونا ۲۴K / تولہ", en: "Gold 24K / Tola", val: "₨422,095" },
+    { ur: "سونا ۲۲K / تولہ", en: "Gold 22K / Tola", val: "₨389,402" },
+    { ur: "چاندی / تولہ", en: "Silver / Tola", val: "₨5,350" },
+    { ur: "USD / PKR", en: "USD / PKR", val: "₨277.50" },
+    { ur: "AED / PKR", en: "AED / PKR", val: "₨75.45" },
+    { ur: "SAR / PKR", en: "SAR / PKR", val: "₨74.35" },
+    { ur: "GBP / PKR", en: "GBP / PKR", val: "₨375.50" },
+    { ur: "EUR / PKR", en: "EUR / PKR", val: "₨312.40" },
+    { ur: "CNY / PKR", en: "CNY / PKR", val: "₨41.65" },
   ];
   const seamlessRatesList = [...ratesList, ...ratesList];
 

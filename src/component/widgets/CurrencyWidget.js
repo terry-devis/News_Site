@@ -14,9 +14,10 @@ export default function CurrencyWidget({ className = "" }) {
     { code: "CNY", name_ur: "چینی یوآن", name_en: "Chinese Yuan", buy: "41.20", sell: "41.65" },
   ]);
   const [timestamp, setTimestamp] = useState("19 Nov, 12:00");
-  const [goldRates] = useState({
+  const [bullionRates] = useState({
     gold24k: "422,095",
     gold22k: "386,920",
+    silver: "5,350",
   });
 
   useEffect(() => {
@@ -108,25 +109,35 @@ export default function CurrencyWidget({ className = "" }) {
       </div>
 
       <div className="p-3.5 space-y-3">
-        {/* Gold Bullion Dual Callout Cards (Identical geometry to Suhoor/Iftar boxes) */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Bullion Callout Cards: Gold 24K, Gold 22K, Silver (3-col responsive) */}
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {/* 24K Gold */}
-          <div className="bg-[#f7f6f3] border border-[#dcd8cd] p-2.5 rounded-none text-center">
-            <div className="text-[11px] font-bold text-[#0d3822] mb-0.5">
-              {isUrdu ? "سونا ۲۴ قیراط / تولہ" : "Gold 24K / Tola"}
+          <div className="bg-[#f7f6f3] border border-[#dcd8cd] p-2 rounded-none text-center">
+            <div className="text-[10px] font-bold text-[#0d3822] mb-0.5 truncate">
+              {isUrdu ? "سونا ۲۴K (تولہ)" : "Gold 24K"}
             </div>
-            <div className="text-base font-extrabold text-gray-950 font-sans tracking-tight">
-              ₨ {goldRates.gold24k}
+            <div className="text-xs sm:text-sm font-extrabold text-gray-950 font-sans tracking-tight">
+              ₨ {bullionRates.gold24k}
             </div>
           </div>
 
           {/* 22K Gold */}
-          <div className="bg-[#f7f6f3] border border-[#dcd8cd] p-2.5 rounded-none text-center">
-            <div className="text-[11px] font-bold text-[#0d3822] mb-0.5">
-              {isUrdu ? "سونا ۲۲ قیراط / تولہ" : "Gold 22K / Tola"}
+          <div className="bg-[#f7f6f3] border border-[#dcd8cd] p-2 rounded-none text-center">
+            <div className="text-[10px] font-bold text-[#0d3822] mb-0.5 truncate">
+              {isUrdu ? "سونا ۲۲K (تولہ)" : "Gold 22K"}
             </div>
-            <div className="text-base font-extrabold text-gray-950 font-sans tracking-tight">
-              ₨ {goldRates.gold22k}
+            <div className="text-xs sm:text-sm font-extrabold text-gray-950 font-sans tracking-tight">
+              ₨ {bullionRates.gold22k}
+            </div>
+          </div>
+
+          {/* Silver (Chaandi) */}
+          <div className="bg-[#f7f6f3] border border-[#dcd8cd] p-2 rounded-none text-center">
+            <div className="text-[10px] font-bold text-[#0d3822] mb-0.5 truncate">
+              {isUrdu ? "چاندی (تولہ)" : "Silver"}
+            </div>
+            <div className="text-xs sm:text-sm font-extrabold text-gray-950 font-sans tracking-tight">
+              ₨ {bullionRates.silver}
             </div>
           </div>
         </div>

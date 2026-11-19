@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
 export async function GET(req) {
@@ -78,13 +79,18 @@ export async function POST(req) {
         await supabaseAdmin.from("breaking_news").insert({
           text_ur: title_ur,
           text_en: title_en || null,
-          priority: 1,
+          link_url: `/story/${data[0].id}`,
+          priority: 0,
           is_active: true,
         });
       } catch (tickerErr) {
         console.error("Failed to add to ticker:", tickerErr);
       }
     }
+
+    try {
+      revalidatePath("/");
+    } catch (e) {}
 
     return NextResponse.json({ success: true, article: data[0] });
   } catch (error) {

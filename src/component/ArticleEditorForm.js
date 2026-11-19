@@ -62,6 +62,41 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
   const [viewMode, setViewMode] = useState("editor"); // 'editor' or 'preview'
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [togglingBreaking, setTogglingBreaking] = useState(false);
+  const [breakingNotice, setBreakingNotice] = useState("");
+
+  const handleInstantToggleBreaking = async () => {
+    const nextState = !isBreaking;
+    setIsBreaking(nextState);
+
+    // If editing existing post, immediately sync to server & live ticker!
+    if (isEdit && initialData?.id) {
+      setTogglingBreaking(true);
+      try {
+        const res = await fetch(`/api/articles/${initialData.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            is_breaking: nextState,
+            title_ur: titleUr || initialData.title_ur,
+            title_en: titleEn || initialData.title_en,
+          }),
+        });
+        if (res.ok) {
+          setBreakingNotice(
+            nextState
+              ? (lang === "ur" ? "✓ بریکنگ نیوز ریڈ پٹی میں لائیو فعال ہو گئی!" : "✓ Live now on top red Breaking Ticker!")
+              : (lang === "ur" ? "✓ بریکنگ نیوز ریڈ پٹی سے ہٹا دی گئی۔" : "✓ Removed from Breaking Ticker.")
+          );
+          setTimeout(() => setBreakingNotice(""), 4500);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setTogglingBreaking(false);
+      }
+    }
+  };
 
   const urduTextareaRef = useRef(null);
   const englishTextareaRef = useRef(null);
@@ -699,29 +734,54 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
               {t("flags_heading")}
             </h4>
 
-            {/* Interactive Breaking News Toggle Switch */}
-            <div className="p-3 rounded-xl bg-white border border-[#dcd8cd] space-y-1">
-              <label className="flex items-center justify-between cursor-pointer gap-2">
+            {/* Interactive Breaking News Toggle Card */}
+            <div className={`p-3 rounded-xl border transition-all ${
+              isBreaking 
+                ? "bg-red-50/90 border-red-300 shadow-xs" 
+                : "bg-white border-[#dcd8cd]"
+            } space-y-2`}>
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <Flame size={15} className={`shrink-0 ${isBreaking ? "text-red-600" : "text-gray-400"}`} />
-                  <span className={`text-xs font-bold truncate ${isBreaking ? "text-red-700" : "text-gray-700"}`}>
+                  <Flame size={16} className={`shrink-0 ${isBreaking ? "text-red-600 animate-bounce" : "text-gray-400"}`} />
+                  <span className={`text-xs font-bold truncate ${isBreaking ? "text-red-800" : "text-gray-700"}`}>
                     {t("flag_breaking")}
                   </span>
                 </div>
-                {/* Switch button */}
-                <input
-                  type="checkbox"
-                  checked={isBreaking}
-                  onChange={(e) => setIsBreaking(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600 relative cursor-pointer shrink-0"></div>
-              </label>
-              <p className="text-[10px] text-gray-500 font-sans leading-tight">
-                {lang === "ur"
-                  ? "آن کرنے پر یہ سرخی ویب سائٹ کی اوپری ریڈ بریکنگ نیوز پٹی میں لائیو چلے گی۔"
-                  : "When active, this will live-stream in the top red breaking news ticker."}
-              </p>
+
+                {/* Instant Action Button */}
+                <button
+                  type="button"
+                  onClick={handleInstantToggleBreaking}
+                  disabled={togglingBreaking}
+                  className={`text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                    isBreaking
+                      ? "bg-red-600 hover:bg-red-700 text-white shadow-xs"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-[#dcd8cd]"
+                  }`}
+                >
+                  <span className={`size-2 rounded-full ${isBreaking ? "bg-yellow-300 animate-pulse" : "bg-gray-400"}`} />
+                  <span>
+                    {togglingBreaking 
+                      ? (lang === "ur" ? "تبدیل ہو رہا ہے..." : "Updating...")
+                      : isBreaking 
+                        ? (lang === "ur" ? "بریکنگ آن ہے" : "Breaking ON") 
+                        : (lang === "ur" ? "بریکنگ لگائیں" : "Turn ON")}
+                  </span>
+                </button>
+              </div>
+
+              {breakingNotice ? (
+                <div className="p-2 bg-emerald-100 border border-emerald-300 rounded-lg text-emerald-900 text-[11px] font-bold flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="shrink-0 text-emerald-700" />
+                  <span>{breakingNotice}</span>
+                </div>
+              ) : (
+                <p className="text-[10px] text-gray-500 font-sans leading-tight">
+                  {lang === "ur"
+                    ? "آن کرنے پر یہ سرخی ویب سائٹ کی اوپری ریڈ بریکنگ نیوز پٹی میں فوراً لائیو چلے گی۔"
+                    : "When ON, this headline will immediately stream live in the top red marquee ticker."}
+                </p>
+              )}
             </div>
 
             {/* Featured Story Toggle */}

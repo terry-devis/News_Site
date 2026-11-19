@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Flame,
   Star,
+  CheckCircle2,
 } from "lucide-react";
 import { useAdminLanguage } from "@/context/AdminLanguageContext";
 
@@ -20,6 +21,7 @@ export default function PostsAdmin() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [toastNotice, setToastNotice] = useState("");
 
   async function loadArticles() {
     setLoading(true);
@@ -61,7 +63,14 @@ export default function PostsAdmin() {
         body: JSON.stringify({ is_breaking: nextState, title_ur: art.title_ur, title_en: art.title_en }),
       });
 
-      if (!res.ok) {
+      if (res.ok) {
+        setToastNotice(
+          nextState
+            ? (lang === "ur" ? `✓ "${(art.title_ur || '').substring(0, 35)}..." بریکنگ نیوز ریڈ پٹی میں فعال ہو گئی!` : `✓ "${(art.title_en || art.title_ur || '').substring(0, 35)}..." is now LIVE on breaking ticker!`)
+            : (lang === "ur" ? "✓ بریکنگ نیوز ریڈ پٹی سے ہٹا دی گئی۔" : "✓ Removed from breaking ticker.")
+        );
+        setTimeout(() => setToastNotice(""), 4500);
+      } else {
         setArticles(articles.map((a) => (a.id === art.id ? { ...a, is_breaking: !nextState } : a)));
         alert("Failed to update breaking news status");
       }
@@ -100,6 +109,13 @@ export default function PostsAdmin() {
           <span>{t("nav_new_post")}</span>
         </Link>
       </div>
+
+      {toastNotice && (
+        <div className="p-3 bg-emerald-100 border border-emerald-300 rounded-xl text-emerald-900 text-xs font-bold flex items-center gap-2 shadow-xs">
+          <CheckCircle2 size={16} className="text-emerald-700 shrink-0" />
+          <span>{toastNotice}</span>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">

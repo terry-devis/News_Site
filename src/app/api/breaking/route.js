@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
 export async function GET() {
@@ -38,7 +39,11 @@ export async function POST(req) {
         .select();
 
       if (error) throw error;
-      return NextResponse.json({ success: true, item: data?.[0] });
+      try {
+      revalidatePath("/");
+    } catch (e) {}
+
+    return NextResponse.json({ success: true, item: data?.[0] });
     } else {
       // Insert new
       const { data, error } = await supabaseAdmin
@@ -54,7 +59,11 @@ export async function POST(req) {
         .select();
 
       if (error) throw error;
-      return NextResponse.json({ success: true, item: data?.[0] });
+      try {
+      revalidatePath("/");
+    } catch (e) {}
+
+    return NextResponse.json({ success: true, item: data?.[0] });
     }
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -76,6 +85,10 @@ export async function DELETE(req) {
       .eq("id", id);
 
     if (error) throw error;
+    try {
+      revalidatePath("/");
+    } catch (e) {}
+
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

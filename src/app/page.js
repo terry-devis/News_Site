@@ -1,7 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import HomeClient from "@/component/HomeClient";
 
-export const revalidate = 60; // Refresh every 60 seconds
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // Fallback seed articles with Urdu and English translations
 const fallbackArticles = [
@@ -177,19 +178,38 @@ export default async function Home() {
     };
   });
 
-  // Ensure breaking news has English fallback
-  const processedBreaking = breakingNews.map(b => ({
-    ...b,
-    text_en: b.text_en || (b.text_ur?.includes("سونے") 
-      ? "Latest gold and silver rates announced in Pakistan bullion market." 
-      : "Daily Afadiat digital live services are officially launched — Instant verified global news at your fingertips.")
-  }));
+  // Extract breaking news directly from articles with is_breaking = true
+  const articleBreaking = articles
+    .filter((a) => a.is_breaking)
+    .map((a) => ({
+      id: `art-${a.id}`,
+      text_ur: a.title_ur,
+      text_en: a.title_en || a.title_ur,
+      link_url: `/story/${a.id || a.slug}`,
+      article_id: a.id,
+      priority: 0,
+      is_active: true,
+    }));
+
+  // Combine with breaking_news table, putting live article breaking headlines first
+  const allBreaking = [...articleBreaking];
+  for (const b of breakingNews) {
+    const exists = allBreaking.some(
+      (item) => item.text_ur?.trim() === b.text_ur?.trim() || (b.link_url && item.link_url === b.link_url)
+    );
+    if (!exists) {
+      allBreaking.push({
+        ...b,
+        text_en: b.text_en || b.text_ur,
+      });
+    }
+  }
 
   return (
     <HomeClient
       articles={newsList}
       categories={categories}
-      breakingNews={processedBreaking}
+      breakingNews={allBreaking}
     />
   );
 }

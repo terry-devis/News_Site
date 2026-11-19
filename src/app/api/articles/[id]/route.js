@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
 export async function GET(req, { params }) {
@@ -42,32 +43,48 @@ export async function PUT(req, { params }) {
     if (updates.is_breaking !== undefined) {
       const titleUr = updates.title_ur || data[0]?.title_ur;
       const titleEn = updates.title_en || data[0]?.title_en || titleUr;
+      const linkUrl = `/story/${id}`;
 
       if (updates.is_breaking && titleUr) {
-        // Find existing ticker item
+        // Find existing ticker item by text_ur or link_url
         const { data: existing } = await supabaseAdmin
           .from("breaking_news")
           .select("id")
-          .eq("text_ur", titleUr)
+          .or(`text_ur.eq."${titleUr}",link_url.eq."${linkUrl}"`)
           .maybeSingle();
 
         if (existing) {
           await supabaseAdmin
             .from("breaking_news")
-            .update({ is_active: true, text_ur: titleUr, text_en: titleEn })
+            .update({ is_active: true, text_ur: titleUr, text_en: titleEn, link_url: linkUrl, priority: 0 })
             .eq("id", existing.id);
         } else {
           await supabaseAdmin
             .from("breaking_news")
-            .insert({ text_ur: titleUr, text_en: titleEn, priority: 1, is_active: true });
+            .insert({ text_ur: titleUr, text_en: titleEn, link_url: linkUrl, priority: 0, is_active: true });
         }
-      } else if (!updates.is_breaking && titleUr) {
+      } else if (!updates.is_breaking) {
         // Deactivate from ticker
-        await supabaseAdmin
-          .from("breaking_news")
-          .update({ is_active: false })
-          .eq("text_ur", titleUr);
+        const linkUrl = `/story/${id}`;
+        if (titleUr) {
+          await supabaseAdmin
+            .from("breaking_news")
+            .update({ is_active: false })
+            .or(`text_ur.eq."${titleUr}",link_url.eq."${linkUrl}"`);
+        } else {
+          await supabaseAdmin
+            .from("breaking_news")
+            .update({ is_active: false })
+            .eq("link_url", linkUrl);
+        }
       }
+    }
+
+    try {
+      revalidatePath("/");
+      revalidatePath(`/story/${id}`);
+    } catch (e) {
+      // ignore
     }
 
     return NextResponse.json({ success: true, article: data[0] });
@@ -80,6 +97,7 @@ export async function PUT(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     const { id } = params;
+    const linkUrl = `/story/${id}`;
     // Get title before delete to clean up ticker
     const { data: art } = await supabaseAdmin.from("articles").select("title_ur").eq("id", id).maybeSingle();
 
@@ -87,8 +105,14 @@ export async function DELETE(req, { params }) {
     if (error) throw error;
 
     if (art?.title_ur) {
-      await supabaseAdmin.from("breaking_news").delete().eq("text_ur", art.title_ur);
+      await supabaseAdmin.from("breaking_news").delete().or(`text_ur.eq."${art.title_ur}",link_url.eq."${linkUrl}"`);
+    } else {
+      await supabaseAdmin.from("breaking_news").delete().eq("link_url", linkUrl);
     }
+
+    try {
+      revalidatePath("/");
+    } catch (e) {}
 
     return NextResponse.json({ success: true });
   } catch (error) {

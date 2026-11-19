@@ -44,9 +44,9 @@ export default function Header({ categories = [], breakingNews = [] }) {
     day: "numeric",
   }).format(new Date());
 
-  const breakingText = breakingNews.length > 0 
-    ? breakingNews.map(b => (isEnglish ? (b.text_en || b.text_ur) : (b.text_ur || b.text_en))).join("  ★  ") 
-    : t("breakingDefault");
+  const breakingList = breakingNews.length > 0 ? breakingNews : [
+    { text_ur: t("breakingDefault"), text_en: t("breakingDefault") }
+  ];
 
   return (
     <header className="w-full bg-[#f7f6f3]" dir={dir}>
@@ -247,8 +247,25 @@ export default function Header({ categories = [], breakingNews = [] }) {
           <span>{t("breakingBadge")}</span>
         </div>
         <div className="overflow-hidden whitespace-nowrap py-1.5 text-xs sm:text-sm flex-1">
-          <div className="animate-marquee text-yellow-100 font-medium">
-            {breakingText}
+          <div className="animate-marquee text-yellow-100 font-medium inline-flex items-center gap-4">
+            {breakingList.map((b, idx) => {
+              const text = isEnglish ? (b.text_en || b.text_ur) : (b.text_ur || b.text_en);
+              return (
+                <span key={b.id || idx} className="inline-flex items-center gap-3">
+                  {b.link_url || b.article_id ? (
+                    <Link
+                      href={b.link_url || `/story/${b.article_id}`}
+                      className="hover:underline hover:text-white transition font-medium"
+                    >
+                      {text}
+                    </Link>
+                  ) : (
+                    <span>{text}</span>
+                  )}
+                  <span className="text-yellow-400 font-bold opacity-80">★</span>
+                </span>
+              );
+            })}
           </div>
         </div>
       </div>

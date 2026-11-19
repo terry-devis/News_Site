@@ -68,39 +68,67 @@ export default function Header({ categories = [], breakingNews = [] }) {
     { ur: "CNY / PKR", en: "CNY / PKR", val: "₨41.65" },
   ]);
 
-  // Live Forex Rates Fetcher with 5-minute Auto-Refetching
+  // Live Forex Rates Fetcher with 60-minute Shared Cache (Protects free API quotas)
   useEffect(() => {
     let isMounted = true;
+    const CACHE_KEY = "daily_afadiat_forex_cache";
+    const TTL = 3600000; // 60 minutes
+
+    function applyRates(rates) {
+      const usdPkr = rates.PKR || 276.75;
+      const sarUsd = rates.SAR || 3.75;
+      const aedUsd = rates.AED || 3.67;
+      const gbpUsd = rates.GBP || 0.76;
+      const eurUsd = rates.EUR || 0.91;
+      const cnyUsd = rates.CNY || 7.24;
+
+      setRatesList([
+        { ur: "سونا ۲۴K / تولہ", en: "Gold 24K / Tola", val: "₨422,095" },
+        { ur: "سونا ۲۲K / تولہ", en: "Gold 22K / Tola", val: "₨389,402" },
+        { ur: "چاندی / تولہ", en: "Silver / Tola", val: "₨5,350" },
+        { ur: "USD / PKR", en: "USD / PKR", val: `₨${usdPkr.toFixed(2)}` },
+        { ur: "AED / PKR", en: "AED / PKR", val: `₨${(usdPkr / aedUsd).toFixed(2)}` },
+        { ur: "SAR / PKR", en: "SAR / PKR", val: `₨${(usdPkr / sarUsd).toFixed(2)}` },
+        { ur: "GBP / PKR", en: "GBP / PKR", val: `₨${(usdPkr / gbpUsd).toFixed(2)}` },
+        { ur: "EUR / PKR", en: "EUR / PKR", val: `₨${(usdPkr / eurUsd).toFixed(2)}` },
+        { ur: "CNY / PKR", en: "CNY / PKR", val: `₨${(usdPkr / cnyUsd).toFixed(2)}` },
+      ]);
+    }
+
+    // 1. Check if fresh valid cache already exists in browser session
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.rates && Date.now() - parsed.fetchedAt < TTL) {
+          if (isMounted) applyRates(parsed.rates);
+          // Return early to save API quota!
+          return;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch fresh rates only when cache is expired or missing
     async function fetchLiveForex() {
       try {
         const res = await fetch("https://open.er-api.com/v6/latest/USD");
         const data = await res.json();
         if (isMounted && data.result === "success" && data.rates) {
-          const usdPkr = data.rates.PKR || 276.75;
-          const sarUsd = data.rates.SAR || 3.75;
-          const aedUsd = data.rates.AED || 3.67;
-          const gbpUsd = data.rates.GBP || 0.76;
-          const eurUsd = data.rates.EUR || 0.91;
-          const cnyUsd = data.rates.CNY || 7.24;
-
-          setRatesList([
-            { ur: "سونا ۲۴K / تولہ", en: "Gold 24K / Tola", val: "₨422,095" },
-            { ur: "سونا ۲۲K / تولہ", en: "Gold 22K / Tola", val: "₨389,402" },
-            { ur: "چاندی / تولہ", en: "Silver / Tola", val: "₨5,350" },
-            { ur: "USD / PKR", en: "USD / PKR", val: `₨${usdPkr.toFixed(2)}` },
-            { ur: "AED / PKR", en: "AED / PKR", val: `₨${(usdPkr / aedUsd).toFixed(2)}` },
-            { ur: "SAR / PKR", en: "SAR / PKR", val: `₨${(usdPkr / sarUsd).toFixed(2)}` },
-            { ur: "GBP / PKR", en: "GBP / PKR", val: `₨${(usdPkr / gbpUsd).toFixed(2)}` },
-            { ur: "EUR / PKR", en: "EUR / PKR", val: `₨${(usdPkr / eurUsd).toFixed(2)}` },
-            { ur: "CNY / PKR", en: "CNY / PKR", val: `₨${(usdPkr / cnyUsd).toFixed(2)}` },
-          ]);
+          applyRates(data.rates);
+          try {
+            sessionStorage.setItem(
+              CACHE_KEY,
+              JSON.stringify({ rates: data.rates, fetchedAt: Date.now() })
+            );
+          } catch (e) {}
         }
       } catch (e) {
-        // Fallback to initial values safely
+        // Safe fallback
       }
     }
+
     fetchLiveForex();
-    const interval = setInterval(fetchLiveForex, 300000); // Refetch every 5 minutes
+    const interval = setInterval(fetchLiveForex, TTL); // Gentle 60-minute refetch
     return () => {
       isMounted = false;
       clearInterval(interval);

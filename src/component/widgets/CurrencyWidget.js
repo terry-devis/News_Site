@@ -22,58 +22,85 @@ export default function CurrencyWidget({ className = "" }) {
 
   useEffect(() => {
     let isMounted = true;
+    const CACHE_KEY = "daily_afadiat_forex_cache";
+    const TTL = 3600000; // 60 minutes
+
+    function processAndSetRates(ratesData) {
+      const usdPkr = ratesData.PKR || 276.75;
+      const sarUsd = ratesData.SAR || 3.75;
+      const aedUsd = ratesData.AED || 3.67;
+      const gbpUsd = ratesData.GBP || 0.76;
+      const eurUsd = ratesData.EUR || 0.91;
+      const cnyUsd = ratesData.CNY || 7.24;
+
+      const calcRate = (foreignPerUsd, spread = 0.006) => {
+        const pkrRate = usdPkr / foreignPerUsd;
+        return {
+          buy: (pkrRate * (1 - spread)).toFixed(2),
+          sell: (pkrRate * (1 + spread)).toFixed(2),
+        };
+      };
+
+      const usdSpread = {
+        buy: (usdPkr * 0.995).toFixed(2),
+        sell: (usdPkr * 1.005).toFixed(2),
+      };
+      const sarSpread = calcRate(sarUsd);
+      const aedSpread = calcRate(aedUsd);
+      const gbpSpread = calcRate(gbpUsd);
+      const eurSpread = calcRate(eurUsd);
+      const cnySpread = calcRate(cnyUsd);
+
+      setRates([
+        { code: "USD", name_ur: "امریکی ڈالر", name_en: "US Dollar", buy: usdSpread.buy, sell: usdSpread.sell },
+        { code: "SAR", name_ur: "سعودی ریال", name_en: "Saudi Riyal", buy: sarSpread.buy, sell: sarSpread.sell },
+        { code: "AED", name_ur: "اماراتی درہم", name_en: "UAE Dirham", buy: aedSpread.buy, sell: aedSpread.sell },
+        { code: "GBP", name_ur: "برطانوی پاؤنڈ", name_en: "British Pound", buy: gbpSpread.buy, sell: gbpSpread.sell },
+        { code: "EUR", name_ur: "یورو", name_en: "Euro", buy: eurSpread.buy, sell: eurSpread.sell },
+        { code: "CNY", name_ur: "چینی یوآن", name_en: "Chinese Yuan", buy: cnySpread.buy, sell: cnySpread.sell },
+      ]);
+
+      const d = new Date();
+      const timeStr =
+        d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) +
+        ", " +
+        d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      setTimestamp(timeStr);
+    }
+
+    // 1. Try reading valid cache first
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.rates && Date.now() - parsed.fetchedAt < TTL) {
+          if (isMounted) processAndSetRates(parsed.rates);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch fresh rates only when needed
     async function fetchRates() {
       try {
         const res = await fetch("https://open.er-api.com/v6/latest/USD");
         const data = await res.json();
         if (isMounted && data.result === "success" && data.rates) {
-          const usdPkr = data.rates.PKR || 277.5;
-          const sarUsd = data.rates.SAR || 3.75;
-          const aedUsd = data.rates.AED || 3.67;
-          const gbpUsd = data.rates.GBP || 0.79;
-          const eurUsd = data.rates.EUR || 0.95;
-          const cnyUsd = data.rates.CNY || 7.24;
-
-          const calcRate = (foreignPerUsd, spread = 0.006) => {
-            const pkrRate = usdPkr / foreignPerUsd;
-            return {
-              buy: (pkrRate * (1 - spread)).toFixed(2),
-              sell: (pkrRate * (1 + spread)).toFixed(2),
-            };
-          };
-
-          const usdSpread = {
-            buy: (usdPkr * 0.995).toFixed(2),
-            sell: (usdPkr * 1.005).toFixed(2),
-          };
-          const sarSpread = calcRate(sarUsd);
-          const aedSpread = calcRate(aedUsd);
-          const gbpSpread = calcRate(gbpUsd);
-          const eurSpread = calcRate(eurUsd);
-          const cnySpread = calcRate(cnyUsd);
-
-          setRates([
-            { code: "USD", name_ur: "امریکی ڈالر", name_en: "US Dollar", buy: usdSpread.buy, sell: usdSpread.sell },
-            { code: "SAR", name_ur: "سعودی ریال", name_en: "Saudi Riyal", buy: sarSpread.buy, sell: sarSpread.sell },
-            { code: "AED", name_ur: "اماراتی درہم", name_en: "UAE Dirham", buy: aedSpread.buy, sell: aedSpread.sell },
-            { code: "GBP", name_ur: "برطانوی پاؤنڈ", name_en: "British Pound", buy: gbpSpread.buy, sell: gbpSpread.sell },
-            { code: "EUR", name_ur: "یورو", name_en: "Euro", buy: eurSpread.buy, sell: eurSpread.sell },
-            { code: "CNY", name_ur: "چینی یوآن", name_en: "Chinese Yuan", buy: cnySpread.buy, sell: cnySpread.sell },
-          ]);
-
-          const d = new Date();
-          const timeStr =
-            d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) +
-            ", " +
-            d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-          setTimestamp(timeStr);
+          processAndSetRates(data.rates);
+          try {
+            sessionStorage.setItem(
+              CACHE_KEY,
+              JSON.stringify({ rates: data.rates, fetchedAt: Date.now() })
+            );
+          } catch (e) {}
         }
       } catch (err) {
         console.error("Currency API error:", err);
       }
     }
+
     fetchRates();
-    const interval = setInterval(fetchRates, 300000); // Auto-refetch every 5 minutes
+    const interval = setInterval(fetchRates, TTL); // 60-minute interval
     return () => {
       isMounted = false;
       clearInterval(interval);

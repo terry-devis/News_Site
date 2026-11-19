@@ -26,6 +26,38 @@ export default function WeatherWidget({ className = "" }) {
 
   useEffect(() => {
     let isMounted = true;
+    const CACHE_KEY = `daily_afadiat_weather_${selectedCity.id}`;
+    const TTL = 1800000; // 30 minutes in ms
+
+    function applyWeather(cur) {
+      setWeather({
+        temp: Math.round(cur.temperature_2m),
+        apparent: Math.round(cur.apparent_temperature),
+        humidity: Math.round(cur.relative_humidity_2m),
+        wind: Math.round(cur.wind_speed_10m),
+        code: cur.weather_code,
+      });
+      const d = new Date();
+      const timeStr =
+        d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) +
+        ", " +
+        d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      setTimestamp(timeStr);
+    }
+
+    // 1. Try reading valid cache first (Instant load, 0 network calls!)
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.current && Date.now() - parsed.fetchedAt < TTL) {
+          if (isMounted) applyWeather(parsed.current);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch fresh weather from Open-Meteo only when needed
     async function fetchWeather() {
       setLoading(true);
       try {
@@ -34,19 +66,13 @@ export default function WeatherWidget({ className = "" }) {
         );
         const data = await res.json();
         if (isMounted && data.current) {
-          setWeather({
-            temp: Math.round(data.current.temperature_2m),
-            apparent: Math.round(data.current.apparent_temperature),
-            humidity: Math.round(data.current.relative_humidity_2m),
-            wind: Math.round(data.current.wind_speed_10m),
-            code: data.current.weather_code,
-          });
-          const d = new Date();
-          const timeStr =
-            d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) +
-            ", " +
-            d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-          setTimestamp(timeStr);
+          applyWeather(data.current);
+          try {
+            sessionStorage.setItem(
+              CACHE_KEY,
+              JSON.stringify({ current: data.current, fetchedAt: Date.now() })
+            );
+          } catch (e) {}
         }
       } catch (err) {
         console.error("Weather API error:", err);
@@ -54,8 +80,9 @@ export default function WeatherWidget({ className = "" }) {
         if (isMounted) setLoading(false);
       }
     }
+
     fetchWeather();
-    const interval = setInterval(fetchWeather, 300000); // Auto-refetch every 5 minutes
+    const interval = setInterval(fetchWeather, TTL); // Refetch every 30 minutes
     return () => {
       isMounted = false;
       clearInterval(interval);

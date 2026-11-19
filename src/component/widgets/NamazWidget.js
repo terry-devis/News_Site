@@ -41,6 +41,33 @@ export default function NamazWidget({ className = "" }) {
 
   useEffect(() => {
     let isMounted = true;
+    const CACHE_KEY = `daily_afadiat_namaz_${city}`;
+    const TTL = 7200000; // 2 hours (Prayer times only change once per day)
+
+    function applyNamazData(data) {
+      if (data?.timings) setTimings(data.timings);
+      const h = data?.date?.hijri;
+      if (h) {
+        const hStr = isEnglish
+          ? `${h.day} ${h.month.en} ${h.year} AH`
+          : `${h.day} ${h.month.ar || "جمادی الآخر"} ${h.year}ھ`;
+        setHijriDate(hStr);
+      }
+    }
+
+    // 1. Try reading valid cache first (Instant load, 0 network calls!)
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.data && Date.now() - parsed.fetchedAt < TTL) {
+          if (isMounted) applyNamazData(parsed.data);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch from Aladhan API only when needed
     async function fetchNamaz() {
       setLoading(true);
       try {
@@ -49,14 +76,13 @@ export default function NamazWidget({ className = "" }) {
         );
         const data = await res.json();
         if (isMounted && data.code === 200 && data.data?.timings) {
-          setTimings(data.data.timings);
-          const h = data.data.date?.hijri;
-          if (h) {
-            const hStr = isEnglish
-              ? `${h.day} ${h.month.en} ${h.year} AH`
-              : `${h.day} ${h.month.ar || "جمادی الآخر"} ${h.year}ھ`;
-            setHijriDate(hStr);
-          }
+          applyNamazData(data.data);
+          try {
+            sessionStorage.setItem(
+              CACHE_KEY,
+              JSON.stringify({ data: data.data, fetchedAt: Date.now() })
+            );
+          } catch (e) {}
         }
       } catch (err) {
         console.error("Namaz API error:", err);
@@ -64,8 +90,9 @@ export default function NamazWidget({ className = "" }) {
         if (isMounted) setLoading(false);
       }
     }
+
     fetchNamaz();
-    const interval = setInterval(fetchNamaz, 900000); // Auto-refetch prayer times every 15 minutes
+    const interval = setInterval(fetchNamaz, TTL); // Refetch every 2 hours
     return () => {
       isMounted = false;
       clearInterval(interval);

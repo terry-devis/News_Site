@@ -48,6 +48,26 @@ export default function Header({ categories = [], breakingNews = [] }) {
     { text_ur: t("breakingDefault"), text_en: t("breakingDefault") }
   ];
 
+  // Duplicate items so the marquee flows seamlessly with ZERO initial delay and NO gaps on page load/refresh
+  const seamlessBreakingList =
+    breakingList.length === 1
+      ? [...breakingList, ...breakingList, ...breakingList, ...breakingList]
+      : breakingList.length === 2
+      ? [...breakingList, ...breakingList, ...breakingList]
+      : [...breakingList, ...breakingList];
+
+  const ratesList = [
+    { ur: "سونا ۲۴K/تولہ:", en: "Gold 24K/tola:", val: "₨422,095" },
+    { ur: "سونا ۲۲K/تولہ:", en: "Gold 22K/tola:", val: "₨389,402" },
+    { ur: "USD / PKR:", en: "USD / PKR:", val: "₨277.50" },
+    { ur: "AED / PKR:", en: "AED / PKR:", val: "₨75.45" },
+    { ur: "SAR / PKR:", en: "SAR / PKR:", val: "₨74.35" },
+    { ur: "GBP / PKR:", en: "GBP / PKR:", val: "₨375.50" },
+    { ur: "EUR / PKR:", en: "EUR / PKR:", val: "₨312.40" },
+    { ur: "CNY / PKR:", en: "CNY / PKR:", val: "₨41.65" },
+  ];
+  const seamlessRatesList = [...ratesList, ...ratesList];
+
   return (
     <header className="w-full bg-[#f7f6f3]" dir={dir}>
       {/* 1. TOP UTILITY BAR (Clean, tight edge padding) */}
@@ -217,41 +237,34 @@ export default function Header({ categories = [], breakingNews = [] }) {
             <span>{t("marketRatesBadge")}</span>
           </Link>
           
-          {/* Animated Marquee Currency & Gold Rates (Flows opposite to breaking news) */}
+          {/* Animated Marquee Currency & Gold Rates (Starts immediately at 0% with ZERO initial delay) */}
           <div className="overflow-hidden whitespace-nowrap py-1 flex-1">
-            <div className="animate-marquee-reverse text-xs text-gray-700 font-sans cursor-pointer hover:text-emerald-800 transition">
-              <span className="mx-3">{isUrdu ? "سونا ۲۴K/تولہ:" : "Gold 24K/tola:"} <strong className="text-gray-950 font-bold">₨422,095</strong></span>
-              <span className="text-gray-400">·</span>
-              <span className="mx-3">{isUrdu ? "سونا ۲۲K/تولہ:" : "Gold 22K/tola:"} <strong className="text-gray-950 font-bold">₨389,402</strong></span>
-              <span className="text-gray-400">·</span>
-              <span className="mx-3">USD / PKR: <strong className="text-gray-950 font-bold">₨277.50</strong></span>
-              <span className="text-gray-400">·</span>
-              <span className="mx-3">AED / PKR: <strong className="text-gray-950 font-bold">₨75.45</strong></span>
-              <span className="text-gray-400">·</span>
-              <span className="mx-3">SAR / PKR: <strong className="text-gray-950 font-bold">₨74.35</strong></span>
-              <span className="text-gray-400">·</span>
-              <span className="mx-3">GBP / PKR: <strong className="text-gray-950 font-bold">₨375.50</strong></span>
-              <span className="text-gray-400">·</span>
-              <span className="mx-3">EUR / PKR: <strong className="text-gray-950 font-bold">₨312.40</strong></span>
-              <span className="text-gray-400">·</span>
-              <span className="mx-3">CNY / PKR: <strong className="text-gray-950 font-bold">₨41.65</strong></span>
+            <div className="animate-marquee-reverse text-xs text-gray-700 font-sans cursor-pointer hover:text-emerald-800 transition inline-flex items-center">
+              {seamlessRatesList.map((r, idx) => (
+                <React.Fragment key={idx}>
+                  <span className="mx-3 whitespace-nowrap">
+                    {isUrdu ? r.ur : r.en} <strong className="text-gray-950 font-bold">{r.val}</strong>
+                  </span>
+                  <span className="text-gray-400">·</span>
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 5. BREAKING NEWS RED TICKER: FULL WIDTH & FLUSH */}
+      {/* 5. BREAKING NEWS RED TICKER: FULL WIDTH & FLUSH (Visible immediately on page open/refresh) */}
       <div className="w-full bg-red-700 text-white flex items-center overflow-hidden border-b border-red-800">
         <div className="bg-red-900 px-3.5 py-1.5 font-bold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 z-10 shadow-md font-sans">
           <Flame size={15} className="text-yellow-300 animate-bounce" />
           <span>{t("breakingBadge")}</span>
         </div>
         <div className="overflow-hidden whitespace-nowrap py-1.5 text-xs sm:text-sm flex-1">
-          <div className="animate-marquee text-yellow-100 font-medium inline-flex items-center gap-4">
-            {breakingList.map((b, idx) => {
+          <div className="animate-marquee text-yellow-100 font-medium inline-flex items-center gap-6">
+            {seamlessBreakingList.map((b, idx) => {
               const text = isEnglish ? (b.text_en || b.text_ur) : (b.text_ur || b.text_en);
               return (
-                <span key={b.id || idx} className="inline-flex items-center gap-3">
+                <span key={b.id ? `${b.id}-${idx}` : idx} className="inline-flex items-center gap-3 shrink-0">
                   {b.link_url || b.article_id ? (
                     <Link
                       href={b.link_url || `/story/${b.article_id}`}

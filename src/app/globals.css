@@ -57,16 +57,16 @@
   font-size: 0.9375rem; /* 15px */
 }
 
-/* Marquee animation */
+/* Continuous Seamless Marquee: Starts immediately at 0% on page load/refresh with ZERO delay */
 @keyframes marquee {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
 }
 
 .animate-marquee {
-  display: inline-block;
+  display: inline-flex;
   white-space: nowrap;
-  animation: marquee 48s linear infinite;
+  animation: marquee 28s linear infinite;
   will-change: transform;
 }
 
@@ -74,16 +74,16 @@
   animation-play-state: paused;
 }
 
-/* Opposite direction Marquee animation for Market Rates */
+/* Continuous Seamless Reverse Marquee for Market Rates: Starts immediately at 0% with ZERO delay */
 @keyframes marquee-reverse {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(50%); }
 }
 
 .animate-marquee-reverse {
-  display: inline-block;
+  display: inline-flex;
   white-space: nowrap;
-  animation: marquee-reverse 48s linear infinite;
+  animation: marquee-reverse 32s linear infinite;
   will-change: transform;
 }
 

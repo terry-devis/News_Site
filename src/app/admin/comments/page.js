@@ -8,10 +8,12 @@ import {
   Trash2,
   ExternalLink,
   Clock,
-  Filter,
 } from "lucide-react";
+import { useAdminLanguage } from "@/context/AdminLanguageContext";
 
 export default function CommentsAdmin() {
+  const { t, lang } = useAdminLanguage();
+
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("pending");
@@ -46,19 +48,19 @@ export default function CommentsAdmin() {
         );
       }
     } catch (e) {
-      alert("خرابی پیش آئی");
+      alert("Error updating status");
     }
   };
 
   const handleDelete = async (commentId) => {
-    if (!window.confirm("کیا آپ واقعی اس تبصرے کو حذف کرنا چاہتے ہیں؟")) return;
+    if (!window.confirm("Are you sure you want to delete this comment?")) return;
     try {
       const res = await fetch(`/api/comments?id=${commentId}`, { method: "DELETE" });
       if (res.ok) {
         setComments(comments.filter((c) => c.id !== commentId));
       }
     } catch (e) {
-      alert("حذف کرنے میں خرابی ہوئی");
+      alert("Failed to delete comment");
     }
   };
 
@@ -72,59 +74,59 @@ export default function CommentsAdmin() {
   const rejectedCount = comments.filter((c) => c.status === "rejected").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold urdu-headline text-gray-900">
-            قارئین کے تبصروں کی تصدیق و نگرانی (Check & Balance)
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            {t("comments_page_title")}
           </h1>
           <p className="text-xs text-gray-600 mt-0.5">
-            صرف وہی تبصرے عوام کے لیے لائیو ہوں گے جنہیں آپ یہاں سے &quot;منظور&quot; کریں گے۔
+            {t("comments_page_desc")}
           </p>
         </div>
 
         {/* Status Tab Filters */}
-        <div className="flex items-center gap-1 bg-[#dcd8cd]/50 p-1 rounded-lg text-xs font-semibold">
+        <div className="flex items-center gap-1 bg-[#dcd8cd]/50 p-1 rounded-xl text-xs font-semibold">
           <button
             onClick={() => setStatusFilter("pending")}
-            className={`px-3 py-1.5 rounded-md transition ${
+            className={`px-3 py-1.5 rounded-lg transition ${
               statusFilter === "pending"
-                ? "bg-amber-600 text-white shadow-xs"
+                ? "bg-amber-600 text-white shadow-xs font-bold"
                 : "text-gray-700 hover:text-gray-900"
             }`}
           >
-            زیرِ التواء ({pendingCount})
+            {t("tab_pending")} ({pendingCount})
           </button>
           <button
             onClick={() => setStatusFilter("approved")}
-            className={`px-3 py-1.5 rounded-md transition ${
+            className={`px-3 py-1.5 rounded-lg transition ${
               statusFilter === "approved"
-                ? "bg-emerald-700 text-white shadow-xs"
+                ? "bg-emerald-700 text-white shadow-xs font-bold"
                 : "text-gray-700 hover:text-gray-900"
             }`}
           >
-            منظور شدہ ({approvedCount})
+            {t("tab_approved")} ({approvedCount})
           </button>
           <button
             onClick={() => setStatusFilter("rejected")}
-            className={`px-3 py-1.5 rounded-md transition ${
+            className={`px-3 py-1.5 rounded-lg transition ${
               statusFilter === "rejected"
-                ? "bg-red-700 text-white shadow-xs"
+                ? "bg-red-700 text-white shadow-xs font-bold"
                 : "text-gray-700 hover:text-gray-900"
             }`}
           >
-            مسترد شدہ ({rejectedCount})
+            {t("tab_rejected")} ({rejectedCount})
           </button>
           <button
             onClick={() => setStatusFilter("all")}
-            className={`px-3 py-1.5 rounded-md transition ${
+            className={`px-3 py-1.5 rounded-lg transition ${
               statusFilter === "all"
-                ? "bg-gray-800 text-white shadow-xs"
+                ? "bg-gray-800 text-white shadow-xs font-bold"
                 : "text-gray-700 hover:text-gray-900"
             }`}
           >
-            تمام ({comments.length})
+            {t("tab_all")} ({comments.length})
           </button>
         </div>
       </div>
@@ -132,18 +134,18 @@ export default function CommentsAdmin() {
       {/* Comments List */}
       <div className="space-y-3">
         {loading ? (
-          <div className="p-8 text-center text-xs text-gray-500 bg-[#efeee9] rounded-xl border border-[#dcd8cd]">
-            تبصرے لوڈ ہو رہے ہیں...
+          <div className="p-8 text-center text-xs text-gray-500 bg-[#efeee9] rounded-2xl border border-[#dcd8cd]">
+            Loading comments...
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-xs text-gray-500 bg-[#efeee9] rounded-xl border border-[#dcd8cd]">
-            اس کیٹیگری میں کوئی تبصرہ موجود نہیں ہے۔
+          <div className="p-8 text-center text-xs text-gray-500 bg-[#efeee9] rounded-2xl border border-[#dcd8cd]">
+            No comments in this section.
           </div>
         ) : (
           filtered.map((item) => (
             <div
               key={item.id}
-              className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-4 sm:p-5 shadow-xs space-y-3"
+              className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-4 sm:p-5 shadow-xs space-y-3"
             >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2.5 border-b border-[#dcd8cd]">
                 <div className="flex items-center gap-2.5">
@@ -153,29 +155,29 @@ export default function CommentsAdmin() {
                   )}
                   {item.status === "pending" && (
                     <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                      زیرِ التواء
+                      {t("tab_pending")}
                     </span>
                   )}
                   {item.status === "approved" && (
                     <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                      منظور شدہ (لائیو)
+                      {t("tab_approved")}
                     </span>
                   )}
                   {item.status === "rejected" && (
                     <span className="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                      مسترد
+                      {t("tab_rejected")}
                     </span>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-gray-500 font-sans">
                   <Clock size={12} />
-                  <span>{new Date(item.created_at).toLocaleString("ur-PK")}</span>
+                  <span>{new Date(item.created_at).toLocaleString(lang === "ur" ? "ur-PK" : "en-US")}</span>
                 </div>
               </div>
 
               {/* Comment Content */}
-              <p className="text-xs sm:text-sm text-gray-800 urdu-body leading-relaxed bg-white p-3 rounded-lg border border-[#dcd8cd]">
+              <p className="text-xs sm:text-sm text-gray-800 leading-relaxed bg-white p-3 rounded-xl border border-[#dcd8cd]">
                 {item.content}
               </p>
 
@@ -188,7 +190,7 @@ export default function CommentsAdmin() {
                       target="_blank"
                       className="text-xs text-emerald-700 hover:underline flex items-center gap-1 font-semibold"
                     >
-                      <span>متعلقہ مضمون دیکھیں</span>
+                      <span>{t("related_story_link")}</span>
                       <ExternalLink size={12} />
                     </Link>
                   )}
@@ -198,25 +200,25 @@ export default function CommentsAdmin() {
                   {item.status !== "approved" && (
                     <button
                       onClick={() => handleStatusChange(item.id, "approved")}
-                      className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-1 transition"
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition"
                     >
                       <CheckCircle size={13} />
-                      <span>منظور کریں (Approve)</span>
+                      <span>{t("approve")}</span>
                     </button>
                   )}
                   {item.status !== "rejected" && (
                     <button
                       onClick={() => handleStatusChange(item.id, "rejected")}
-                      className="bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-1 transition"
+                      className="bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition"
                     >
                       <XCircle size={13} />
-                      <span>مسترد کریں (Reject)</span>
+                      <span>{t("reject")}</span>
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(item.id)}
                     className="p-1.5 text-gray-400 hover:text-red-600 rounded transition"
-                    title="حذف کریں"
+                    title={t("delete")}
                   >
                     <Trash2 size={16} />
                   </button>

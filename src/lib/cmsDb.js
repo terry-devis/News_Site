@@ -81,6 +81,16 @@ function ensureLocalStore() {
           twitter: "https://x.com/dailyafadiat",
           tiktok: "https://tiktok.com/@dailyafadiat",
         },
+        contact_info: {
+          address_ur: "شاہراہِ قائدین، صدر، کراچی، پاکستان",
+          address_en: "Shahrah-e-Quaideen, Saddar, Karachi, Pakistan",
+          phone: "+92 300 1234567",
+          whatsapp: "+92 300 1234567",
+          editorial_email: "editor@dailyafadiat.com",
+          ads_email: "ads@dailyafadiat.com",
+          timing_ur: "پیر تا ہفتہ: صبح ۹ تا شام ۶ بجے",
+          timing_en: "Mon to Sat: 9:00 AM to 6:00 PM",
+        },
         site_info: {
           title_ur: "ڈیلی افادیت",
           tagline_ur: "سچ کے ساتھ، ہر لمحہ باخبر — TRUST • FACTS • GLOBAL NEWS",
@@ -300,4 +310,56 @@ export async function addSubscriber(email) {
     return { success: true, subscriber: sub };
   }
   return { success: true, message: "Already subscribed" };
+}
+
+// ==========================================
+// 5. CONTACT MESSAGES API
+// ==========================================
+export async function getContactMessages() {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("contact_messages")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (!error && data) return data;
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  return local.contact_messages || [];
+}
+
+export async function addContactMessage({ name, email, phone, subject, message }) {
+  const newMsg = {
+    name,
+    email,
+    phone: phone || null,
+    subject: subject || "عام استفسار (General Inquiry)",
+    message,
+    created_at: new Date().toISOString(),
+  };
+
+  try {
+    const { data, error } = await supabaseAdmin.from("contact_messages").insert(newMsg).select();
+    if (!error && data) return data[0];
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  if (!local.contact_messages) local.contact_messages = [];
+  newMsg.id = Date.now();
+  local.contact_messages.unshift(newMsg);
+  writeLocalStore(local);
+  return newMsg;
+}
+
+export async function deleteContactMessage(id) {
+  try {
+    await supabaseAdmin.from("contact_messages").delete().eq("id", id);
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  if (local.contact_messages) {
+    local.contact_messages = local.contact_messages.filter((m) => m.id !== Number(id));
+    writeLocalStore(local);
+  }
+  return { success: true };
 }

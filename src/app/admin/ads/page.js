@@ -5,14 +5,15 @@ import {
   Megaphone,
   Upload,
   CheckCircle,
-  XCircle,
   Save,
-  Eye,
   Code,
   Image as ImageIcon,
 } from "lucide-react";
+import { useAdminLanguage } from "@/context/AdminLanguageContext";
 
 export default function AdsAdmin() {
+  const { t, lang } = useAdminLanguage();
+
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingSlot, setSavingSlot] = useState(null);
@@ -60,13 +61,13 @@ export default function AdsAdmin() {
         handleSlotChange(slotKey, "image_url", data.url);
         setNotice({
           slotKey,
-          text: `تصویر Cloudflare R2 پر اپلوڈ ہو گئی۔ محفوظ کرنا نہ بھولیں!`,
+          text: lang === "ur" ? "تصویر Cloudflare R2 پر اپلوڈ ہو گئی۔ محفوظ کرنا نہ بھولیں!" : "Banner uploaded to Cloudflare R2! Don't forget to save.",
         });
       } else {
-        alert(data.error || "اپلوڈ میں خرابی ہوئی");
+        alert(data.error || "Upload failed");
       }
     } catch (err) {
-      alert("نیٹ ورک خرابی");
+      alert("Network error");
     } finally {
       setUploadingFor(null);
     }
@@ -83,38 +84,38 @@ export default function AdsAdmin() {
       if (res.ok) {
         setNotice({
           slotKey: slot.slot_key,
-          text: "اشتہار کی ترتیبات کامیابی کے ساتھ محفوظ ہو گئیں۔",
+          text: lang === "ur" ? "اشتہار کی ترتیبات کامیابی کے ساتھ محفوظ ہو گئیں۔" : "Banner settings saved successfully!",
         });
       }
     } catch (e) {
-      alert("محفوظ کرنے میں خرابی ہوئی");
+      alert("Failed to save banner");
     } finally {
       setSavingSlot(null);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold urdu-headline text-gray-900">
-          اشتہارات اور پلیس ہولڈرز کا کنٹرول (Ads Manager)
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+          {t("ads_page_title")}
         </h1>
         <p className="text-xs text-gray-600 mt-0.5">
-          پورٹل پر تمام بینرز کو فعال/غیر فعال کریں، Cloudflare R2 سے بینر اپلوڈ کریں، یا گوگل ایڈسینس کوڈ لگائیں۔
+          {t("ads_page_desc")}
         </p>
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-xs text-gray-500 bg-[#efeee9] rounded-xl border border-[#dcd8cd]">
-          اشتہارات لوڈ ہو رہے ہیں...
+        <div className="p-8 text-center text-xs text-gray-500 bg-[#efeee9] rounded-2xl border border-[#dcd8cd]">
+          Loading advertisement slots...
         </div>
       ) : (
         <div className="space-y-6">
           {slots.map((slot) => (
             <div
               key={slot.slot_key}
-              className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-5 shadow-xs space-y-4"
+              className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-5 shadow-xs space-y-4"
             >
               {/* Top row: Title, Key, Toggle */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-[#dcd8cd]">
@@ -130,7 +131,7 @@ export default function AdsAdmin() {
                   {/* Active Toggle Switch */}
                   <label className="flex items-center gap-2 cursor-pointer">
                     <span className="text-xs font-bold text-gray-700">
-                      {slot.is_active ? "فعال (Active)" : "غیر فعال (Disabled)"}
+                      {slot.is_active ? t("status_active") : t("status_disabled")}
                     </span>
                     <input
                       type="checkbox"
@@ -145,16 +146,16 @@ export default function AdsAdmin() {
                   <button
                     onClick={() => handleSave(slot)}
                     disabled={savingSlot === slot.slot_key}
-                    className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 transition disabled:opacity-50"
+                    className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 transition disabled:opacity-50"
                   >
                     <Save size={14} />
-                    <span>{savingSlot === slot.slot_key ? "..." : "محفوظ کریں"}</span>
+                    <span>{savingSlot === slot.slot_key ? "..." : t("save_changes")}</span>
                   </button>
                 </div>
               </div>
 
               {notice?.slotKey === slot.slot_key && (
-                <div className="p-2.5 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded text-xs flex items-center gap-1.5 font-medium">
+                <div className="p-2.5 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-xl text-xs flex items-center gap-1.5 font-medium">
                   <CheckCircle size={15} />
                   <span>{notice.text}</span>
                 </div>
@@ -165,26 +166,26 @@ export default function AdsAdmin() {
                 <button
                   type="button"
                   onClick={() => handleSlotChange(slot.slot_key, "ad_type", "image")}
-                  className={`text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition ${
+                  className={`text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition ${
                     slot.ad_type === "image"
                       ? "bg-emerald-800 text-white shadow-xs"
                       : "bg-white text-gray-700 border border-[#dcd8cd]"
                   }`}
                 >
                   <ImageIcon size={14} />
-                  <span>تصویری بینر (R2 Image Banner)</span>
+                  <span>{t("tab_image_banner")}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSlotChange(slot.slot_key, "ad_type", "code")}
-                  className={`text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition ${
+                  className={`text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition ${
                     slot.ad_type === "code"
                       ? "bg-emerald-800 text-white shadow-xs"
                       : "bg-white text-gray-700 border border-[#dcd8cd]"
                   }`}
                 >
                   <Code size={14} />
-                  <span>ایڈسینس / کسٹم ایچ ٹی ایم ایل کوڈ (AdSense Script)</span>
+                  <span>{t("tab_code_snippet")}</span>
                 </button>
               </div>
 
@@ -194,41 +195,43 @@ export default function AdsAdmin() {
                   <div className="space-y-3">
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">
-                        بینر کی تصویر (R2 URL)
+                        {t("field_banner_image_url")}
                       </label>
                       <input
                         type="text"
+                        dir="ltr"
                         value={slot.image_url || ""}
                         onChange={(e) =>
                           handleSlotChange(slot.slot_key, "image_url", e.target.value)
                         }
-                        placeholder="https://... بینر تصویر کا URL"
-                        className="w-full text-xs p-2.5 rounded bg-white border border-[#dcd8cd] font-mono text-left"
+                        placeholder="https://pub-....r2.dev/banner.jpg"
+                        className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] font-mono text-left"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">
-                        کلک کرنے پر منزل کا لنک (Target Destination URL)
+                        {t("field_target_url")}
                       </label>
                       <input
                         type="text"
+                        dir="ltr"
                         value={slot.target_url || ""}
                         onChange={(e) =>
                           handleSlotChange(slot.slot_key, "target_url", e.target.value)
                         }
-                        placeholder="https://client-website.com"
-                        className="w-full text-xs p-2.5 rounded bg-white border border-[#dcd8cd] font-mono text-left"
+                        placeholder="https://advertiser-website.com"
+                        className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] font-mono text-left"
                       />
                     </div>
 
                     <div>
-                      <label className="border-2 border-dashed border-[#dcd8cd] hover:border-emerald-600 rounded-lg p-3 flex items-center justify-center gap-2 cursor-pointer bg-white transition text-xs font-bold text-emerald-800">
+                      <label className="border-2 border-dashed border-[#dcd8cd] hover:border-emerald-600 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer bg-white transition text-xs font-bold text-emerald-800">
                         <Upload size={16} />
                         <span>
                           {uploadingFor === slot.slot_key
-                            ? "تصویر اپلوڈ ہو رہی ہے..."
-                            : "کمپیوٹر سے بینر اپلوڈ کریں (Cloudflare R2)"}
+                            ? "Uploading to Cloudflare R2..."
+                            : t("btn_pick_file")}
                         </span>
                         <input
                           type="file"
@@ -242,20 +245,20 @@ export default function AdsAdmin() {
                   </div>
 
                   {/* Preview Box */}
-                  <div className="bg-white border border-[#dcd8cd] rounded-lg p-3 flex flex-col items-center justify-center min-h-[140px] text-center">
+                  <div className="bg-white border border-[#dcd8cd] rounded-xl p-3 flex flex-col items-center justify-center min-h-[140px] text-center">
                     <span className="text-[10px] text-gray-400 uppercase tracking-widest font-sans mb-1">
-                      بینر کا براہ راست پیش منظر
+                      {t("preview_banner_text")}
                     </span>
                     {slot.image_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={slot.image_url}
                         alt="Ad Preview"
-                        className="max-h-28 object-contain rounded shadow-xs"
+                        className="max-h-28 object-contain rounded-lg shadow-xs"
                       />
                     ) : (
                       <p className="text-xs text-gray-400">
-                        کوئی تصویر اپلوڈ نہیں ہے۔ عوام کو رابطہ کا پلیس ہولڈر نظر آئے گا۔
+                        No image uploaded yet. A contact placeholder will be visible to readers.
                       </p>
                     )}
                   </div>
@@ -266,20 +269,18 @@ export default function AdsAdmin() {
               {slot.ad_type === "code" && (
                 <div className="pt-2">
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    گوگل ایڈسینس یا کسٹم اشتہاری سکرپٹ (AdSense / HTML Code)
+                    {t("field_adsense_snippet")}
                   </label>
                   <textarea
                     rows={4}
+                    dir="ltr"
                     value={slot.code_snippet || ""}
                     onChange={(e) =>
                       handleSlotChange(slot.slot_key, "code_snippet", e.target.value)
                     }
                     placeholder="<script async src='https://pagead2.googlesyndication.com...'></script><ins class='adsbygoogle' ...></ins>"
-                    className="w-full text-xs p-3 rounded bg-white border border-[#dcd8cd] font-mono text-left leading-relaxed outline-none"
+                    className="w-full text-xs p-3 rounded-lg bg-white border border-[#dcd8cd] font-mono text-left leading-relaxed outline-none"
                   />
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    یہاں آپ گوگل ایڈسینس کا پورا ایڈ کوڈ یا افیلیٹ ایچ ٹی ایم ایل بینر پیسٹ کر سکتے ہیں۔
-                  </p>
                 </div>
               )}
             </div>

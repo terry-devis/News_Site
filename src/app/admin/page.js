@@ -11,10 +11,12 @@ import {
   CheckCircle,
   XCircle,
   ExternalLink,
-  TrendingUp,
 } from "lucide-react";
+import { useAdminLanguage } from "@/context/AdminLanguageContext";
 
 export default function AdminDashboard() {
+  const { t, lang } = useAdminLanguage();
+
   const [stats, setStats] = useState({
     articlesCount: 0,
     pendingCommentsCount: 0,
@@ -77,21 +79,21 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold urdu-headline text-gray-900">
-            ڈیلی افادیت — ادارتی کنٹرول پینل (CMS)
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            {t("dashboard_welcome_title")}
           </h1>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">
-            یہاں سے آپ خبروں کی اشاعت، تصاویر کی Cloudflare R2 پر منتقلی، اشتہارات اور قارئین کے تبصروں کو کنٹرول کر سکتے ہیں۔
+          <p className="text-xs sm:text-sm text-gray-600 mt-1 max-w-2xl leading-relaxed">
+            {t("dashboard_welcome_desc")}
           </p>
         </div>
         <Link
           href="/admin/posts/new"
-          className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg flex items-center gap-2 transition shrink-0 shadow-xs"
+          className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 transition shrink-0 shadow-xs"
         >
           <PlusCircle size={17} />
-          <span>نیا مضمون شائع کریں</span>
+          <span>{t("dashboard_publish_btn")}</span>
         </Link>
       </div>
 
@@ -100,7 +102,7 @@ export default function AdminDashboard() {
         {/* Total Articles */}
         <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-600">شائع شدہ مضامین</span>
+            <span className="text-xs font-bold text-gray-600">{t("stat_published_articles")}</span>
             <div className="p-2 rounded-lg bg-emerald-100 text-emerald-800">
               <FileText size={18} />
             </div>
@@ -109,14 +111,14 @@ export default function AdminDashboard() {
             {loading ? "..." : stats.articlesCount}
           </div>
           <Link href="/admin/posts" className="text-[11px] text-emerald-700 hover:underline mt-2 inline-block font-semibold">
-            تمام مضامین دیکھیں ←
+            {t("view_all")} →
           </Link>
         </div>
 
         {/* Pending Comments */}
         <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-600">زیرِ التواء تبصرے</span>
+            <span className="text-xs font-bold text-gray-600">{t("stat_pending_comments")}</span>
             <div className={`p-2 rounded-lg ${stats.pendingCommentsCount > 0 ? "bg-amber-100 text-amber-800" : "bg-gray-100 text-gray-600"}`}>
               <MessageSquare size={18} />
             </div>
@@ -125,14 +127,14 @@ export default function AdminDashboard() {
             {loading ? "..." : stats.pendingCommentsCount}
           </div>
           <Link href="/admin/comments" className="text-[11px] text-emerald-700 hover:underline mt-2 inline-block font-semibold">
-            تصدیق و منظوری کریں ←
+            {t("view_all")} →
           </Link>
         </div>
 
         {/* Active Ads */}
         <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-600">فعال اشتہارات</span>
+            <span className="text-xs font-bold text-gray-600">{t("stat_active_ads")}</span>
             <div className="p-2 rounded-lg bg-blue-100 text-blue-800">
               <Megaphone size={18} />
             </div>
@@ -141,14 +143,14 @@ export default function AdminDashboard() {
             {loading ? "..." : stats.activeAdsCount}
           </div>
           <Link href="/admin/ads" className="text-[11px] text-emerald-700 hover:underline mt-2 inline-block font-semibold">
-            اشتہارات تبدیل کریں ←
+            {t("view_all")} →
           </Link>
         </div>
 
         {/* Newsletter Subscribers */}
         <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-600">نیوز لیٹر قارئین</span>
+            <span className="text-xs font-bold text-gray-600">{t("stat_subscribers")}</span>
             <div className="p-2 rounded-lg bg-purple-100 text-purple-800">
               <Mail size={18} />
             </div>
@@ -157,7 +159,7 @@ export default function AdminDashboard() {
             {loading ? "..." : stats.subscribersCount}
           </div>
           <Link href="/admin/newsletter" className="text-[11px] text-emerald-700 hover:underline mt-2 inline-block font-semibold">
-            براڈکاسٹ ای میل بھیجیں ←
+            {t("view_all")} →
           </Link>
         </div>
       </div>
@@ -170,16 +172,16 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between pb-3 border-b border-[#dcd8cd] mb-4">
             <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
               <MessageSquare size={18} className="text-amber-700" />
-              <span>زیرِ التواء تبصرے (Check & Balance)</span>
+              <span>{t("pending_comments_title")}</span>
             </h2>
             <Link href="/admin/comments" className="text-xs text-emerald-700 hover:underline font-semibold">
-              سب دیکھیں
+              {t("view_all")}
             </Link>
           </div>
 
           {pendingComments.length === 0 ? (
             <div className="py-8 text-center text-xs text-gray-500">
-              کوئی نیا تبصرہ تصدیق کے لیے زیرِ التواء نہیں ہے۔ سب کلیر ہے!
+              {t("all_clear_comments")}
             </div>
           ) : (
             <div className="space-y-3">
@@ -191,10 +193,10 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-xs text-gray-900">{comment.author_name}</span>
                     <span className="text-[10px] text-gray-400 font-sans">
-                      {new Date(comment.created_at).toLocaleDateString("ur-PK")}
+                      {new Date(comment.created_at).toLocaleDateString(lang === "ur" ? "ur-PK" : "en-US")}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-700 urdu-body leading-relaxed">
+                  <p className="text-xs text-gray-700 leading-relaxed">
                     {comment.content}
                   </p>
                   <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-100">
@@ -203,14 +205,14 @@ export default function AdminDashboard() {
                       className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded transition"
                     >
                       <CheckCircle size={12} />
-                      <span>منظور کریں</span>
+                      <span>{t("approve")}</span>
                     </button>
                     <button
                       onClick={() => handleModerate(comment.id, "rejected")}
                       className="inline-flex items-center gap-1 text-[11px] font-bold bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded transition"
                     >
                       <XCircle size={12} />
-                      <span>مسترد کریں</span>
+                      <span>{t("reject")}</span>
                     </button>
                   </div>
                 </div>
@@ -224,10 +226,10 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between pb-3 border-b border-[#dcd8cd] mb-4">
             <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
               <FileText size={18} className="text-emerald-700" />
-              <span>تازہ ترین مضامین</span>
+              <span>{t("recent_articles")}</span>
             </h2>
             <Link href="/admin/posts" className="text-xs text-emerald-700 hover:underline font-semibold">
-              سب مضامین
+              {t("view_all")}
             </Link>
           </div>
 
@@ -236,11 +238,11 @@ export default function AdminDashboard() {
               <div key={art.id} className="py-2.5 flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <span className="text-[10px] font-bold text-emerald-700 font-sans">
-                    {art.categories?.name_ur || "خبر"}
+                    {lang === "en" ? art.categories?.name_en || art.categories?.name_ur : art.categories?.name_ur || "خبر"}
                   </span>
                   <Link href={`/admin/posts/${art.id}`} className="block">
                     <h3 className="text-xs font-bold text-gray-900 hover:text-emerald-700 line-clamp-2 leading-snug">
-                      {art.title_ur}
+                      {lang === "en" && art.title_en ? art.title_en : art.title_ur}
                     </h3>
                   </Link>
                 </div>
@@ -248,7 +250,7 @@ export default function AdminDashboard() {
                   href={`/story/${art.id || art.slug}`}
                   target="_blank"
                   className="text-gray-400 hover:text-emerald-700 p-1"
-                  title="لائیو دیکھیں"
+                  title="View Live"
                 >
                   <ExternalLink size={14} />
                 </Link>

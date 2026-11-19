@@ -16,25 +16,28 @@ import {
   Menu,
   X,
   ShieldCheck,
+  Languages,
 } from "lucide-react";
+import { AdminLanguageProvider, useAdminLanguage } from "@/context/AdminLanguageContext";
 
-export default function AdminLayout({ children }) {
+function AdminLayoutInner({ children }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { lang, setLang, t, dir } = useAdminLanguage();
 
   const navItems = [
-    { label: "ڈیش بورڈ", href: "/admin", icon: LayoutDashboard },
-    { label: "تمام مضامین", href: "/admin/posts", icon: FileText },
-    { label: "نیا مضمون لکھیں", href: "/admin/posts/new", icon: PlusCircle },
-    { label: "تبصرے اور تصدیق", href: "/admin/comments", icon: MessageSquare },
-    { label: "اشتہارات کا کنٹرول", href: "/admin/ads", icon: Megaphone },
-    { label: "سوشل میڈیا لنکس", href: "/admin/settings", icon: Share2 },
-    { label: "نیوز لیٹر اور SMTP", href: "/admin/newsletter", icon: Mail },
+    { label: t("nav_dashboard"), href: "/admin", icon: LayoutDashboard },
+    { label: t("nav_posts"), href: "/admin/posts", icon: FileText },
+    { label: t("nav_new_post"), href: "/admin/posts/new", icon: PlusCircle },
+    { label: t("nav_comments"), href: "/admin/comments", icon: MessageSquare },
+    { label: t("nav_ads"), href: "/admin/ads", icon: Megaphone },
+    { label: t("nav_settings"), href: "/admin/settings", icon: Share2 },
+    { label: t("nav_newsletter"), href: "/admin/newsletter", icon: Mail },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f7f6f3] text-gray-900 flex flex-col font-sans" dir="rtl">
-      {/* Admin Top Bar */}
+    <div className="min-h-screen bg-[#f7f6f3] text-gray-900 flex flex-col font-sans" dir={dir}>
+      {/* Admin Top Navigation Bar */}
       <header className="bg-[#07130c] text-white border-b border-emerald-950 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <button
@@ -48,19 +51,40 @@ export default function AdminLayout({ children }) {
               <Image src="/logo.webp" alt="Daily Afadiat CMS" fill className="object-contain" />
             </div>
             <span className="hidden sm:inline bg-emerald-700/80 text-[11px] px-2 py-0.5 rounded font-bold uppercase tracking-wider text-emerald-100">
-              CMS ایڈمن پینل
+              {t("cms_title")}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Right Section: Language Switcher + Visit Site */}
+        <div className="flex items-center gap-2.5">
+          {/* Language Switcher Pill */}
+          <div className="flex items-center bg-emerald-950/80 border border-emerald-800 rounded-lg p-0.5 text-xs font-semibold">
+            <button
+              onClick={() => setLang("en")}
+              className={`px-2.5 py-1 rounded-md transition ${
+                lang === "en" ? "bg-emerald-600 text-white font-bold shadow-xs" : "text-emerald-300 hover:text-white"
+              }`}
+            >
+              English
+            </button>
+            <button
+              onClick={() => setLang("ur")}
+              className={`px-2.5 py-1 rounded-md transition ${
+                lang === "ur" ? "bg-emerald-600 text-white font-bold shadow-xs" : "text-emerald-300 hover:text-white"
+              }`}
+            >
+              اردو
+            </button>
+          </div>
+
           <Link
             href="/"
             target="_blank"
-            className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-1.5 rounded transition"
+            className="text-xs text-emerald-300 hover:text-white flex items-center gap-1 font-medium bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-1.5 rounded-lg transition"
           >
             <ExternalLink size={13} />
-            <span>ویب سائٹ دیکھیں</span>
+            <span className="hidden sm:inline">{t("visit_website")}</span>
           </Link>
         </div>
       </header>
@@ -69,13 +93,13 @@ export default function AdminLayout({ children }) {
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 right-0 z-40 w-64 bg-[#efeee9] border-l border-[#dcd8cd] pt-16 lg:pt-0 transform transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 flex flex-col justify-between ${
-            sidebarOpen ? "translate-x-0 shadow-2xl" : "translate-x-full"
+          className={`fixed inset-y-0 ${dir === "rtl" ? "right-0 border-l" : "left-0 border-r"} z-40 w-64 bg-[#efeee9] border-[#dcd8cd] pt-16 lg:pt-0 transform transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 flex flex-col justify-between ${
+            sidebarOpen ? "translate-x-0 shadow-2xl" : dir === "rtl" ? "translate-x-full" : "-translate-x-full"
           }`}
         >
           <nav className="p-4 space-y-1 overflow-y-auto">
             <div className="px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-              ادارتی شعبہ جات
+              {t("editorial_departments")}
             </div>
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -101,9 +125,8 @@ export default function AdminLayout({ children }) {
           <div className="p-4 border-t border-[#dcd8cd] text-[11px] text-gray-500 flex items-center justify-between">
             <span className="flex items-center gap-1 font-semibold text-emerald-800">
               <ShieldCheck size={14} />
-              <span>مصدقہ سسٹم فعال</span>
+              <span>{t("verified_badge")}</span>
             </span>
-            <span className="font-mono text-[10px]">v2.1 R2</span>
           </div>
         </aside>
 
@@ -113,5 +136,13 @@ export default function AdminLayout({ children }) {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function AdminLayout({ children }) {
+  return (
+    <AdminLanguageProvider>
+      <AdminLayoutInner>{children}</AdminLayoutInner>
+    </AdminLanguageProvider>
   );
 }

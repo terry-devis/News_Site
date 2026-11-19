@@ -17,6 +17,7 @@ import {
   X,
   ShieldCheck,
   Languages,
+  Flame,
 } from "lucide-react";
 import { AdminLanguageProvider, useAdminLanguage } from "@/context/AdminLanguageContext";
 
@@ -27,6 +28,7 @@ function AdminLayoutInner({ children }) {
 
   const navItems = [
     { label: t("nav_dashboard"), href: "/admin", icon: LayoutDashboard },
+    { label: t("nav_breaking"), href: "/admin/breaking", icon: Flame },
     { label: t("nav_posts"), href: "/admin/posts", icon: FileText },
     { label: t("nav_new_post"), href: "/admin/posts/new", icon: PlusCircle },
     { label: t("nav_comments"), href: "/admin/comments", icon: MessageSquare },

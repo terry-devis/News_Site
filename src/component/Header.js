@@ -56,7 +56,7 @@ export default function Header({ categories = [], breakingNews = [] }) {
       ? [...breakingList, ...breakingList]
       : breakingList;
 
-  const ratesList = [
+  const [ratesList, setRatesList] = useState([
     { ur: "سونا ۲۴K / تولہ", en: "Gold 24K / Tola", val: "₨422,095" },
     { ur: "سونا ۲۲K / تولہ", en: "Gold 22K / Tola", val: "₨389,402" },
     { ur: "چاندی / تولہ", en: "Silver / Tola", val: "₨5,350" },
@@ -66,7 +66,46 @@ export default function Header({ categories = [], breakingNews = [] }) {
     { ur: "GBP / PKR", en: "GBP / PKR", val: "₨375.50" },
     { ur: "EUR / PKR", en: "EUR / PKR", val: "₨312.40" },
     { ur: "CNY / PKR", en: "CNY / PKR", val: "₨41.65" },
-  ];
+  ]);
+
+  // Live Forex Rates Fetcher with 5-minute Auto-Refetching
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLiveForex() {
+      try {
+        const res = await fetch("https://open.er-api.com/v6/latest/USD");
+        const data = await res.json();
+        if (isMounted && data.result === "success" && data.rates) {
+          const usdPkr = data.rates.PKR || 276.75;
+          const sarUsd = data.rates.SAR || 3.75;
+          const aedUsd = data.rates.AED || 3.67;
+          const gbpUsd = data.rates.GBP || 0.76;
+          const eurUsd = data.rates.EUR || 0.91;
+          const cnyUsd = data.rates.CNY || 7.24;
+
+          setRatesList([
+            { ur: "سونا ۲۴K / تولہ", en: "Gold 24K / Tola", val: "₨422,095" },
+            { ur: "سونا ۲۲K / تولہ", en: "Gold 22K / Tola", val: "₨389,402" },
+            { ur: "چاندی / تولہ", en: "Silver / Tola", val: "₨5,350" },
+            { ur: "USD / PKR", en: "USD / PKR", val: `₨${usdPkr.toFixed(2)}` },
+            { ur: "AED / PKR", en: "AED / PKR", val: `₨${(usdPkr / aedUsd).toFixed(2)}` },
+            { ur: "SAR / PKR", en: "SAR / PKR", val: `₨${(usdPkr / sarUsd).toFixed(2)}` },
+            { ur: "GBP / PKR", en: "GBP / PKR", val: `₨${(usdPkr / gbpUsd).toFixed(2)}` },
+            { ur: "EUR / PKR", en: "EUR / PKR", val: `₨${(usdPkr / eurUsd).toFixed(2)}` },
+            { ur: "CNY / PKR", en: "CNY / PKR", val: `₨${(usdPkr / cnyUsd).toFixed(2)}` },
+          ]);
+        }
+      } catch (e) {
+        // Fallback to initial values safely
+      }
+    }
+    fetchLiveForex();
+    const interval = setInterval(fetchLiveForex, 300000); // Refetch every 5 minutes
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
   const seamlessRatesList = [...ratesList, ...ratesList];
 
   return (

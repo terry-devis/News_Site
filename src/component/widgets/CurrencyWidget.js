@@ -73,8 +73,10 @@ export default function CurrencyWidget({ className = "" }) {
       }
     }
     fetchRates();
+    const interval = setInterval(fetchRates, 300000); // Auto-refetch every 5 minutes
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, []);
 

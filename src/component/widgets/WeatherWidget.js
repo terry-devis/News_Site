@@ -55,8 +55,10 @@ export default function WeatherWidget({ className = "" }) {
       }
     }
     fetchWeather();
+    const interval = setInterval(fetchWeather, 300000); // Auto-refetch every 5 minutes
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, [selectedCity]);
 

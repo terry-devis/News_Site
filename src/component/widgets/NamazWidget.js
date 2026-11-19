@@ -25,6 +25,20 @@ export default function NamazWidget({ className = "" }) {
   const [hijriDate, setHijriDate] = useState("9 جمادی الآخر 1448ھ");
   const [loading, setLoading] = useState(false);
 
+  // Live clock tracker to update active prayer highlight in real time every 60s
+  const [currentMinutes, setCurrentMinutes] = useState(() => {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const d = new Date();
+      setCurrentMinutes(d.getHours() * 60 + d.getMinutes());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
     async function fetchNamaz() {
@@ -51,8 +65,10 @@ export default function NamazWidget({ className = "" }) {
       }
     }
     fetchNamaz();
+    const interval = setInterval(fetchNamaz, 900000); // Auto-refetch prayer times every 15 minutes
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, [city, isEnglish]);
 
@@ -69,10 +85,7 @@ export default function NamazWidget({ className = "" }) {
     return `${h}:${m} ${ampm}`;
   };
 
-  // Determine current active prayer
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
+  // Determine current active prayer (using live currentMinutes state)
   const getMinutes = (tStr) => {
     if (!tStr) return 0;
     const [h, m] = tStr.split(" ")[0].split(":").map(Number);

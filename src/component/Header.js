@@ -93,13 +93,13 @@ export default function Header({ categories = [], breakingNews = [] }) {
               <span>{t("admin")}</span>
             </Link>
 
-            {/* Language Toggle Button */}
+            {/* Language Toggle Button (Simple, clean neutral style) */}
             <button
               onClick={toggleLanguage}
-              className="inline-flex items-center gap-1.5 border border-emerald-600/40 bg-emerald-50/60 hover:bg-emerald-100/70 rounded px-2.5 py-0.5 text-xs font-bold text-emerald-800 hover:text-emerald-900 transition font-sans cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1.5 border border-[#dcd8cd] bg-[#f7f6f3] rounded px-2.5 py-0.5 text-xs font-bold text-gray-700 hover:border-emerald-600 hover:text-emerald-700 transition font-sans cursor-pointer"
               title={isUrdu ? "Switch entire site to English" : "تمام ویب سائٹ اردو میں بدلیں"}
             >
-              <Globe size={13} className="text-emerald-600" />
+              <Globe size={13} />
               <span>{isUrdu ? "English" : "اردو"}</span>
             </button>
           </div>

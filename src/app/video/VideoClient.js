@@ -43,11 +43,14 @@ export default function VideoClient({ categories = [], breakingNews = [], initia
     title_en: v.title_en || v.title_ur || "",
     summary_ur: v.summary_ur || "",
     summary_en: v.summary_en || v.summary_ur || "",
+    content_ur: v.content_ur || v.summary_ur || "",
+    content_en: v.content_en || v.summary_en || v.content_ur || "",
     duration: v.duration || "15:00",
     views: v.views_count || v.views || "10K",
     date: v.created_at ? new Date(v.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "Today",
     thumb: v.cover_image || v.thumb || "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&auto=format&fit=crop",
-    author: v.author_name || v.author || "ڈیلی افادیت نیوز روم",
+    author_ur: v.author_name || v.author || "ڈیلی افادیت نیوز روم",
+    author_en: v.author_en || "Daily Afadiat Newsroom",
     featured: Boolean(v.is_featured !== undefined ? v.is_featured : v.featured),
     videoUrl: getEmbedUrl(v.video_url || v.videoUrl),
   }));
@@ -55,17 +58,20 @@ export default function VideoClient({ categories = [], breakingNews = [], initia
   const catTabs = [
     { key: "all", name_ur: "تمام ویڈیوز", name_en: "All Videos" },
     { key: "special", name_ur: "خصوصی رپورٹس", name_en: "Special Reports" },
-    { key: "bulletin", name_ur: "نیوز بلیٹنز", name_en: "Bulletins" },
-    { key: "economy", name_ur: "بزنس و معیشت", name_en: "Economy" },
-    { key: "tech", name_ur: "سائنس و ٹیکنالوجی", name_en: "Tech & Science" },
-    { key: "sports", name_ur: "کھیل و اسپورٹس", name_en: "Sports" },
+    { key: "bulletin", name_ur: "نیوز بلیٹنز", name_en: "News Bulletins" },
+    { key: "economy", name_ur: "بزنس و معیشت", name_en: "Business & Economy" },
+    { key: "tech", name_ur: "سائنس و ٹیکنالوجی", name_en: "Science & Tech" },
+    { key: "sports", name_ur: "کھیل و اسپورٹس", name_en: "Sports News" },
+    { key: "interviews", name_ur: "خصوصی انٹرویوز", name_en: "Interviews" },
   ];
 
   const filtered = videoList.filter((v) => {
     const matchCat = selectedCat === "all" || v.category === selectedCat;
     const matchSearch =
       v.title_ur.toLowerCase().includes(search.toLowerCase()) ||
-      v.title_en.toLowerCase().includes(search.toLowerCase());
+      v.title_en.toLowerCase().includes(search.toLowerCase()) ||
+      v.summary_ur.toLowerCase().includes(search.toLowerCase()) ||
+      v.summary_en.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
 
@@ -178,7 +184,9 @@ export default function VideoClient({ categories = [], breakingNews = [], initia
                 </div>
 
                 <div className="pt-3 border-t border-[#dcd8cd] flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-800">{heroVideo.author}</span>
+                  <span className="text-xs font-bold text-emerald-800">
+                    {isEnglish ? heroVideo.author_en : heroVideo.author_ur}
+                  </span>
                   <button
                     onClick={() => setActiveVideoModal(heroVideo)}
                     className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow-xs"
@@ -256,7 +264,9 @@ export default function VideoClient({ categories = [], breakingNews = [], initia
                   </div>
 
                   <div className="p-4 pt-0 border-t border-[#dcd8cd]/50 flex items-center justify-between text-xs text-gray-500">
-                    <span className="font-semibold text-emerald-800 text-[11px]">{v.author}</span>
+                    <span className="font-semibold text-emerald-800 text-[11px]">
+                      {isEnglish ? v.author_en : v.author_ur}
+                    </span>
                     <span className="text-emerald-700 font-bold group-hover:underline flex items-center gap-1">
                       <span>{isUrdu ? "چلائیں" : "Play"}</span>
                       <Play size={10} />
@@ -308,20 +318,34 @@ export default function VideoClient({ categories = [], breakingNews = [], initia
               </div>
 
               {/* Video Info under player */}
-              <div className="p-5 bg-zinc-900 text-white space-y-2">
+              <div className="p-5 bg-zinc-900 text-white space-y-3">
                 <div className="flex items-center gap-3 text-xs text-gray-400 font-sans">
                   <span>{activeVideoModal.views} views</span>
                   <span>•</span>
                   <span>{activeVideoModal.date}</span>
                   <span>•</span>
-                  <span className="text-emerald-400 font-semibold">{activeVideoModal.author}</span>
+                  <span className="text-emerald-400 font-semibold">
+                    {isEnglish ? activeVideoModal.author_en : activeVideoModal.author_ur}
+                  </span>
                 </div>
                 <h2 className="text-lg sm:text-xl font-bold urdu-headline leading-relaxed">
                   {isUrdu ? activeVideoModal.title_ur : activeVideoModal.title_en}
                 </h2>
-                <p className="text-xs text-gray-300 leading-relaxed">
+                <p className="text-xs text-gray-300 leading-relaxed font-sans">
                   {isUrdu ? activeVideoModal.summary_ur : activeVideoModal.summary_en}
                 </p>
+
+                {/* Detailed transcription / coverage highlights */}
+                {(activeVideoModal.content_ur || activeVideoModal.content_en) && (
+                  <div className="pt-3 border-t border-gray-800 text-xs text-gray-400 leading-relaxed font-sans">
+                    <span className="text-[10px] uppercase font-bold text-gray-500 block mb-1">
+                      {isUrdu ? "تفصیلی تجزیہ و اہم نکات" : "Detailed Overview & Highlights"}
+                    </span>
+                    <p className="whitespace-pre-line">
+                      {isUrdu ? activeVideoModal.content_ur : activeVideoModal.content_en}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

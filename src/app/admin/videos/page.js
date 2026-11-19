@@ -41,12 +41,15 @@ export default function AdminVideosPage() {
     title_en: "",
     summary_ur: "",
     summary_en: "",
+    content_ur: "",
+    content_en: "",
     category: "special",
     video_url: "",
     duration: "15:00",
     views_count: "10K",
     cover_image: "",
     author_name: "تحقیقاتی ڈیسک",
+    author_en: "Investigative Bureau",
     is_featured: false,
   });
 
@@ -83,12 +86,15 @@ export default function AdminVideosPage() {
       title_en: "",
       summary_ur: "",
       summary_en: "",
+      content_ur: "",
+      content_en: "",
       category: "special",
       video_url: "",
       duration: "12:00",
       views_count: "15K",
       cover_image: "",
       author_name: "نیوز ڈیسک",
+      author_en: "Newsroom Desk",
       is_featured: false,
     });
     setModalOpen(true);
@@ -101,12 +107,15 @@ export default function AdminVideosPage() {
       title_en: v.title_en || "",
       summary_ur: v.summary_ur || "",
       summary_en: v.summary_en || "",
+      content_ur: v.content_ur || "",
+      content_en: v.content_en || "",
       category: v.category || "special",
       video_url: v.video_url || "",
       duration: v.duration || "12:00",
       views_count: v.views_count || v.views || "15K",
       cover_image: v.cover_image || v.thumb || "",
       author_name: v.author_name || v.author || "نیوز ڈیسک",
+      author_en: v.author_en || "Newsroom Desk",
       is_featured: Boolean(v.is_featured),
     });
     setModalOpen(true);
@@ -535,32 +544,88 @@ export default function AdminVideosPage() {
                 )}
               </div>
 
-              {/* Byline / Reporter */}
-              <div>
-                <label className="block font-bold text-gray-800 mb-1">
-                  {isUrdu ? "رپورٹر / اینکر / ڈیسک کا نام" : "Reporter / Anchor Name"}
-                </label>
-                <input
-                  type="text"
-                  value={formData.author_name}
-                  onChange={(e) => setFormData({ ...formData, author_name: e.target.value })}
-                  placeholder="تحقیقاتی ڈیسک"
-                  className="w-full border border-[#dcd8cd] rounded-none p-2.5 text-xs outline-none font-sans"
-                />
+              {/* Byline / Reporter (Bilingual) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">
+                    {isUrdu ? "رپورٹر / اینکر کا نام (اردو)" : "Reporter / Anchor Name (Urdu)"}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.author_name}
+                    onChange={(e) => setFormData({ ...formData, author_name: e.target.value })}
+                    placeholder="تحقیقاتی ڈیسک"
+                    className="w-full border border-[#dcd8cd] rounded-none p-2.5 text-xs text-right font-urdu outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">
+                    {isUrdu ? "رپورٹر / اینکر کا نام (انگریزی)" : "Reporter / Anchor Name (English)"}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.author_en}
+                    onChange={(e) => setFormData({ ...formData, author_en: e.target.value })}
+                    placeholder="e.g. Investigative Bureau / Newsroom"
+                    className="w-full border border-[#dcd8cd] rounded-none p-2.5 text-xs outline-none font-sans"
+                  />
+                </div>
               </div>
 
-              {/* Urdu Summary */}
-              <div>
-                <label className="block font-bold text-gray-800 mb-1">
-                  {isUrdu ? "ویڈیو کا تفصیلی خلاصہ (اردو)" : "Video Summary (Urdu)"}
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.summary_ur}
-                  onChange={(e) => setFormData({ ...formData, summary_ur: e.target.value })}
-                  placeholder="ویڈیو کی مختصر تفصیل..."
-                  className="w-full border border-[#dcd8cd] rounded-none p-2.5 text-xs text-right font-urdu outline-none focus:border-emerald-700"
-                />
+              {/* Summaries (Bilingual) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">
+                    {isUrdu ? "ویڈیو کا خلاصہ (اردو)" : "Video Summary (Urdu)"}
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={formData.summary_ur}
+                    onChange={(e) => setFormData({ ...formData, summary_ur: e.target.value })}
+                    placeholder="ویڈیو کی مختصر تفصیل..."
+                    className="w-full border border-[#dcd8cd] rounded-none p-2.5 text-xs text-right font-urdu outline-none focus:border-emerald-700"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">
+                    {isUrdu ? "ویڈیو کا خلاصہ (انگریزی)" : "Video Summary (English)"}
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={formData.summary_en}
+                    onChange={(e) => setFormData({ ...formData, summary_en: e.target.value })}
+                    placeholder="Short summary in English..."
+                    className="w-full border border-[#dcd8cd] rounded-none p-2.5 text-xs outline-none font-sans focus:border-emerald-700"
+                  />
+                </div>
+              </div>
+
+              {/* Detailed Content / Key Points (Bilingual) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">
+                    {isUrdu ? "تفصیلی تفصیلات / اہم نکات (اردو)" : "Full Description / Key Points (Urdu)"}
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={formData.content_ur}
+                    onChange={(e) => setFormData({ ...formData, content_ur: e.target.value })}
+                    placeholder="ویڈیو کے تفصیلی حقائق، نکات یا ٹرانسکرپشن..."
+                    className="w-full border border-[#dcd8cd] rounded-none p-2.5 text-xs text-right font-urdu outline-none focus:border-emerald-700 leading-relaxed"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">
+                    {isUrdu ? "تفصیلی تفصیلات / اہم نکات (انگریزی)" : "Full Description / Key Points (English)"}
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={formData.content_en}
+                    onChange={(e) => setFormData({ ...formData, content_en: e.target.value })}
+                    placeholder="Detailed transcription, timestamps, or full overview in English..."
+                    className="w-full border border-[#dcd8cd] rounded-none p-2.5 text-xs outline-none font-sans focus:border-emerald-700 leading-relaxed"
+                  />
+                </div>
               </div>
 
               {/* Featured Priority Checkbox */}

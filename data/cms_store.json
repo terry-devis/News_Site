@@ -109,7 +109,10 @@
       "author_name": "تحقیقاتی ڈیسک",
       "is_featured": true,
       "is_active": true,
-      "created_at": "2026-11-17T10:05:00.234Z"
+      "created_at": "2026-11-17T10:05:00.234Z",
+      "author_en": "Investigative Bureau",
+      "content_ur": "بلوچستان اور شمالی علاقہ جات کے قدرتی وسائل، ریکوڈک منصوبہ اور جدید ٹیکنالوجی سے معاشی کایا پلٹ کا جامع جائزہ۔ اس خصوصی نشریات میں تمام بنیادی حقائق، سرکاری دستاویزات اور ماہرین کے بیانات کا تفصیلی احاطہ کیا گیا ہے۔",
+      "content_en": "In-depth investigation exploring natural reserves, Reko Diq copper-gold deposits, and national transformation. This special broadcast delivers comprehensive coverage incorporating field dispatches, official documents, and expert technical assessments."
     },
     {
       "id": 2,
@@ -125,7 +128,10 @@
       "author_name": "نیوز روم",
       "is_featured": false,
       "is_active": true,
-      "created_at": "2026-11-18T10:05:00.235Z"
+      "created_at": "2026-11-18T10:05:00.235Z",
+      "author_en": "Newsroom Desk",
+      "content_ur": "ملک بھر کے تمام اہم واقعات کا لمحہ بہ لمحہ احوال اور مستند تجزیہ۔ اس خصوصی نشریات میں تمام بنیادی حقائق، سرکاری دستاویزات اور ماہرین کے بیانات کا تفصیلی احاطہ کیا گیا ہے۔",
+      "content_en": "Nightly comprehensive broadcast covering fiscal metrics, cabinet decisions, and regional developments. This special broadcast delivers comprehensive coverage incorporating field dispatches, official documents, and expert technical assessments."
     },
     {
       "id": 3,
@@ -141,7 +147,10 @@
       "author_name": "بزنس ڈیسک",
       "is_featured": false,
       "is_active": true,
-      "created_at": "2026-11-16T10:05:00.235Z"
+      "created_at": "2026-11-16T10:05:00.235Z",
+      "author_en": "Business Desk",
+      "content_ur": "معاشی ماہرین اور فنانشل تجزیہ کاروں کے ساتھ خصوصی تبادلہ خیال۔ اس خصوصی نشریات میں تمام بنیادی حقائق، سرکاری دستاویزات اور ماہرین کے بیانات کا تفصیلی احاطہ کیا گیا ہے۔",
+      "content_en": "Dialogue with seasoned market strategists regarding interest rate trajectory and foreign inflows. This special broadcast delivers comprehensive coverage incorporating field dispatches, official documents, and expert technical assessments."
     },
     {
       "id": 4,
@@ -157,7 +166,10 @@
       "author_name": "اسپورٹس ڈیسک",
       "is_featured": false,
       "is_active": true,
-      "created_at": "2026-11-15T10:05:00.235Z"
+      "created_at": "2026-11-15T10:05:00.235Z",
+      "author_en": "Sports Bureau",
+      "content_ur": "قومی ٹیم کی حکمت عملی اور شائقینِ کرکٹ کے پرجوش تاثرات۔ اس خصوصی نشریات میں تمام بنیادی حقائق، سرکاری دستاویزات اور ماہرین کے بیانات کا تفصیلی احاطہ کیا گیا ہے۔",
+      "content_en": "Inside training camp footage and fan interviews ahead of the decisive clash. This special broadcast delivers comprehensive coverage incorporating field dispatches, official documents, and expert technical assessments."
     }
   ],
   "epaper_editions": [
@@ -173,7 +185,48 @@
       "page_image": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop",
       "pdf_url": "",
       "is_active": true,
-      "created_at": "2026-11-19T10:05:00.235Z"
+      "created_at": "2026-11-19T10:05:00.235Z",
+      "stories": [
+        {
+          "id": "s1",
+          "position": "lead",
+          "headline_ur": "ڈیلی افادیت ڈیجیٹل اور پرنٹ ایڈیشن کا شاندار آغاز: سچائی اور فوری باخبر رہنے کا نیا عہد",
+          "headline_en": "Daily Afadiat Digital & Print Edition Historic Launch: A New Era of Integrity and Speed",
+          "excerpt_ur": "جدید ترین پرنٹنگ ٹیکنالوجی اور ڈیجیٹل سروسز کے ساتھ ملکی صحافت میں ایک نئے باب کا اضافہ۔",
+          "excerpt_en": "Marking a transformative milestone in Pakistani journalism with state-of-the-art broadsheet printing and digital accessibility.",
+          "content_ur": "اسلام آباد (خصوصی نامہ نگار) روزنامہ افادیت نے جدید ترین پرنٹنگ ٹیکنالوجی اور ڈیجیٹل سروسز کے ساتھ ملکی صحافت میں ایک نئے باب کا اضافہ کر دیا ہے۔ ادارتی بورڈ کا کہنا ہے کہ ہمارا مقصد قاری تک بلاخوف و خطر اور تصدیق شدہ اطلاعات پہنچانا ہے۔ ملک بھر کے تمام بڑے شہروں میں آج سے باقاعدہ ترسیل جاری ہے۔",
+          "content_en": "Islamabad (Special Correspondent) Daily Afadiat has inaugurated its multi-edition print publication and digital broadsheet ecosystem today. The editorial governing board reiterated its core pledge to deliver uncompromising, rigorously verified, and fact-checked news to citizens across the federation.",
+          "byline_ur": "اسلام آباد (خصوصی نامہ نگار)",
+          "byline_en": "Islamabad (Special Correspondent)",
+          "image_url": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop"
+        },
+        {
+          "id": "s2",
+          "position": "secondary_top",
+          "headline_ur": "اسٹیٹ بینک کی مانیٹری پالیسی کا اعلان، شرح سود میں استحکام برقرار",
+          "headline_en": "State Bank of Pakistan Announces Monetary Policy, Retaining Benchmark Rates",
+          "excerpt_ur": "مرکزی بینک نے ملکی معاشی استحکام اور زرمبادلہ ذخائر میں بہتری کے پیش نظر نئی ہدایات جاری کر دیں۔",
+          "excerpt_en": "Central bank highlights fiscal stabilization, export expansion, and foreign reserve resilience.",
+          "content_ur": "کراچی (بزنس رپورٹر) اسٹیٹ بینک آف پاکستان نے اپنی تازہ مانیٹری پالیسی کا اعلان کرتے ہوئے شرح سود میں استحکام برقرار رکھنے کی توثیق کی ہے۔ مرکزی بینک کے مطابق برآمدات میں بتدریج اضافہ اور زرمبادلہ کے ذخائر میں بہتری خوش آئند اشارے ہیں۔",
+          "content_en": "Karachi (Business Desk) The State Bank of Pakistan announced its latest benchmark policy stance today, affirming stability in discount rates. Governor noted consistent improvements in foreign remittances, trade balance adjustments, and inflation deceleration.",
+          "byline_ur": "کراچی (بزنس رپورٹر)",
+          "byline_en": "Karachi (Business Desk)",
+          "image_url": ""
+        },
+        {
+          "id": "s3",
+          "position": "secondary_bottom",
+          "headline_ur": "ملک بھر میں موسم سرما کی بارشیں اور پہاڑوں پر برفباری کی نئی لہر",
+          "headline_en": "Winter Weather Alert: Widespread Rain Across Plains and Snowfall Over Northern Peaks",
+          "excerpt_ur": "محکمہ موسمیات نے سردی کی نئی لہر کی پیش گوئی کر دی، سیاحوں کا شمالی علاقوں میں رش۔",
+          "excerpt_en": "Meteorological Department issues advisories as cold spell intensifies across the country.",
+          "content_ur": "مری، گلگت بلتستان اور وادی نیلم میں برفباری کا سلسلہ شروع ہو گیا ہے جس کے بعد سردی کی شدت میں غیر معمولی اضافہ ریکارڈ کیا گیا ہے۔ محکمہ موسمیات کے مطابق مغربی ہواؤں کا نیا سلسلہ مزید تین روز تک برقرار رہنے کا امکان ہے۔",
+          "content_en": "Murree, Gilgit-Baltistan, and Neelum Valley experienced fresh winter snowfall today. Weather authorities anticipate the active westerly wave to persist over northern mountain ridges through the weekend.",
+          "byline_ur": "موسمی ڈیسک",
+          "byline_en": "Weather Desk",
+          "image_url": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop"
+        }
+      ]
     },
     {
       "id": 2,

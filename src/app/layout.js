@@ -1,9 +1,10 @@
 import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
+import { SiteLanguageProvider } from "@/context/SiteLanguageContext";
 
 export const metadata = {
   title: "ڈیلی افادیت — سچ کے ساتھ، ہر خبر",
-  description: "ڈیلی افادیت نیوز پورٹل: پاکستان، دنیا، کھیل اور بزنس کی تازہ ترین اور مصدقہ خبریں",
+  description: "ڈیلی افادیت نیوز پورٹل: پاکستان، دنیا، کھیل اور بزنس کی تازہ ترین اور مصدقہ خبریں | Daily Afadiat News",
 };
 
 export default function RootLayout({ children }) {
@@ -28,9 +29,11 @@ export default function RootLayout({ children }) {
           easing="ease"
           speed={1000}
         />
-        <div className="min-h-screen flex flex-col">
-          {children}
-        </div>
+        <SiteLanguageProvider>
+          <div className="min-h-screen flex flex-col">
+            {children}
+          </div>
+        </SiteLanguageProvider>
       </body>
     </html>
   );

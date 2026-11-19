@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Header from "@/component/Header";
 import Footer from "@/component/Footer";
 import NewsletterBox from "@/component/NewsletterBox";
+import { useSiteLanguage } from "@/context/SiteLanguageContext";
 import {
   MapPin,
   Phone,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 export default function ContactPage() {
+  const { isUrdu, isEnglish, dir, t } = useSiteLanguage();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -26,11 +28,13 @@ export default function ContactPage() {
 
   const [contactInfo, setContactInfo] = useState({
     address_ur: "شاہراہِ قائدین، صدر، کراچی، پاکستان",
+    address_en: "Shahrah-e-Quaideen, Saddar, Karachi & Press Club Road, Islamabad, Pakistan",
     phone: "+92 300 1234567",
     whatsapp: "+92 300 1234567",
     editorial_email: "editor@dailyafadiat.com",
     ads_email: "ads@dailyafadiat.com",
     timing_ur: "پیر تا ہفتہ: صبح ۹ تا شام ۶ بجے",
+    timing_en: "Monday – Saturday: 9:00 AM – 6:00 PM (PKT)",
   });
 
   const [socialLinks, setSocialLinks] = useState({
@@ -79,46 +83,56 @@ export default function ContactPage() {
       const data = await res.json();
       if (res.ok) {
         setStatus("success");
-        setResponseMsg(data.message || "آپ کا پیغام کامیابی کے ساتھ موصول ہو گیا ہے!");
+        setResponseMsg(
+          data.message ||
+            (isEnglish
+              ? "Your inquiry has been received successfully! Our team will contact you shortly."
+              : "آپ کا پیغام کامیابی کے ساتھ موصول ہو گیا ہے!")
+        );
         setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
       } else {
         setStatus("error");
-        setResponseMsg(data.error || "پیغام بھیجنے میں خرابی ہوئی، دوبارہ کوشش کریں۔");
+        setResponseMsg(
+          data.error ||
+            (isEnglish ? "Error sending message. Please try again." : "پیغام بھیجنے میں خرابی ہوئی، دوبارہ کوشش کریں۔")
+        );
       }
     } catch (err) {
       setStatus("error");
-      setResponseMsg("نیٹ ورک خرابی، براہ کرم بعد میں کوشش کریں۔");
+      setResponseMsg(isEnglish ? "Network error. Please try again later." : "نیٹ ورک خرابی، براہ کرم بعد میں کوشش کریں۔");
     }
   };
 
   return (
-    <div className="min-h-screen text-gray-900 font-sans">
+    <div className="min-h-screen text-gray-900 font-sans" dir={dir}>
       <Header />
 
       <main className="u-shell py-6 sm:py-10">
-        {/* 1. Page Header (Daily Insaaf Style) */}
+        {/* 1. Page Header */}
         <header className="border-b-2 border-[#1a1a1a] pb-3 mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold urdu-headline text-gray-900">
-            ہم سے رابطہ کریں
+          <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
+            {t("contactTitle")}
           </h1>
-          <p className="text-gray-600 text-xs sm:text-sm mt-2 max-w-2xl leading-relaxed urdu-body">
-            خبر، تجویز، شکایت یا اشتہارات کے لیے ہم سے رابطہ کرنے کے لیے درج ذیل ذرائع استعمال کریں۔
+          <p className={`text-gray-600 text-xs sm:text-sm mt-2 max-w-2xl leading-relaxed ${isUrdu ? "urdu-body" : "font-sans"}`}>
+            {t("contactSubtitle")}
           </p>
         </header>
 
         {/* 2. Two-Column Broadsheet Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* Main Content: Contact Form (8 Cols in RTL, right side) */}
+          {/* Main Content: Contact Form (8 Cols) */}
           <div className="lg:col-span-8">
             <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-6 sm:p-8 shadow-xs">
               <div className="mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold urdu-headline text-gray-900 flex items-center gap-2">
+                <h2 className={`text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
                   <MessageSquare size={22} className="text-emerald-700" />
-                  <span>ہمیں پیغام بھیجیں</span>
+                  <span>{isEnglish ? "Send Us a Message" : "ہمیں پیغام بھیجیں"}</span>
                 </h2>
-                <p className="text-gray-600 text-xs sm:text-sm mt-1 urdu-body">
-                  کوئی سوال، تجویز یا خبر؟ نیچے دیا گیا فارم پُر کریں، ہماری ادارتی ٹیم جلد جواب دے گی۔
+                <p className={`text-gray-600 text-xs sm:text-sm mt-1 ${isUrdu ? "urdu-body" : "font-sans"}`}>
+                  {isEnglish
+                    ? "Have a question, news tip, or advertising request? Fill out the form below and our team will get back to you promptly."
+                    : "کوئی سوال، تجویز یا خبر؟ نیچے دیا گیا فارم پُر کریں، ہماری ادارتی ٹیم جلد جواب دے گی۔"}
                 </p>
               </div>
 
@@ -141,12 +155,12 @@ export default function ContactPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-800 mb-1.5">
-                      آپ کا نام <span className="text-red-500">*</span>
+                      {t("fullName")} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="مثلاً: محمد علی"
+                      placeholder={isEnglish ? "e.g. John Doe / Muhammad Ali" : "مثلاً: محمد علی"}
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full text-xs sm:text-sm p-3 rounded-lg bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none shadow-xs"
@@ -155,7 +169,7 @@ export default function ContactPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-800 mb-1.5">
-                      ای میل ایڈریس <span className="text-red-500">*</span>
+                      {t("emailAddress")} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
@@ -173,7 +187,7 @@ export default function ContactPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-800 mb-1.5">
-                      فون / واٹس ایپ نمبر <span className="text-gray-400 font-normal">(اختیاری)</span>
+                      {t("phoneNumber")} <span className="text-gray-400 font-normal">({isEnglish ? "Optional" : "اختیاری"})</span>
                     </label>
                     <input
                       type="tel"
@@ -187,11 +201,11 @@ export default function ContactPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-800 mb-1.5">
-                      موضوع (Subject) <span className="text-gray-400 font-normal">(اختیاری)</span>
+                      {t("subject")} <span className="text-gray-400 font-normal">({isEnglish ? "Optional" : "اختیاری"})</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="خبر کی تصدیق، اشتہار یا عام استفسار..."
+                      placeholder={isEnglish ? "News tip, advertising query, general inquiry..." : "خبر کی تصدیق، اشتہار یا عام استفسار..."}
                       value={formData.subject}
                       onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                       className="w-full text-xs sm:text-sm p-3 rounded-lg bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none shadow-xs"
@@ -202,44 +216,44 @@ export default function ContactPage() {
                 {/* Row 3: Message Content */}
                 <div>
                   <label className="block text-xs font-bold text-gray-800 mb-1.5">
-                    تفصیلی پیغام <span className="text-red-500">*</span>
+                    {t("message")} <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     required
                     rows={6}
-                    placeholder="اپنا تفصیلی پیغام یا خبر تحریر کریں..."
+                    placeholder={isEnglish ? "Type your detailed message, inquiry or press release..." : "اپنا تفصیلی پیغام یا خبر تحریر کریں..."}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full text-xs sm:text-sm p-3.5 rounded-lg bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none urdu-body leading-relaxed shadow-xs"
+                    className={`w-full text-xs sm:text-sm p-3.5 rounded-lg bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none leading-relaxed shadow-xs ${isUrdu ? "urdu-body" : "font-sans"}`}
                   />
                 </div>
 
                 {/* Submit Button */}
-                <div className="pt-2 flex items-center justify-between">
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <span className="text-[11px] text-gray-500">
-                    نوٹ: ہم آپ کی ذاتی معلومات کو مکمل صیغہ راز میں رکھتے ہیں۔
+                    {isEnglish ? "Note: We keep your personal information completely private." : "نوٹ: ہم آپ کی ذاتی معلومات کو مکمل صیغہ راز میں رکھتے ہیں۔"}
                   </span>
                   <button
                     type="submit"
                     disabled={status === "submitting"}
-                    className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-xs disabled:opacity-50"
+                    className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
                   >
                     <Send size={15} />
-                    <span>{status === "submitting" ? "بھیجا جا رہا ہے..." : "پیغام بھیجیں"}</span>
+                    <span>{status === "submitting" ? t("sendingMessage") : t("sendMessage")}</span>
                   </button>
                 </div>
               </form>
             </div>
           </div>
 
-          {/* Sidebar: Details & Social Channels (4 Cols in RTL, left side) */}
+          {/* Sidebar: Details & Social Channels (4 Cols) */}
           <aside className="lg:col-span-4 space-y-6">
             
             {/* 1. Office & Contact Card */}
             <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
               <h3 className="font-bold text-base text-gray-900 pb-2 border-b border-[#dcd8cd] flex items-center gap-2">
                 <MapPin size={18} className="text-emerald-700" />
-                <span>دفتر اور رابطہ کی معلومات</span>
+                <span>{t("officeHeadquarters")}</span>
               </h3>
 
               <div className="space-y-3.5 text-xs sm:text-[13px] text-gray-700 font-sans">
@@ -247,8 +261,12 @@ export default function ContactPage() {
                 <div className="flex items-start gap-2.5">
                   <MapPin size={16} className="text-emerald-700 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="block text-gray-900 font-bold mb-0.5">مرکزی دفتر:</strong>
-                    <span className="urdu-body leading-relaxed">{contactInfo.address_ur}</span>
+                    <strong className="block text-gray-900 font-bold mb-0.5">
+                      {isEnglish ? "Main Bureau & Media House:" : "مرکزی دفتر:"}
+                    </strong>
+                    <span className={isUrdu ? "urdu-body leading-relaxed" : "leading-relaxed"}>
+                      {isEnglish ? (contactInfo.address_en || contactInfo.address_ur) : (contactInfo.address_ur || contactInfo.address_en)}
+                    </span>
                   </div>
                 </div>
 
@@ -256,7 +274,9 @@ export default function ContactPage() {
                 <div className="flex items-start gap-2.5">
                   <Phone size={16} className="text-emerald-700 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="block text-gray-900 font-bold mb-0.5">فون و واٹس ایپ:</strong>
+                    <strong className="block text-gray-900 font-bold mb-0.5">
+                      {isEnglish ? "Phone & WhatsApp:" : "فون و واٹس ایپ:"}
+                    </strong>
                     <a href={`tel:${contactInfo.phone}`} className="hover:text-emerald-700 font-mono" dir="ltr">
                       {contactInfo.phone}
                     </a>
@@ -267,7 +287,9 @@ export default function ContactPage() {
                 <div className="flex items-start gap-2.5">
                   <Mail size={16} className="text-emerald-700 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="block text-gray-900 font-bold mb-0.5">ادارتی ڈیسک (Editorial):</strong>
+                    <strong className="block text-gray-900 font-bold mb-0.5">
+                      {isEnglish ? "Editorial Desk:" : "ادارتی ڈیسک (Editorial):"}
+                    </strong>
                     <a href={`mailto:${contactInfo.editorial_email}`} className="hover:text-emerald-700 font-mono text-[12px]">
                       {contactInfo.editorial_email}
                     </a>
@@ -278,7 +300,9 @@ export default function ContactPage() {
                 <div className="flex items-start gap-2.5">
                   <Mail size={16} className="text-emerald-700 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="block text-gray-900 font-bold mb-0.5">اشتہارات و کمرشل (Advertising):</strong>
+                    <strong className="block text-gray-900 font-bold mb-0.5">
+                      {isEnglish ? "Advertising & Commercial:" : "اشتہارات و کمرشل (Advertising):"}
+                    </strong>
                     <a href={`mailto:${contactInfo.ads_email}`} className="hover:text-emerald-700 font-mono text-[12px]">
                       {contactInfo.ads_email}
                     </a>
@@ -286,12 +310,16 @@ export default function ContactPage() {
                 </div>
 
                 {/* Timings */}
-                {contactInfo.timing_ur && (
+                {(contactInfo.timing_ur || contactInfo.timing_en) && (
                   <div className="flex items-start gap-2.5 pt-2 border-t border-[#dcd8cd]">
                     <Clock size={16} className="text-gray-500 shrink-0 mt-0.5" />
                     <div>
-                      <strong className="block text-gray-900 font-bold mb-0.5">دفتری اوقات:</strong>
-                      <span className="text-gray-600 urdu-body">{contactInfo.timing_ur}</span>
+                      <strong className="block text-gray-900 font-bold mb-0.5">
+                        {t("officeHours")}:
+                      </strong>
+                      <span className="text-gray-600">
+                        {isEnglish ? (contactInfo.timing_en || contactInfo.timing_ur) : (contactInfo.timing_ur || contactInfo.timing_en)}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -302,7 +330,7 @@ export default function ContactPage() {
             <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-5 shadow-xs">
               <h3 className="font-bold text-base text-gray-900 pb-2 border-b border-[#dcd8cd] flex items-center gap-2 mb-3">
                 <Share2 size={18} className="text-emerald-700" />
-                <span>ہمیں فالو کریں</span>
+                <span>{t("followUs")}</span>
               </h3>
 
               <div className="flex flex-wrap items-center gap-2 pt-1">

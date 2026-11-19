@@ -4,8 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowUp, Mail, Lock } from "lucide-react";
 import AdSlot from "@/component/AdSlot";
+import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
 export default function Footer({ categories = [] }) {
+  const { isUrdu, isEnglish, dir, t } = useSiteLanguage();
   const [socialLinks, setSocialLinks] = useState({
     youtube: "https://youtube.com/@dailyafadiat",
     whatsapp: "https://whatsapp.com",
@@ -40,19 +42,19 @@ export default function Footer({ categories = [] }) {
   };
 
   const defaultCategories = [
-    { id: 1, name_ur: "پاکستان", slug: "pakistan" },
-    { id: 2, name_ur: "انٹرنیشنل", slug: "world" },
-    { id: 3, name_ur: "کھیل", slug: "sports" },
-    { id: 4, name_ur: "بزنس", slug: "business" },
-    { id: 5, name_ur: "سائنس و ٹیکنالوجی", slug: "tech" },
-    { id: 6, name_ur: "صحت", slug: "health" },
-    { id: 7, name_ur: "دلچسپ و عجیب", slug: "weird" },
+    { id: 1, name_ur: "پاکستان", name_en: "Pakistan", slug: "pakistan" },
+    { id: 2, name_ur: "انٹرنیشنل", name_en: "World", slug: "world" },
+    { id: 3, name_ur: "کھیل", name_en: "Sports", slug: "sports" },
+    { id: 4, name_ur: "بزنس", name_en: "Business", slug: "business" },
+    { id: 5, name_ur: "سائنس و ٹیکنالوجی", name_en: "Science & Tech", slug: "tech" },
+    { id: 6, name_ur: "صحت", name_en: "Health", slug: "health" },
+    { id: 7, name_ur: "دلچسپ و عجیب", name_en: "Odd & Curious", slug: "weird" },
   ];
 
   const activeCategories = categories.length > 0 ? categories : defaultCategories;
 
   return (
-    <footer className="w-full bg-[#07130c] border-t border-emerald-950/80 text-gray-300 mt-14 pt-8 pb-6 font-sans">
+    <footer className="w-full bg-[#07130c] border-t border-emerald-950/80 text-gray-300 mt-14 pt-8 pb-6 font-sans" dir={dir}>
       <div className="u-shell">
         
         {/* Footer Top Ad Slot (Controllable from CMS) */}
@@ -63,33 +65,32 @@ export default function Footer({ categories = [] }) {
         {/* ========================================================== */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 pb-6">
           
-          {/* Right side (RTL): Brand Logo & Tagline */}
+          {/* Brand Logo & Tagline */}
           <div className="flex flex-col items-start gap-2">
             <Link href="/" className="inline-block">
               <div className="relative h-14 w-52 sm:h-16 sm:w-60">
                 <Image
                   src="/logo.webp"
-                  alt="ڈیلی افادیت"
+                  alt="ڈیلی افادیت / Daily Afadiat"
                   fill
                   className="object-contain"
                 />
               </div>
             </Link>
-            <p className="text-gray-400 text-xs sm:text-[13px] font-medium font-nastaliq pr-1">
-              {tagline}
+            <p className={`text-gray-400 text-xs sm:text-[13px] font-medium pr-1 ${isUrdu ? "font-nastaliq" : "font-sans"}`}>
+              {isEnglish ? "TRUST • FACTS • GLOBAL NEWS — Dedicated to Truthful & Independent Journalism" : tagline}
             </p>
           </div>
 
-          {/* Left side (RTL): Real Vector Social Icons & Contact Button */}
-          <div className="flex flex-col gap-3 sm:items-end">
-            <div className="flex flex-col gap-2 sm:items-end">
+          {/* Social Icons & Contact Link */}
+          <div className={`flex flex-col gap-3 ${isUrdu ? "sm:items-end" : "sm:items-start"}`}>
+            <div className={`flex flex-col gap-2 ${isUrdu ? "sm:items-end" : "sm:items-start"}`}>
               <p className="text-gray-400 text-[11px] font-bold tracking-widest uppercase">
-                ہمیں فالو کریں
+                {t("followUs")}
               </p>
               
               {/* Authentic Vector SVG Icons matching Daily Insaaf */}
               <ul className="flex items-center gap-2">
-                
                 {/* 1. YouTube */}
                 <li>
                   <a
@@ -185,7 +186,6 @@ export default function Footer({ categories = [] }) {
                     </svg>
                   </a>
                 </li>
-
               </ul>
             </div>
 
@@ -195,7 +195,7 @@ export default function Footer({ categories = [] }) {
               className="hover:text-emerald-400 text-gray-400 inline-flex items-center gap-1.5 text-xs font-semibold transition-colors mt-0.5"
             >
               <Mail size={14} className="text-emerald-500" />
-              <span>ہم سے رابطہ کریں</span>
+              <span>{t("contact")}</span>
             </Link>
           </div>
 
@@ -204,49 +204,52 @@ export default function Footer({ categories = [] }) {
         {/* ========================================================== */}
         {/* TIER 2: CATEGORIES & SERVICES HORIZONTAL STRIP            */}
         {/* ========================================================== */}
-        <nav aria-label="تمام سیکشنز" className="border-t border-gray-900/90 pt-4 pb-4">
+        <nav aria-label="Sections" className="border-t border-gray-900/90 pt-4 pb-4">
           <ul className="text-gray-400 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs sm:text-[13px] font-medium">
             <li>
               <Link href="/" className="hover:text-emerald-400 font-bold transition-colors">
-                صفحۂ اول
+                {t("home")}
               </Link>
             </li>
             <li>
               <Link href="/latest" className="hover:text-emerald-400 transition-colors">
-                تازہ ترین
+                {t("latest")}
               </Link>
             </li>
-            {activeCategories.map((cat) => (
-              <li key={cat.id}>
-                <Link href={`/category/${cat.slug}`} className="hover:text-emerald-400 transition-colors">
-                  {cat.name_ur}
-                </Link>
-              </li>
-            ))}
+            {activeCategories.map((cat) => {
+              const displayName = isEnglish ? (cat.name_en || cat.name_ur) : (cat.name_ur || cat.name_en);
+              return (
+                <li key={cat.id}>
+                  <Link href={`/category/${cat.slug}`} className="hover:text-emerald-400 transition-colors">
+                    {displayName}
+                  </Link>
+                </li>
+              );
+            })}
             <li>
               <Link href="/live" className="text-red-400 hover:text-red-300 font-semibold transition-colors flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                <span>لائیو ٹی وی</span>
+                <span>{t("liveTv")}</span>
               </Link>
             </li>
             <li>
               <Link href="/epaper" className="hover:text-emerald-400 transition-colors">
-                ای پیپر
+                {t("epaper")}
               </Link>
             </li>
             <li>
               <Link href="/rates" className="hover:text-emerald-400 transition-colors">
-                مارکیٹ ریٹس
+                {t("marketRatesBadge")}
               </Link>
             </li>
             <li>
               <Link href="/advertise" className="hover:text-emerald-400 transition-colors">
-                اشتہار دیں
+                {t("advertise")}
               </Link>
             </li>
             <li>
               <Link href="/contact" className="hover:text-emerald-400 transition-colors">
-                رابطہ
+                {t("contact")}
               </Link>
             </li>
           </ul>
@@ -257,15 +260,15 @@ export default function Footer({ categories = [] }) {
         {/* ========================================================== */}
         <div className="border-t border-gray-900/90 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-500">
           <div className="flex items-center gap-2">
-            <span>© {new Date().getFullYear()} ڈیلی افادیت (Daily Afadiat)</span>
+            <span>© {new Date().getFullYear()} Daily Afadiat (ڈیلی افادیت)</span>
             <span aria-hidden="true" className="text-gray-700">|</span>
             <Link href="/contact" className="hover:text-emerald-400 transition-colors">
-              ہم سے رابطہ کریں
+              {t("contact")}
             </Link>
             <span aria-hidden="true" className="text-gray-700">|</span>
             <Link href="/admin" className="hover:text-emerald-400 transition-colors flex items-center gap-1 text-[11px] text-gray-500">
               <Lock size={11} />
-              <span>ایڈمن پینل</span>
+              <span>{t("admin")}</span>
             </Link>
           </div>
 
@@ -275,7 +278,7 @@ export default function Footer({ categories = [] }) {
               className="hover:text-emerald-400 inline-flex items-center gap-1.5 text-xs text-gray-400 transition-colors cursor-pointer"
             >
               <ArrowUp size={13} className="text-emerald-500" />
-              <span>اوپر جائیں</span>
+              <span>{t("backToTop")}</span>
             </button>
           </div>
         </div>

@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { MessageSquare, Send, CheckCircle2, User, Clock } from "lucide-react";
+import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
 export default function CommentSection({ articleId }) {
+  const { isUrdu, isEnglish, dir, t } = useSiteLanguage();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [authorName, setAuthorName] = useState("");
@@ -55,32 +57,43 @@ export default function CommentSection({ articleId }) {
       if (res.ok) {
         setNotification({
           type: "success",
-          text: data.message || "آپ کا تبصرہ موصول ہو گیا ہے اور ادارتی تصدیق کے بعد لائیو ہو جائے گا۔",
+          text: data.message || t("commentPendingNotice"),
         });
         setContent("");
       } else {
-        setNotification({ type: "error", text: data.error || "تبصرہ بھیجنے میں خرابی ہوئی" });
+        setNotification({
+          type: "error",
+          text: data.error || (isEnglish ? "Error submitting comment" : "تبصرہ بھیجنے میں خرابی ہوئی"),
+        });
       }
     } catch (err) {
-      setNotification({ type: "error", text: "نیٹ ورک خرابی، براہ کرم دوبارہ کوشش کریں" });
+      setNotification({
+        type: "error",
+        text: isEnglish ? "Network error, please try again." : "نیٹ ورک خرابی، براہ کرم دوبارہ کوشش کریں",
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <section className="mt-10 pt-6 border-t border-[#dcd8cd] font-sans">
+    <section className="mt-10 pt-6 border-t border-[#dcd8cd] font-sans" dir={dir}>
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold urdu-headline text-gray-900 flex items-center gap-2">
+        <h3 className={`text-xl font-bold text-gray-900 flex items-center gap-2 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
           <MessageSquare size={20} className="text-emerald-700" />
-          <span>قارئین کے تبصرے ({comments.length})</span>
+          <span>{t("commentsTitle")} ({comments.length})</span>
         </h3>
-        <span className="text-xs text-gray-500 font-sans">ایڈمن تصدیق شدہ</span>
+        <span className="text-xs text-emerald-800 font-sans font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+          {isEnglish ? "Verified Comments" : "ایڈمن تصدیق شدہ"}
+        </span>
       </div>
 
       {/* 1. Comment Submission Form */}
       <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-lg p-5 mb-8 shadow-xs">
-        <h4 className="text-sm font-bold text-gray-800 mb-3">اپنی رائے کا اظہار کریں</h4>
+        <h4 className="text-sm font-bold text-gray-800 mb-1">
+          {isEnglish ? "Leave Your Comment or Perspective" : "اپنی رائے کا اظہار کریں"}
+        </h4>
+        <p className="text-xs text-gray-500 mb-3">{t("commentsSubtitle")}</p>
         
         {notification && (
           <div
@@ -99,26 +112,26 @@ export default function CommentSection({ articleId }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                آپ کا نام <span className="text-red-500">*</span>
+                {t("nameLabel")} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
-                placeholder="مثلاً: محمد احمد"
+                placeholder={t("namePlaceholder")}
                 className="w-full text-xs p-2.5 rounded bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                ای میل ایڈریس (خفیہ رہے گا)
+                {t("emailLabel")}
               </label>
               <input
                 type="email"
                 value={authorEmail}
                 onChange={(e) => setAuthorEmail(e.target.value)}
-                placeholder="name@example.com"
+                placeholder={t("emailPlaceholder")}
                 className="w-full text-xs p-2.5 rounded bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none"
               />
             </div>
@@ -126,29 +139,29 @@ export default function CommentSection({ articleId }) {
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">
-              آپ کا تبصرہ <span className="text-red-500">*</span>
+              {t("commentLabel")} <span className="text-red-500">*</span>
             </label>
             <textarea
               required
               rows={3}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="شائستہ اور موضوع سے متعلق اپنی رائے تحریر کریں..."
+              placeholder={t("commentPlaceholder")}
               className="w-full text-xs p-2.5 rounded bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none leading-relaxed"
             />
           </div>
 
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
             <span className="text-[11px] text-gray-500">
-              نوٹ: تمام تبصرے ادارتی پالیسی کے تحت تصدیق کے بعد لائیو ہوتے ہیں۔
+              {isEnglish ? "Note: All comments undergo editorial moderation before going live." : "نوٹ: تمام تبصرے ادارتی پالیسی کے تحت تصدیق کے بعد لائیو ہوتے ہیں۔"}
             </span>
             <button
               type="submit"
               disabled={submitting}
-              className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded flex items-center gap-1.5 transition disabled:opacity-50"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded flex items-center justify-center gap-1.5 transition disabled:opacity-50 cursor-pointer shadow-xs"
             >
               <Send size={13} />
-              <span>{submitting ? "بھیجا جا رہا ہے..." : "تبصرہ بھیجیں"}</span>
+              <span>{submitting ? t("commentSubmitting") : t("submitComment")}</span>
             </button>
           </div>
         </form>
@@ -157,10 +170,12 @@ export default function CommentSection({ articleId }) {
       {/* 2. List of Approved Comments */}
       <div className="space-y-3">
         {loading ? (
-          <p className="text-xs text-gray-500 text-center py-4">تبصرے لوڈ ہو رہے ہیں...</p>
+          <p className="text-xs text-gray-500 text-center py-4">
+            {isEnglish ? "Loading comments..." : "تبصرے لوڈ ہو رہے ہیں..."}
+          </p>
         ) : comments.length === 0 ? (
           <div className="text-center py-8 bg-[#efeee9]/40 border border-dashed border-[#dcd8cd] rounded-lg">
-            <p className="text-xs text-gray-500">ابھی تک اس خبر پر کوئی تبصرہ نہیں آیا۔ پہلے تبصرہ نگار بنیں!</p>
+            <p className="text-xs text-gray-500">{t("noCommentsYet")}</p>
           </div>
         ) : (
           comments.map((c) => (
@@ -170,17 +185,17 @@ export default function CommentSection({ articleId }) {
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="size-7 rounded-full bg-emerald-800 text-white grid place-items-center text-xs font-bold">
-                    {c.author_name.charAt(0)}
+                  <div className="size-7 rounded-full bg-emerald-800 text-white grid place-items-center text-xs font-bold font-sans">
+                    {c.author_name.charAt(0).toUpperCase()}
                   </div>
                   <span className="text-sm font-bold text-gray-900">{c.author_name}</span>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-gray-500 font-sans">
                   <Clock size={11} />
-                  <span>{new Date(c.created_at).toLocaleDateString("ur-PK")}</span>
+                  <span>{new Date(c.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US")}</span>
                 </div>
               </div>
-              <p className="text-xs sm:text-[13px] text-gray-800 urdu-body leading-relaxed pr-9">
+              <p className={`text-xs sm:text-[13px] text-gray-800 leading-relaxed ${isUrdu ? "urdu-body pr-9" : "font-sans pl-9"}`}>
                 {c.content}
               </p>
             </div>

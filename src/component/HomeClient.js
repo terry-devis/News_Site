@@ -7,10 +7,7 @@ import {
   TrendingUp,
   ArrowRight,
   Play,
-  Youtube,
-  Facebook,
-  Instagram,
-  Twitter,
+  Share2,
   MessageCircle,
 } from "lucide-react";
 import Header from "@/component/Header";
@@ -828,7 +825,7 @@ export default function HomeClient({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
                 >
-                  <Facebook size={13} />
+                  <Share2 size={13} />
                   <span>Facebook</span>
                 </a>
                 <a
@@ -837,7 +834,7 @@ export default function HomeClient({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
                 >
-                  <Youtube size={13} />
+                  <Play size={13} />
                   <span>YouTube</span>
                 </a>
                 <a
@@ -846,7 +843,7 @@ export default function HomeClient({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
                 >
-                  <Twitter size={13} />
+                  <Share2 size={13} />
                   <span>X</span>
                 </a>
                 <a
@@ -855,7 +852,7 @@ export default function HomeClient({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
                 >
-                  <Instagram size={13} />
+                  <Share2 size={13} />
                   <span>Instagram</span>
                 </a>
                 <a

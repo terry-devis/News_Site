@@ -2542,3 +2542,192 @@ export async function fetchLiveServiceData(serviceType) {
   writeLocalStore(local);
   return local.widgets;
 }
+
+// ==========================================
+// 11. NEWSROOM USERS & ROLES API
+// ==========================================
+const DEFAULT_NEWSROOM_USERS = [
+  {
+    id: "usr_admin",
+    email: "admin@dailyinsaf.pk",
+    starting_password: "••••••••••••",
+    full_name_ur: "ایڈمن",
+    full_name_en: "System Administrator",
+    byline_name: "ادارتی بورڈ",
+    designation_ur: "چیف سسٹم ایڈمنسٹریٹر",
+    designation_en: "Chief System Administrator",
+    bio_ur: "ڈیلی افادات کا مرکزی ادارتی اور تکنیکی نظام۔ تمام خبروں، ایڈیشنز اور ڈیسک کی نگرانی۔",
+    bio_en: "Central editorial and technical administration. Oversees all newsroom operations, desk workflows and editions.",
+    roles: ["Super Admin"],
+    desk_scope: [],
+    is_public_author: false,
+    status: "Active",
+    last_active: "12 hours ago",
+    created_at: "2026-08-01T10:00:00Z",
+  },
+  {
+    id: "usr_reporter_1",
+    email: "reporter@dailyinsaf.pk",
+    starting_password: "••••••••••••",
+    full_name_ur: "ٹیسٹ رپورٹر",
+    full_name_en: "Staff Reporter",
+    byline_name: "اسٹاف رپورٹر",
+    designation_ur: "سینئر رپورٹر",
+    designation_en: "Senior Reporter",
+    bio_ur: "قومی اور بین الاقوامی امور، پارلیمانی کارروائی اور قانونی رپورٹنگ میں دس سالہ تجربہ۔",
+    bio_en: "Over a decade of experience covering national, parliamentary and international affairs.",
+    roles: ["Reporter"],
+    desk_scope: ["Pakistan", "World"],
+    is_public_author: true,
+    status: "Active",
+    last_active: "13 Aug 2026",
+    created_at: "2026-08-10T12:00:00Z",
+  },
+  {
+    id: "usr_columnist_1",
+    email: "bilal@dailyinsaf.pk",
+    starting_password: "••••••••••••",
+    full_name_ur: "بلال حسین",
+    full_name_en: "Bilal Hussain",
+    byline_name: "بلال حسین",
+    designation_ur: "معروف کالم نگار",
+    designation_en: "Senior Columnist",
+    bio_ur: "سیاسی تجزیہ کار اور مصنف۔ ملکی معیشت، خارجہ پالیسی اور سماجی رجحانات پر باقاعدہ کالم نگاری۔",
+    bio_en: "Political analyst and author. Regular columns on national economics, foreign policy, and social trends.",
+    roles: ["Columnist"],
+    desk_scope: ["Opinion", "Blogs"],
+    is_public_author: true,
+    status: "Active",
+    last_active: "31 Aug 2026",
+    created_at: "2026-08-15T09:00:00Z",
+  },
+  {
+    id: "usr_subeditor_1",
+    email: "ayesha@dailyinsaf.pk",
+    starting_password: "••••••••••••",
+    full_name_ur: "عائشہ نور",
+    full_name_en: "Ayesha Noor",
+    byline_name: "عائشہ نور",
+    designation_ur: "سب ایڈیٹر",
+    designation_en: "Sub-Editor",
+    bio_ur: "ڈیجیٹل نیوز ڈیسک، کاپی ایڈیٹنگ اور اردو مضامین کی لسانی تدوین۔",
+    bio_en: "Digital news desk curation, copy-editing and Urdu linguistic proofing.",
+    roles: ["Sub-Editor"],
+    desk_scope: [],
+    is_public_author: true,
+    status: "Active",
+    last_active: "never signed in",
+    created_at: "2026-09-01T14:00:00Z",
+  },
+  {
+    id: "usr_columnist_2",
+    email: "zain@yopmail.com",
+    starting_password: "••••••••••••",
+    full_name_ur: "زین عباس",
+    full_name_en: "Zain Abbas",
+    byline_name: "زین عباس",
+    designation_ur: "کالم نگار و فیچر رائٹر",
+    designation_en: "Columnist & Feature Writer",
+    bio_ur: "ماحولیات، انسانی حقوق اور ماحولیاتی تبدیلی پر خصوصی مضامین۔",
+    bio_en: "Special features on ecology, human rights, and climate justice.",
+    roles: ["Columnist"],
+    desk_scope: ["Opinion", "Special Reports"],
+    is_public_author: true,
+    status: "Active",
+    last_active: "never signed in",
+    created_at: "2026-09-05T11:00:00Z",
+  },
+  {
+    id: "usr_reporter_2",
+    email: "fsdfsa@yopmail.com",
+    starting_password: "••••••••••••",
+    full_name_ur: "22wr242",
+    full_name_en: "Desk Reporter",
+    byline_name: "Desk Reporter",
+    designation_ur: "رپورٹر",
+    designation_en: "Reporter",
+    bio_ur: "",
+    bio_en: "",
+    roles: ["Reporter"],
+    desk_scope: ["Sports"],
+    is_public_author: false,
+    status: "Disabled",
+    last_active: "never signed in",
+    created_at: "2026-09-12T16:00:00Z",
+  },
+];
+
+export async function getNewsroomUsers() {
+  const local = ensureLocalStore();
+  if (!local.newsroom_users) {
+    local.newsroom_users = DEFAULT_NEWSROOM_USERS;
+    writeLocalStore(local);
+  }
+  return local.newsroom_users;
+}
+
+export async function createNewsroomUser(userData) {
+  const local = ensureLocalStore();
+  const users = await getNewsroomUsers();
+  const newUser = {
+    ...userData,
+    id: userData.id || `usr_${Date.now()}`,
+    status: userData.status || "Active",
+    last_active: "never signed in",
+    created_at: new Date().toISOString(),
+  };
+  users.unshift(newUser);
+  local.newsroom_users = users;
+  writeLocalStore(local);
+  return newUser;
+}
+
+export async function updateNewsroomUser(idOrEmail, updates) {
+  const local = ensureLocalStore();
+  const users = await getNewsroomUsers();
+  const idx = users.findIndex(
+    (u) => String(u.id) === String(idOrEmail) || String(u.email).toLowerCase() === String(idOrEmail).toLowerCase()
+  );
+  if (idx >= 0) {
+    users[idx] = {
+      ...users[idx],
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    local.newsroom_users = users;
+    writeLocalStore(local);
+    return users[idx];
+  }
+  return null;
+}
+
+export async function resetNewsroomUserPassword(idOrEmail, newPassword) {
+  const local = ensureLocalStore();
+  const users = await getNewsroomUsers();
+  const idx = users.findIndex(
+    (u) => String(u.id) === String(idOrEmail) || String(u.email).toLowerCase() === String(idOrEmail).toLowerCase()
+  );
+  if (idx >= 0) {
+    users[idx] = {
+      ...users[idx],
+      starting_password: newPassword,
+      last_active: "Password reset · signed out",
+      updated_at: new Date().toISOString(),
+    };
+    local.newsroom_users = users;
+    writeLocalStore(local);
+    return { success: true, email: users[idx].email };
+  }
+  return null;
+}
+
+export async function deleteNewsroomUser(idOrEmail) {
+  const local = ensureLocalStore();
+  let users = await getNewsroomUsers();
+  users = users.filter(
+    (u) => String(u.id) !== String(idOrEmail) && String(u.email).toLowerCase() !== String(idOrEmail).toLowerCase()
+  );
+  local.newsroom_users = users;
+  writeLocalStore(local);
+  return { success: true };
+}

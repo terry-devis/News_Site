@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ export async function GET(req) {
       return NextResponse.json({ articles: [] });
     }
 
-    const { data: cat } = await supabase
+    const { data: cat } = await supabaseAdmin
       .from("categories")
       .select("id, slug, name_ur, name_en")
       .eq("slug", slug)
@@ -23,7 +23,7 @@ export async function GET(req) {
       return NextResponse.json({ articles: [] });
     }
 
-    const { data: articles, error } = await supabase
+    const { data: articles, error } = await supabaseAdmin
       .from("articles")
       .select("id, title_ur, title_en, slug, featured_image, created_at")
       .eq("category_id", cat.id)

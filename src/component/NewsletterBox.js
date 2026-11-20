@@ -37,6 +37,41 @@ export default function NewsletterBox({ variant = "ribbon", className = "" }) {
     }
   };
 
+  // 0. INLINE DARK-BAR VARIANT (for Homepage Dark Strip)
+  if (variant === "inline") {
+    return (
+      <div className={`w-full font-sans ${className}`} dir={dir}>
+        {status === "success" ? (
+          <div className="px-3 py-2 bg-emerald-900/70 text-emerald-100 text-xs border border-emerald-500/40 flex items-center gap-2 font-medium">
+            <CheckCircle2 size={14} className="shrink-0 text-emerald-300" />
+            <span>{message}</span>
+          </div>
+        ) : (
+          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <input
+              type="email"
+              required
+              placeholder={t("newsletterPlaceholder")}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex-1 min-w-0 text-xs px-3 py-2 bg-white text-gray-900 border border-white/20 focus:border-emerald-400 outline-none"
+            />
+            <button
+              type="submit"
+              disabled={status === "loading"}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 transition disabled:opacity-50 cursor-pointer shrink-0"
+            >
+              {status === "loading" ? t("subscribing") : t("subscribeBtn")}
+            </button>
+          </form>
+        )}
+        {status === "error" && (
+          <p className="text-[11px] text-red-300 mt-1">{message}</p>
+        )}
+      </div>
+    );
+  }
+
   // 1. SIDEBAR / COMPACT VARIANT
   if (variant === "compact" || variant === "sidebar") {
     return (

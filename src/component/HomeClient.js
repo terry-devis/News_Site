@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -7,9 +7,45 @@ import {
   TrendingUp,
   ArrowRight,
   Play,
-  Share2,
-  MessageCircle,
 } from "lucide-react";
+
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const m = String(url).match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  );
+  return m ? m[1] : null;
+}
+
+const BrandIcons = {
+  facebook: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M13.5 22v-8h2.7l.4-3h-3.1V9.1c0-.9.3-1.5 1.6-1.5h1.6V4.9c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1V11H7.7v3h2.6v8h3.2z" />
+    </svg>
+  ),
+  youtube: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z" />
+    </svg>
+  ),
+  x: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M18.9 2H22l-6.8 7.8L23 22h-6.1l-4.8-6.3L6.6 22H3.5l7.3-8.3L1 2h6.2l4.3 5.7L18.9 2zm-1.1 18h1.7L6.3 3.9H4.5L17.8 20z" />
+    </svg>
+  ),
+  instagram: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  ),
+  whatsapp: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.81 14.12c-.24.68-1.42 1.3-1.97 1.38-.51.07-1.15.1-1.85-.12-.43-.14-.98-.32-1.69-.63-2.97-1.28-4.91-4.29-5.06-4.49-.15-.2-1.21-1.61-1.21-3.07 0-1.46.76-2.18 1.03-2.48.27-.3.59-.38.79-.38.2 0 .4 0 .57.01.18.01.43-.07.67.51.24.59.83 2.04.9 2.19.07.15.12.33.02.53-.1.2-.15.33-.3.5-.15.17-.31.38-.44.51-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.02 1.12.99 2.06 1.3 2.36 1.45.3.15.47.13.65-.07.18-.2.74-.86.94-1.16.2-.3.4-.25.67-.15.27.1 1.73.82 2.03.97.3.15.5.22.57.34.07.12.07.69-.17 1.37z" />
+    </svg>
+  ),
+};
 import Header from "@/component/Header";
 import Footer from "@/component/Footer";
 import AdSlot from "@/component/AdSlot";
@@ -264,6 +300,10 @@ export default function HomeClient({
 
   const mainVideo = videos[0] || null;
   const sideVideos = videos.slice(1, 5);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [isPlayingVideo, setIsPlayingVideo] = useState(false);
+  const activeVideo = selectedVideo || mainVideo;
+  const activeYtId = extractYouTubeId(activeVideo?.video_url);
 
   return (
     <div className="min-h-screen text-gray-900 bg-[#f7f6f3]" dir={dir}>
@@ -647,68 +687,121 @@ export default function HomeClient({
             {/* IN-FEED AD #3 */}
             <AdSlot slotKey="home-infeed-3" className="my-2" />
 
-            {/* 8. VIDEOS (ویڈیوز) */}
-            <section className="u-block overflow-hidden" aria-label={isUrdu ? "ویڈیوز" : "Videos"}>
-              <SectionHeader titleUr="ویڈیوز" titleEn="Videos" href="/video" />
+            {/* 8. VIDEOS (ویڈیوز) — Dark Broadsheet Showcase + Interactive YouTube Embed */}
+            <section
+              className="bg-[#0a2618] text-white p-4 sm:p-5 overflow-hidden border border-[#15452b] shadow-sm"
+              aria-label={isUrdu ? "ویڈیوز" : "Videos"}
+            >
+              <div className="mb-4 flex items-end gap-3 border-b border-white/15 pb-2">
+                <Link href="/video" className="transition-colors hover:text-[#57d98a]">
+                  <h2 className={`text-lg sm:text-xl leading-tight font-bold ${isUrdu ? "urdu-headline" : "font-sans"}`}>
+                    {isUrdu ? "ویڈیوز" : "Videos"}
+                  </h2>
+                </Link>
+                <span className="flex-1" />
+                <Link
+                  href="/video"
+                  className="text-xs font-semibold tracking-wide text-white/75 uppercase transition-colors hover:text-[#57d98a] font-sans"
+                >
+                  {t("viewMore")}
+                </Link>
+              </div>
+
               <div className="grid gap-5 lg:grid-cols-12">
                 <div className="lg:col-span-8">
-                  {mainVideo ? (
-                    <Link href="/video" className="group block border border-[#dcd8cd] bg-[#0a2618] text-white overflow-hidden">
-                      <div className="relative aspect-video bg-black/50">
-                        {mainVideo.thumbnail_url ? (
-                          <img
-                            src={mainVideo.thumbnail_url}
-                            alt={isUrdu ? mainVideo.title_ur : mainVideo.title_en || mainVideo.title_ur}
-                            className="w-full h-full object-cover opacity-85 group-hover:scale-102 transition duration-500"
+                  {activeVideo ? (
+                    <div>
+                      <div className="relative aspect-video w-full overflow-hidden bg-black border border-white/10">
+                        {isPlayingVideo && activeYtId ? (
+                          <iframe
+                            src={`https://www.youtube.com/embed/${activeYtId}?autoplay=1&rel=0`}
+                            title={isUrdu ? activeVideo.title_ur : activeVideo.title_en || activeVideo.title_ur}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="w-full h-full border-0"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-[#0a2618]" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (activeYtId) {
+                                setIsPlayingVideo(true);
+                              } else if (activeVideo.video_url) {
+                                window.open(activeVideo.video_url, "_blank", "noopener,noreferrer");
+                              }
+                            }}
+                            className="group relative block w-full h-full cursor-pointer text-left"
+                          >
+                            <img
+                              src={
+                                activeVideo.thumbnail_url ||
+                                activeVideo.cover_image ||
+                                (activeYtId ? `https://img.youtube.com/vi/${activeYtId}/hqdefault.jpg` : "/logo.webp")
+                              }
+                              alt={isUrdu ? activeVideo.title_ur : activeVideo.title_en || activeVideo.title_ur}
+                              className="h-full w-full object-cover opacity-90 group-hover:opacity-100 transition"
+                            />
+                            <span className="absolute inset-0 grid place-items-center bg-black/25 transition-colors group-hover:bg-black/10">
+                              <span className="grid size-16 place-items-center rounded-full bg-[#e01e26]/90 text-white shadow-xl group-hover:scale-105 transition">
+                                <Play size={26} className="fill-white ms-0.5" />
+                              </span>
+                            </span>
+                          </button>
                         )}
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <span className="size-14 rounded-full bg-emerald-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition">
-                            <Play size={24} className="fill-white ms-0.5" />
-                          </span>
-                        </span>
                       </div>
-                      <div className="p-3.5">
-                        <h3 className={`text-base font-bold leading-snug ${isUrdu ? "urdu-headline" : "font-sans"}`}>
-                          {isUrdu ? mainVideo.title_ur : mainVideo.title_en || mainVideo.title_ur}
-                        </h3>
-                      </div>
-                    </Link>
+                      <h3
+                        className={`mt-3 text-lg sm:text-xl font-bold leading-snug line-clamp-2 hover:text-[#57d98a] transition ${
+                          isUrdu ? "urdu-headline" : "font-sans"
+                        }`}
+                      >
+                        {isUrdu ? activeVideo.title_ur : activeVideo.title_en || activeVideo.title_ur}
+                      </h3>
+                    </div>
                   ) : (
-                    <div className="border border-[#dcd8cd] bg-[#efeee9] p-8 text-center text-xs text-gray-500">
-                      {isUrdu ? "ویڈیوز دیکھنے کے لیے ویڈیو سیکشن ملاحظہ کریں" : "Visit Videos section"}
+                    <div className="aspect-video border border-white/15 bg-black/30 flex items-center justify-center text-xs text-white/60">
+                      {isUrdu ? "ویڈیوز شامل کرنے کے لیے ایڈمن ویڈیو سیکشن استعمال کریں" : "Add videos in Admin → Videos"}
                     </div>
                   )}
                 </div>
 
-                <div className="lg:col-span-4 divide-y divide-[#dcd8cd] border border-[#dcd8cd] bg-[#efeee9]/60 p-3">
-                  {sideVideos.length > 0 ? (
-                    sideVideos.map((v) => (
-                      <Link key={v.id} href="/video" className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0 group">
-                        <div className="relative w-20 h-14 shrink-0 bg-black/80 overflow-hidden border border-[#dcd8cd]">
-                          {v.thumbnail_url && (
-                            <img
-                              src={v.thumbnail_url}
-                              alt={v.title_ur}
-                              className="w-full h-full object-cover opacity-85"
-                            />
-                          )}
-                          <span className="absolute inset-0 flex items-center justify-center">
-                            <Play size={14} className="text-white fill-white" />
-                          </span>
-                        </div>
-                        <span className={`text-xs font-bold text-gray-800 group-hover:text-emerald-700 line-clamp-2 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
-                          {isUrdu ? v.title_ur : v.title_en || v.title_ur}
-                        </span>
-                      </Link>
-                    ))
-                  ) : (
-                    <Link href="/video" className="text-xs font-bold text-emerald-800 hover:underline block py-4 text-center">
-                      {isUrdu ? "تمام ویڈیوز دیکھیں ←" : "Watch all videos →"}
-                    </Link>
-                  )}
+                <div className="lg:col-span-4">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 lg:max-h-[22rem] lg:overflow-y-auto lg:pe-1">
+                    {(videos.length > 1 ? videos.slice(0, 6) : sideVideos).map((v) => {
+                      const ytId = extractYouTubeId(v.video_url);
+                      const thumb =
+                        v.thumbnail_url ||
+                        v.cover_image ||
+                        (ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : "/logo.webp");
+                      const isCurrent = activeVideo?.id === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedVideo(v);
+                            setIsPlayingVideo(Boolean(ytId));
+                          }}
+                          className={`group flex items-start gap-3 text-start cursor-pointer p-1.5 rounded transition ${
+                            isCurrent ? "bg-white/10" : "hover:bg-white/5"
+                          }`}
+                        >
+                          <div className="relative aspect-video w-[7.5rem] shrink-0 overflow-hidden bg-black/60 border border-white/10">
+                            <img src={thumb} alt={v.title_ur} className="h-full w-full object-cover" loading="lazy" />
+                            <span className="absolute bottom-1 end-1 grid size-5 place-items-center rounded-full bg-black/75 text-white">
+                              <Play size={10} className="fill-white" />
+                            </span>
+                          </div>
+                          <h4
+                            className={`flex-1 text-sm font-bold leading-snug line-clamp-3 transition-colors group-hover:text-[#57d98a] ${
+                              isUrdu ? "urdu-headline" : "font-sans"
+                            }`}
+                          >
+                            {isUrdu ? v.title_ur : v.title_en || v.title_ur}
+                          </h4>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </section>
@@ -742,8 +835,8 @@ export default function HomeClient({
             )}
           </div>
 
-          {/* RIGHT / END SIDEBAR (4 Cols) */}
-          <aside className="lg:col-span-4 space-y-5 self-start">
+          {/* RIGHT / END SIDEBAR (4 Cols — full height so sticky ad works!) */}
+          <aside className="lg:col-span-4 space-y-5">
             {/* 1. تازہ ترین خبریں (Latest News) */}
             <section className="border border-[#dcd8cd] bg-white flex flex-col overflow-hidden shadow-xs">
               <header className="border-b border-[#dcd8cd] px-4 py-2.5 bg-[#efeee9] flex items-center justify-between">
@@ -825,7 +918,7 @@ export default function HomeClient({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
                 >
-                  <Share2 size={13} />
+                  {BrandIcons.facebook}
                   <span>Facebook</span>
                 </a>
                 <a
@@ -834,7 +927,7 @@ export default function HomeClient({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
                 >
-                  <Play size={13} />
+                  {BrandIcons.youtube}
                   <span>YouTube</span>
                 </a>
                 <a
@@ -843,7 +936,7 @@ export default function HomeClient({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
                 >
-                  <Share2 size={13} />
+                  {BrandIcons.x}
                   <span>X</span>
                 </a>
                 <a
@@ -852,7 +945,7 @@ export default function HomeClient({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
                 >
-                  <Share2 size={13} />
+                  {BrandIcons.instagram}
                   <span>Instagram</span>
                 </a>
                 <a
@@ -861,7 +954,7 @@ export default function HomeClient({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
                 >
-                  <MessageCircle size={13} />
+                  {BrandIcons.whatsapp}
                   <span>WhatsApp</span>
                 </a>
               </div>
@@ -881,8 +974,8 @@ export default function HomeClient({
             </h3>
             <p className="text-gray-300 text-xs">{t("newsletterSub")}</p>
           </div>
-          <div className="w-full sm:w-auto sm:min-w-[320px]">
-            <NewsletterBox />
+          <div className="w-full sm:w-auto sm:min-w-[340px]">
+            <NewsletterBox variant="inline" />
           </div>
         </section>
       </main>

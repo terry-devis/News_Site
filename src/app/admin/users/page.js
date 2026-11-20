@@ -1,22 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {
-  Users,
-  Plus,
-  Edit2,
-  KeyRound,
-  ShieldCheck,
-  Check,
-  X,
-  AlertTriangle,
-  ExternalLink,
-  ChevronRight,
-  UserCheck,
-  UserX,
-  Shield,
-  Layers,
-  Lock,
-} from "lucide-react";
+import { Pencil, X, AlertTriangle, Check } from "lucide-react";
 
 const SYSTEM_ROLES = [
   {
@@ -137,7 +121,6 @@ export default function UsersAdminPage() {
     loadUsers();
   }, []);
 
-  // Compute user count per role
   const getUserCountForRole = (roleKey) => {
     return users.filter((u) => u.roles && u.roles.includes(roleKey)).length;
   };
@@ -278,173 +261,154 @@ export default function UsersAdminPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#e5e2da] pb-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Users className="text-emerald-800" size={24} />
-            <span>Users & roles</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+      {/* Header with emerald accent bar */}
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-[#e5e2da] pb-4">
+        <div className="border-l-4 border-emerald-800 pl-3">
+          <h1 className="text-lg font-bold tracking-tight text-gray-900">Users & roles</h1>
+          <p className="mt-0.5 text-[0.8125rem] text-gray-500">
             A role is just a set of permissions — adding one needs no code change
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setNewUserModalOpen(true)}
-            className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-4 py-2 rounded flex items-center gap-1.5 shadow-2xs transition-colors"
-          >
-            <Plus size={15} />
-            <span>+ New user</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setNewUserModalOpen(true)}
+          className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition bg-emerald-800 text-white shadow-2xs hover:bg-emerald-900"
+        >
+          + New user
+        </button>
       </div>
 
-      {/* Two-Column Dashboard Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Newsroom Users (7 cols) */}
-        <div className="lg:col-span-7 bg-white border border-[#e5e2da] shadow-2xs overflow-hidden">
-          <div className="p-4 border-b border-[#e5e2da] bg-[#faf9f6]">
-            <h2 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
-              Newsroom Users
+      {/* Equal 2-Column Split Layout */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
+        {/* Left Column: Newsroom Users */}
+        <section className="rounded-lg border border-[#e5e2da] bg-white shadow-2xs overflow-hidden">
+          <header className="flex items-center justify-between gap-4 border-b border-[#e5e2da] px-4 py-2.5 bg-[#faf9f6]">
+            <h2 className="text-[0.6875rem] font-bold tracking-wide text-gray-500 uppercase">
+              Newsroom users
             </h2>
-          </div>
+          </header>
 
-          <div className="divide-y divide-[#e5e2da]">
+          <ul className="divide-y divide-[#e5e2da]">
             {loading ? (
-              <div className="p-8 text-center text-xs text-gray-400">Loading users...</div>
+              <li className="p-8 text-center text-xs text-gray-400">Loading users...</li>
             ) : users.length === 0 ? (
-              <div className="p-8 text-center text-xs text-gray-400">No users found.</div>
+              <li className="p-8 text-center text-xs text-gray-400">No users found.</li>
             ) : (
               users.map((user) => {
-                const initial = (user.full_name_en || user.email || "U")
-                  .trim()
-                  .charAt(0)
-                  .toUpperCase();
+                const initial = (user.email || "u").trim().charAt(0).toLowerCase();
                 const primaryRole = user.roles?.[0] || "";
                 const isActive = user.status === "Active";
 
                 return (
-                  <div
+                  <li
                     key={user.id || user.email}
-                    className="p-4 hover:bg-[#f9f8f5] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-[#f9f8f5] transition-colors"
                   >
-                    <div className="flex items-start gap-3.5">
-                      {/* Avatar */}
-                      <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold flex items-center justify-center text-sm shrink-0 mt-0.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* 36x36 circular avatar taking email initial */}
+                      <div className="size-9 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-bold flex items-center justify-center shrink-0 uppercase">
                         {initial}
                       </div>
 
-                      {/* User Info */}
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-bold text-gray-900 text-xs sm:text-sm font-mono">
-                            {user.email}
-                          </span>
+                      <div className="min-w-0 space-y-0.5">
+                        <p className="truncate text-sm font-medium text-gray-900 font-mono">
+                          {user.email}
+                        </p>
+                        <p className="auto-dir truncate text-xs text-gray-500 font-nastaliq">
+                          {user.full_name_ur || user.full_name_en}
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-1">
                           {primaryRole && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded border border-blue-200 bg-blue-50/70 text-blue-700">
+                            <span className="inline-flex items-center rounded-sm px-1.5 py-0.5 text-[0.6875rem] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
                               {primaryRole}
                             </span>
                           )}
                           <span
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                            className={`inline-flex items-center rounded-sm px-1.5 py-0.5 text-[0.6875rem] font-semibold border ${
                               isActive
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                 : "bg-gray-100 text-gray-500 border-gray-200"
                             }`}
                           >
                             {user.status || "Active"}
                           </span>
                         </div>
-
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                          {user.full_name_ur && (
-                            <span className="font-nastaliq font-bold text-gray-900">
-                              {user.full_name_ur}
-                            </span>
-                          )}
-                          {user.full_name_en && (
-                            <span className="text-gray-500">· {user.full_name_en}</span>
-                          )}
-                          {user.designation_ur && (
-                            <span className="text-[11px] text-gray-400 font-nastaliq">
-                              ({user.designation_ur})
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="text-[11px] text-gray-400">
-                          {user.last_active || "never signed in"}
-                        </div>
                       </div>
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                      <button
-                        onClick={() => setEditUserModal({ ...user })}
-                        className="border border-[#e5e2da] bg-white hover:bg-gray-50 text-gray-700 px-2.5 py-1.5 rounded text-xs font-semibold shadow-2xs flex items-center gap-1 transition-colors"
-                      >
-                        <Edit2 size={12} />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setPasswordModal(user);
-                          setNewPasswordValue("");
-                        }}
-                        className="border border-[#e5e2da] bg-white hover:bg-gray-50 text-gray-700 px-2.5 py-1.5 rounded text-xs font-semibold shadow-2xs flex items-center gap-1 transition-colors"
-                      >
-                        <KeyRound size={12} />
-                        <span>Password</span>
-                      </button>
+                    <div className="shrink-0 text-right space-y-1">
+                      <p className="mb-1 text-[11px] text-gray-400">
+                        {user.last_active || "never signed in"}
+                      </p>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          aria-label="Edit"
+                          title="Edit"
+                          onClick={() => setEditUserModal({ ...user })}
+                          className="text-gray-400 hover:bg-[#f2efe9] hover:text-gray-700 p-1.5 rounded-md transition-colors"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPasswordModal(user);
+                            setNewPasswordValue("");
+                          }}
+                          className="text-xs font-semibold px-2.5 py-1 text-gray-500 hover:bg-[#f2efe9] hover:text-gray-900 rounded-md transition-colors"
+                        >
+                          Password
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  </li>
                 );
               })
             )}
-          </div>
-        </div>
+          </ul>
+        </section>
 
-        {/* Right Column: Roles and Permissions (5 cols) */}
-        <div className="lg:col-span-5 bg-white border border-[#e5e2da] shadow-2xs overflow-hidden space-y-0">
-          <div className="p-4 border-b border-[#e5e2da] bg-[#faf9f6]">
-            <h2 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
-              Roles and Permissions
-            </h2>
-          </div>
+        {/* Right Column: Roles and Permissions */}
+        <div>
+          <section className="rounded-lg border border-[#e5e2da] bg-white shadow-2xs overflow-hidden">
+            <header className="flex items-center justify-between gap-4 border-b border-[#e5e2da] px-4 py-2.5 bg-[#faf9f6]">
+              <h2 className="text-[0.6875rem] font-bold tracking-wide text-gray-500 uppercase">
+                Roles and permissions
+              </h2>
+            </header>
 
-          <div className="divide-y divide-[#e5e2da]">
-            {SYSTEM_ROLES.map((role) => {
-              const count = getUserCountForRole(role.key);
-              return (
-                <div key={role.id} className="p-4 hover:bg-[#f9f8f5] transition-colors space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-gray-900">{role.name}</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] bg-gray-100 text-gray-700 font-semibold px-2 py-0.5 rounded border border-gray-200">
-                        {role.perms}
-                      </span>
-                      <span className="text-[10px] bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded border border-blue-200">
-                        {count} {count === 1 ? "user" : "users"}
-                      </span>
+            <ul className="divide-y divide-[#e5e2da]">
+              {SYSTEM_ROLES.map((role) => {
+                const count = getUserCountForRole(role.key);
+                return (
+                  <li key={role.id} className="p-4 hover:bg-[#f9f8f5] transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <span className="text-sm font-semibold text-gray-900 block">
+                          {role.name}
+                        </span>
+                        <p className="font-mono text-[11px] text-gray-400 mt-0.5">{role.id}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="rounded-sm px-1.5 py-0.5 text-[0.6875rem] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                          {role.perms}
+                        </span>
+                        <span className="rounded-sm px-1.5 py-0.5 text-[0.6875rem] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                          {count} {count === 1 ? "user" : "users"}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-[11px] text-gray-500 leading-relaxed">{role.desc}</p>
-                </div>
-              );
-            })}
-          </div>
+                    <p className="mt-1.5 text-xs leading-6 text-gray-500">{role.desc}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
 
-          {/* Scope notice in card footer */}
-          <div className="p-4 border-t border-[#e5e2da] bg-[#faf9f6] text-[11px] text-gray-500 leading-relaxed space-y-1">
-            <p>
-              Newsroom roles, narrowed by two scopes. Desk scope limits a user to certain sections — give one Sports and they cannot publish into Pakistan.
-            </p>
-            <p>
-              The edition is a per-user scope too: drop article.language.en and they never see or touch the English articles. Both are enforced by the API, not just hidden here.
-            </p>
-          </div>
+          {/* Standalone scope notice callout */}
+          <p className="mt-4 rounded-md border border-[#e5e2da] bg-[#faf9f6] px-4 py-3 text-xs leading-6 text-gray-500">
+            Newsroom roles, narrowed by two scopes. Desk scope limits a user to certain sections — give one Sports and they cannot publish into Pakistan. The edition is a per-user scope too: drop article.language.en and they never see or touch the English articles. Both are enforced by the API, not just hidden here.
+          </p>
         </div>
       </div>
 
@@ -452,36 +416,39 @@ export default function UsersAdminPage() {
       {/* MODAL 1: NEW USER */}
       {/* ======================================================== */}
       {newUserModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg border border-[#e5e2da] shadow-2xl max-w-xl w-full p-6 space-y-5 my-8">
-            <div className="flex items-center justify-between border-b border-[#e5e2da] pb-3">
-              <h3 className="text-base font-bold text-gray-900">New user</h3>
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg border border-[#e5e2da] shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <header className="flex items-center justify-between border-b border-[#e5e2da] px-6 py-4 bg-white shrink-0">
+              <h2 className="text-base font-semibold text-gray-900">New user</h2>
               <button
+                type="button"
                 onClick={() => setNewUserModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-gray-400 hover:text-gray-700 p-1 rounded transition-colors"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
-            </div>
+            </header>
 
-            <form onSubmit={handleCreateUser} className="space-y-4 text-xs">
+            {/* Modal Scrollable Body */}
+            <form onSubmit={handleCreateUser} id="newUserForm" className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
               {/* Email & Starting Password */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Email *</label>
+                  <label className="block font-medium text-gray-700 mb-1">Email *</label>
                   <input
                     type="email"
                     required
                     placeholder="reporter@dailyinsaf.pk"
                     value={newUserForm.email}
                     onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
                   />
-                  <span className="text-[10px] text-gray-400 mt-1 block">This is how they sign in</span>
+                  <p className="text-[11px] text-gray-400 mt-1">This is how they sign in</p>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Starting password *</label>
+                  <label className="block font-medium text-gray-700 mb-1">Starting password *</label>
                   <input
                     type="password"
                     required
@@ -490,18 +457,18 @@ export default function UsersAdminPage() {
                     onChange={(e) =>
                       setNewUserForm({ ...newUserForm, starting_password: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
                   />
-                  <span className="text-[10px] text-gray-400 mt-1 block">
+                  <p className="text-[11px] text-gray-400 mt-1">
                     At least 10 characters — they must change it on first sign-in
-                  </span>
+                  </p>
                 </div>
               </div>
 
               {/* Full Name Urdu & English */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Full name (Urdu) *</label>
+                  <label className="block font-medium text-gray-700 mb-1">Full name (Urdu) *</label>
                   <input
                     type="text"
                     required
@@ -510,12 +477,12 @@ export default function UsersAdminPage() {
                     onChange={(e) =>
                       setNewUserForm({ ...newUserForm, full_name_ur: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 font-nastaliq focus:outline-emerald-800 text-sm"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Full name (English)</label>
+                  <label className="block font-medium text-gray-700 mb-1">Full name (English)</label>
                   <input
                     type="text"
                     placeholder="Muhammad Ali"
@@ -523,33 +490,33 @@ export default function UsersAdminPage() {
                     onChange={(e) =>
                       setNewUserForm({ ...newUserForm, full_name_en: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
                   />
-                  <span className="text-[10px] text-gray-400 mt-1 block">
+                  <p className="text-[11px] text-gray-400 mt-1">
                     Used on the English edition's byline
-                  </span>
+                  </p>
                 </div>
               </div>
 
               {/* Byline Name */}
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Byline name</label>
+                <label className="block font-medium text-gray-700 mb-1">Byline name</label>
                 <input
                   type="text"
                   placeholder="علی خان"
                   value={newUserForm.byline_name}
                   onChange={(e) => setNewUserForm({ ...newUserForm, byline_name: e.target.value })}
-                  className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800 font-nastaliq"
+                  className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white font-nastaliq"
                 />
-                <span className="text-[10px] text-gray-400 mt-1 block">
+                <p className="text-[11px] text-gray-400 mt-1">
                   Overrides the full name on published stories
-                </span>
+                </p>
               </div>
 
               {/* Designation Urdu & English */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Designation (Urdu)</label>
+                  <label className="block font-medium text-gray-700 mb-1">Designation (Urdu)</label>
                   <input
                     type="text"
                     placeholder="سینئر رپورٹر"
@@ -557,12 +524,12 @@ export default function UsersAdminPage() {
                     onChange={(e) =>
                       setNewUserForm({ ...newUserForm, designation_ur: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 font-nastaliq focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Designation (English)</label>
+                  <label className="block font-medium text-gray-700 mb-1">Designation (English)</label>
                   <input
                     type="text"
                     placeholder="Senior Reporter"
@@ -570,46 +537,44 @@ export default function UsersAdminPage() {
                     onChange={(e) =>
                       setNewUserForm({ ...newUserForm, designation_en: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
                   />
-                  <span className="text-[10px] text-gray-400 mt-1 block">
-                    Used on the English edition
-                  </span>
+                  <p className="text-[11px] text-gray-400 mt-1">Used on the English edition</p>
                 </div>
               </div>
 
               {/* Bio Urdu & English */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Bio (Urdu)</label>
+                  <label className="block font-medium text-gray-700 mb-1">Bio (Urdu)</label>
                   <textarea
                     rows={2}
                     value={newUserForm.bio_ur}
                     onChange={(e) => setNewUserForm({ ...newUserForm, bio_ur: e.target.value })}
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 font-nastaliq focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
                   />
-                  <span className="text-[10px] text-gray-400 mt-1 block">
+                  <p className="text-[11px] text-gray-400 mt-1">
                     Shown on the Urdu author page — Google News expects one
-                  </span>
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Bio (English)</label>
+                  <label className="block font-medium text-gray-700 mb-1">Bio (English)</label>
                   <textarea
                     rows={2}
                     value={newUserForm.bio_en}
                     onChange={(e) => setNewUserForm({ ...newUserForm, bio_en: e.target.value })}
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
                   />
-                  <span className="text-[10px] text-gray-400 mt-1 block">
+                  <p className="text-[11px] text-gray-400 mt-1">
                     Shown on the English edition's author page
-                  </span>
+                  </p>
                 </div>
               </div>
 
-              {/* Roles Multi-Select */}
+              {/* Roles Multi-Select Buttons */}
               <div>
-                <label className="block font-bold text-gray-700 mb-1.5">Roles *</label>
+                <label className="block font-medium text-gray-700 mb-1.5">Roles *</label>
                 <div className="flex flex-wrap gap-2">
                   {SYSTEM_ROLES.map((r) => {
                     const selected = newUserForm.roles.includes(r.key);
@@ -623,7 +588,7 @@ export default function UsersAdminPage() {
                             : [...newUserForm.roles, r.key];
                           setNewUserForm({ ...newUserForm, roles: updated });
                         }}
-                        className={`px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors ${
                           selected
                             ? "bg-emerald-800 text-white border-emerald-900"
                             : "bg-white text-gray-700 border-[#e5e2da] hover:bg-gray-50"
@@ -634,13 +599,13 @@ export default function UsersAdminPage() {
                     );
                   })}
                 </div>
-                <span className="text-[10px] text-gray-400 mt-1 block">A user can hold more than one</span>
+                <p className="text-[11px] text-gray-400 mt-1">A user can hold more than one</p>
               </div>
 
               {/* Desk Scope Pills */}
               <div>
-                <label className="block font-bold text-gray-700 mb-1.5">Desk scope</label>
-                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 border border-[#e5e2da] rounded bg-gray-50/50">
+                <label className="block font-medium text-gray-700 mb-1.5">Desk scope</label>
+                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 border border-[#e5e2da] rounded-md bg-[#faf9f6]">
                   {DESK_SECTIONS.map((sec) => {
                     const selected = newUserForm.desk_scope.includes(sec);
                     return (
@@ -655,7 +620,7 @@ export default function UsersAdminPage() {
                         }}
                         className={`px-2.5 py-1 rounded text-[11px] font-medium border transition-colors ${
                           selected
-                            ? "bg-emerald-700 text-white border-emerald-800"
+                            ? "bg-emerald-800 text-white border-emerald-900"
                             : "bg-white text-gray-600 border-[#e5e2da] hover:bg-gray-100"
                         }`}
                       >
@@ -664,49 +629,57 @@ export default function UsersAdminPage() {
                     );
                   })}
                 </div>
-                <span className="text-[10px] text-gray-400 mt-1 block">
+                <p className="text-[11px] text-gray-400 mt-1">
                   Leave empty for site-wide access. Otherwise they only see and publish into these sections.
-                </span>
+                </p>
               </div>
 
-              {/* Public Author Switch */}
-              <div className="pt-2 border-t border-[#e5e2da]">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={newUserForm.is_public_author}
-                    onChange={(e) =>
-                      setNewUserForm({ ...newUserForm, is_public_author: e.target.checked })
-                    }
-                    className="w-4 h-4 text-emerald-800 rounded border-gray-300 focus:ring-emerald-700 cursor-pointer"
-                  />
-                  <div>
-                    <span className="font-bold text-gray-900 block">Public author</span>
-                    <span className="text-[11px] text-gray-500">
-                      Gives them a byline page on the site. Turn off for desk-only accounts.
-                    </span>
-                  </div>
-                </label>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#e5e2da]">
+              {/* Public Author Toggle Switch */}
+              <div className="pt-2 border-t border-[#e5e2da] flex items-center justify-between">
+                <div>
+                  <span className="font-medium text-gray-900 block">Public author</span>
+                  <span className="text-[11px] text-gray-500">
+                    Gives them a byline page on the site. Turn off for desk-only accounts.
+                  </span>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setNewUserModalOpen(false)}
-                  className="border border-[#e5e2da] bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded text-xs font-semibold"
+                  role="switch"
+                  aria-checked={newUserForm.is_public_author}
+                  onClick={() =>
+                    setNewUserForm({ ...newUserForm, is_public_author: !newUserForm.is_public_author })
+                  }
+                  className={`w-10 h-5 rounded-full transition-colors relative cursor-pointer shrink-0 ${
+                    newUserForm.is_public_author ? "bg-emerald-800" : "bg-gray-300"
+                  }`}
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="bg-emerald-800 hover:bg-emerald-900 text-white px-5 py-2 rounded text-xs font-semibold shadow-2xs"
-                >
-                  Create user
+                  <span
+                    className={`block w-4 h-4 rounded-full bg-white shadow transition-transform absolute top-0.5 ${
+                      newUserForm.is_public_author ? "left-5" : "left-0.5"
+                    }`}
+                  />
                 </button>
               </div>
             </form>
+
+            {/* Modal Fixed Footer */}
+            <footer className="flex items-center justify-end gap-3 border-t border-[#e5e2da] px-6 py-4 bg-[#faf9f6] shrink-0">
+              <button
+                type="button"
+                onClick={() => setNewUserModalOpen(false)}
+                className="border border-[#e5e2da] bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="newUserForm"
+                disabled={saving}
+                className="bg-emerald-800 hover:bg-emerald-900 text-white px-5 py-2 rounded-md text-xs font-semibold shadow-2xs"
+              >
+                Create user
+              </button>
+            </footer>
           </div>
         </div>
       )}
@@ -715,23 +688,28 @@ export default function UsersAdminPage() {
       {/* MODAL 2: EDIT USER */}
       {/* ======================================================== */}
       {editUserModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg border border-[#e5e2da] shadow-2xl max-w-xl w-full p-6 space-y-5 my-8">
-            <div className="flex items-center justify-between border-b border-[#e5e2da] pb-3">
-              <h3 className="text-base font-bold text-gray-900">Edit {editUserModal.email}</h3>
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg border border-[#e5e2da] shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <header className="flex items-center justify-between border-b border-[#e5e2da] px-6 py-4 bg-white shrink-0">
+              <h2 className="text-base font-semibold text-gray-900">
+                Edit {editUserModal.email}
+              </h2>
               <button
+                type="button"
                 onClick={() => setEditUserModal(null)}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-gray-400 hover:text-gray-700 p-1 rounded transition-colors"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
-            </div>
+            </header>
 
-            <form onSubmit={handleSaveEditUser} className="space-y-4 text-xs">
+            {/* Modal Scrollable Body */}
+            <form onSubmit={handleSaveEditUser} id="editUserForm" className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
               {/* Full Name Urdu & English */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Full name (Urdu) *</label>
+                  <label className="block font-medium text-gray-700 mb-1">Full name (Urdu) *</label>
                   <input
                     type="text"
                     required
@@ -739,65 +717,65 @@ export default function UsersAdminPage() {
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, full_name_ur: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 font-nastaliq focus:outline-emerald-800 text-sm"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Full name (English)</label>
+                  <label className="block font-medium text-gray-700 mb-1">Full name (English)</label>
                   <input
                     type="text"
                     value={editUserModal.full_name_en || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, full_name_en: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
                   />
-                  <span className="text-[10px] text-gray-400 mt-1 block">
+                  <p className="text-[11px] text-gray-400 mt-1">
                     Used on the English edition's byline
-                  </span>
+                  </p>
                 </div>
               </div>
 
               {/* Byline Name */}
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Byline name</label>
+                <label className="block font-medium text-gray-700 mb-1">Byline name</label>
                 <input
                   type="text"
                   value={editUserModal.byline_name || ""}
                   onChange={(e) =>
                     setEditUserModal({ ...editUserModal, byline_name: e.target.value })
                   }
-                  className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800 font-nastaliq"
+                  className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white font-nastaliq"
                 />
-                <span className="text-[10px] text-gray-400 mt-1 block">
+                <p className="text-[11px] text-gray-400 mt-1">
                   Overrides the full name on published stories
-                </span>
+                </p>
               </div>
 
               {/* Designation Urdu & English */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Designation (Urdu)</label>
+                  <label className="block font-medium text-gray-700 mb-1">Designation (Urdu)</label>
                   <input
                     type="text"
                     value={editUserModal.designation_ur || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, designation_ur: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 font-nastaliq focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Designation (English)</label>
+                  <label className="block font-medium text-gray-700 mb-1">Designation (English)</label>
                   <input
                     type="text"
                     value={editUserModal.designation_en || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, designation_en: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
                   />
                 </div>
               </div>
@@ -805,33 +783,33 @@ export default function UsersAdminPage() {
               {/* Bio Urdu & English */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Bio (Urdu)</label>
+                  <label className="block font-medium text-gray-700 mb-1">Bio (Urdu)</label>
                   <textarea
                     rows={2}
                     value={editUserModal.bio_ur || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, bio_ur: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 font-nastaliq focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Bio (English)</label>
+                  <label className="block font-medium text-gray-700 mb-1">Bio (English)</label>
                   <textarea
                     rows={2}
                     value={editUserModal.bio_en || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, bio_en: e.target.value })
                     }
-                    className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800"
+                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
                   />
                 </div>
               </div>
 
               {/* Roles */}
               <div>
-                <label className="block font-bold text-gray-700 mb-1.5">Roles *</label>
+                <label className="block font-medium text-gray-700 mb-1.5">Roles *</label>
                 <div className="flex flex-wrap gap-2">
                   {SYSTEM_ROLES.map((r) => {
                     const selected = editUserModal.roles?.includes(r.key);
@@ -845,7 +823,7 @@ export default function UsersAdminPage() {
                             : [...(editUserModal.roles || []), r.key];
                           setEditUserModal({ ...editUserModal, roles: updated });
                         }}
-                        className={`px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors ${
                           selected
                             ? "bg-emerald-800 text-white border-emerald-900"
                             : "bg-white text-gray-700 border-[#e5e2da] hover:bg-gray-50"
@@ -860,8 +838,8 @@ export default function UsersAdminPage() {
 
               {/* Desk Scope */}
               <div>
-                <label className="block font-bold text-gray-700 mb-1.5">Desk scope</label>
-                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 border border-[#e5e2da] rounded bg-gray-50/50">
+                <label className="block font-medium text-gray-700 mb-1.5">Desk scope</label>
+                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 border border-[#e5e2da] rounded-md bg-[#faf9f6]">
                   {DESK_SECTIONS.map((sec) => {
                     const selected = editUserModal.desk_scope?.includes(sec);
                     return (
@@ -876,7 +854,7 @@ export default function UsersAdminPage() {
                         }}
                         className={`px-2.5 py-1 rounded text-[11px] font-medium border transition-colors ${
                           selected
-                            ? "bg-emerald-700 text-white border-emerald-800"
+                            ? "bg-emerald-800 text-white border-emerald-900"
                             : "bg-white text-gray-600 border-[#e5e2da] hover:bg-gray-100"
                         }`}
                       >
@@ -887,70 +865,85 @@ export default function UsersAdminPage() {
                 </div>
               </div>
 
-              {/* Public Author Switch */}
-              <div className="pt-2 border-t border-[#e5e2da]">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editUserModal.is_public_author ?? true}
-                    onChange={(e) =>
-                      setEditUserModal({
-                        ...editUserModal,
-                        is_public_author: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 text-emerald-800 rounded border-gray-300 focus:ring-emerald-700 cursor-pointer"
-                  />
-                  <div>
-                    <span className="font-bold text-gray-900 block">Public author</span>
-                    <span className="text-[11px] text-gray-500">
-                      Gives them a byline page on the site. Turn off for desk-only accounts.
-                    </span>
-                  </div>
-                </label>
-              </div>
-
-              {/* Active Switch */}
-              <div className="pt-2 border-t border-[#e5e2da]">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editUserModal.status === "Active"}
-                    onChange={(e) =>
-                      setEditUserModal({
-                        ...editUserModal,
-                        status: e.target.checked ? "Active" : "Disabled",
-                      })
-                    }
-                    className="w-4 h-4 text-emerald-800 rounded border-gray-300 focus:ring-emerald-700 cursor-pointer"
-                  />
-                  <div>
-                    <span className="font-bold text-gray-900 block">Active</span>
-                    <span className="text-[11px] text-gray-500">
-                      A disabled user cannot sign in; their published stories stay up.
-                    </span>
-                  </div>
-                </label>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#e5e2da]">
+              {/* Public Author Toggle Switch */}
+              <div className="pt-2 border-t border-[#e5e2da] flex items-center justify-between">
+                <div>
+                  <span className="font-medium text-gray-900 block">Public author</span>
+                  <span className="text-[11px] text-gray-500">
+                    Gives them a byline page on the site. Turn off for desk-only accounts.
+                  </span>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setEditUserModal(null)}
-                  className="border border-[#e5e2da] bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded text-xs font-semibold"
+                  role="switch"
+                  aria-checked={editUserModal.is_public_author ?? true}
+                  onClick={() =>
+                    setEditUserModal({
+                      ...editUserModal,
+                      is_public_author: !Boolean(editUserModal.is_public_author),
+                    })
+                  }
+                  className={`w-10 h-5 rounded-full transition-colors relative cursor-pointer shrink-0 ${
+                    editUserModal.is_public_author ?? true ? "bg-emerald-800" : "bg-gray-300"
+                  }`}
                 >
-                  Cancel
+                  <span
+                    className={`block w-4 h-4 rounded-full bg-white shadow transition-transform absolute top-0.5 ${
+                      editUserModal.is_public_author ?? true ? "left-5" : "left-0.5"
+                    }`}
+                  />
                 </button>
+              </div>
+
+              {/* Active Toggle Switch */}
+              <div className="pt-2 border-t border-[#e5e2da] flex items-center justify-between">
+                <div>
+                  <span className="font-medium text-gray-900 block">Active</span>
+                  <span className="text-[11px] text-gray-500">
+                    A disabled user cannot sign in; their published stories stay up.
+                  </span>
+                </div>
                 <button
-                  type="submit"
-                  disabled={saving}
-                  className="bg-emerald-800 hover:bg-emerald-900 text-white px-5 py-2 rounded text-xs font-semibold shadow-2xs"
+                  type="button"
+                  role="switch"
+                  aria-checked={editUserModal.status === "Active"}
+                  onClick={() =>
+                    setEditUserModal({
+                      ...editUserModal,
+                      status: editUserModal.status === "Active" ? "Disabled" : "Active",
+                    })
+                  }
+                  className={`w-10 h-5 rounded-full transition-colors relative cursor-pointer shrink-0 ${
+                    editUserModal.status === "Active" ? "bg-emerald-800" : "bg-gray-300"
+                  }`}
                 >
-                  Save changes
+                  <span
+                    className={`block w-4 h-4 rounded-full bg-white shadow transition-transform absolute top-0.5 ${
+                      editUserModal.status === "Active" ? "left-5" : "left-0.5"
+                    }`}
+                  />
                 </button>
               </div>
             </form>
+
+            {/* Modal Fixed Footer */}
+            <footer className="flex items-center justify-end gap-3 border-t border-[#e5e2da] px-6 py-4 bg-[#faf9f6] shrink-0">
+              <button
+                type="button"
+                onClick={() => setEditUserModal(null)}
+                className="border border-[#e5e2da] bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="editUserForm"
+                disabled={saving}
+                className="bg-emerald-800 hover:bg-emerald-900 text-white px-5 py-2 rounded-md text-xs font-semibold shadow-2xs"
+              >
+                Save changes
+              </button>
+            </footer>
           </div>
         </div>
       )}
@@ -959,53 +952,54 @@ export default function UsersAdminPage() {
       {/* MODAL 3: SET PASSWORD */}
       {/* ======================================================== */}
       {passwordModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg border border-[#e5e2da] shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#e5e2da] pb-3">
-              <h3 className="text-sm font-bold text-gray-900 truncate">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg border border-[#e5e2da] shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <header className="flex items-center justify-between border-b border-[#e5e2da] px-6 py-4 bg-white">
+              <h3 className="text-sm font-semibold text-gray-900 truncate">
                 Set a new password for {passwordModal.email}
               </h3>
               <button
+                type="button"
                 onClick={() => setPasswordModal(null)}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-gray-400 hover:text-gray-700 p-1 rounded transition-colors"
               >
                 <X size={16} />
               </button>
-            </div>
+            </header>
 
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-start gap-2">
-              <AlertTriangle size={15} className="shrink-0 mt-0.5" />
-              <span>
-                Every active session of theirs is signed out, and they must change it again on next sign-in.
-              </span>
-            </div>
+            <form onSubmit={handleResetPassword} className="p-6 space-y-4 text-xs">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-start gap-2">
+                <AlertTriangle size={15} className="shrink-0 mt-0.5 text-amber-600" />
+                <span>
+                  Every active session of theirs is signed out, and they must change it again on next sign-in.
+                </span>
+              </div>
 
-            <form onSubmit={handleResetPassword} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-gray-700 mb-1">New password *</label>
+                <label className="block font-medium text-gray-700 mb-1">New password *</label>
                 <input
                   type="password"
                   required
                   placeholder="••••••••••••"
                   value={newPasswordValue}
                   onChange={(e) => setNewPasswordValue(e.target.value)}
-                  className="w-full border border-[#e5e2da] rounded px-3 py-2 bg-white text-gray-900 focus:outline-emerald-800 font-mono"
+                  className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white font-mono"
                 />
-                <span className="text-[10px] text-gray-400 mt-1 block">At least 10 characters</span>
+                <p className="text-[11px] text-gray-400 mt-1">At least 10 characters</p>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#e5e2da]">
                 <button
                   type="button"
                   onClick={() => setPasswordModal(null)}
-                  className="border border-[#e5e2da] bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-xs font-semibold"
+                  className="border border-[#e5e2da] bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-md text-xs font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded text-xs font-semibold shadow-2xs"
+                  className="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-1.5 rounded-md text-xs font-semibold shadow-2xs"
                 >
                   Reset password
                 </button>

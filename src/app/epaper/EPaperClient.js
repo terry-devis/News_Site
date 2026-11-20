@@ -321,16 +321,6 @@ export default function EPaperClient({
                 className="outline-none bg-transparent font-sans text-xs sm:text-sm text-gray-800 cursor-pointer"
               />
             </label>
-
-            {/* Subtle CMS Link */}
-            <Link
-              href="/admin/epaper"
-              className="border border-[#dcd8cd] bg-white hover:border-[#184e2d] hover:text-[#184e2d] flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-gray-700 transition-colors"
-              title={isUrdu ? "ای پیپر مضامین اور صفحات ایڈٹ کریں" : "Manage ePaper in CMS"}
-            >
-              <Edit size={14} />
-              <span className="hidden sm:inline">{isUrdu ? "ایڈٹ (CMS)" : "CMS"}</span>
-            </Link>
           </div>
         </header>
 
@@ -867,14 +857,6 @@ export default function EPaperClient({
                     <Download size={13} />
                     <span>{isUrdu ? "کلپ محفوظ کریں (Save Clip)" : "Save Story Clipping"}</span>
                   </button>
-
-                  <Link
-                    href="/admin/epaper"
-                    className="text-xs font-bold text-gray-700 hover:text-emerald-800 flex items-center gap-1 border border-gray-300 bg-gray-50 px-2.5 py-1"
-                  >
-                    <Edit size={12} />
-                    <span>{isUrdu ? "اس خبر میں ترمیم کریں (Studio)" : "Edit in Studio"}</span>
-                  </Link>
                 </div>
 
                 <button

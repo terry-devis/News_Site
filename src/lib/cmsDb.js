@@ -1622,3 +1622,304 @@ export async function deleteCategory(id) {
   writeLocalStore(local);
   return { success: true };
 }
+
+// ----------------------------------------------------
+// LAYOUT BUILDER & HOMEPAGE ZONES API
+// ----------------------------------------------------
+
+const DEFAULT_LAYOUT_ZONES = [
+  {
+    key: "top",
+    label: "Top",
+    max_blocks: 2,
+    allowed_types: ["Hero", "Ticker"],
+  },
+  {
+    key: "body",
+    label: "Body",
+    max_blocks: null,
+    allowed_types: ["Grid", "List", "Carousel", "Video rail", "Opinion", "Widget", "Ad"],
+  },
+  {
+    key: "bottom",
+    label: "Bottom",
+    max_blocks: null,
+    allowed_types: ["List", "Opinion", "Ad", "Widget"],
+  },
+];
+
+const DEFAULT_LAYOUT_BLOCKS = [
+  {
+    id: "blk_top_1",
+    zone: "top",
+    title_ur: "",
+    title_en: "Untitled block",
+    style: "Hero",
+    fill_mode: "auto",
+    category_slug: null,
+    limit: 5,
+    order_by: "featured",
+    featured_only: true,
+    is_active: true,
+  },
+  {
+    id: "blk_body_1",
+    zone: "body",
+    title_ur: "بزنس",
+    title_en: "Business",
+    style: "List",
+    fill_mode: "auto",
+    category_slug: "business",
+    limit: 6,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_2",
+    zone: "body",
+    title_ur: "پاکستان",
+    title_en: "Pakistan",
+    style: "Grid",
+    fill_mode: "auto",
+    category_slug: "pakistan",
+    limit: 10,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_3",
+    zone: "body",
+    title_ur: "اہم خبریں",
+    title_en: "Top stories",
+    style: "Grid",
+    fill_mode: "auto",
+    category_slug: null,
+    limit: 8,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_4",
+    zone: "body",
+    title_ur: "انٹرنیشنل",
+    title_en: "World",
+    style: "Grid",
+    fill_mode: "auto",
+    category_slug: "world",
+    limit: 6,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_5",
+    zone: "body",
+    title_ur: "کھیل",
+    title_en: "Sports",
+    style: "Grid",
+    fill_mode: "auto",
+    category_slug: "sports",
+    limit: 6,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_6",
+    zone: "body",
+    title_ur: "انٹرٹینمنٹ",
+    title_en: "Entertainment",
+    style: "Grid",
+    fill_mode: "auto",
+    category_slug: "entertainment",
+    limit: 6,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_7",
+    zone: "body",
+    title_ur: "▶ ویڈیوز",
+    title_en: "Videos",
+    style: "Video rail",
+    fill_mode: "auto",
+    category_slug: "videos",
+    limit: 8,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_8",
+    zone: "body",
+    title_ur: "سائنس و ٹیکنالوجی",
+    title_en: "Science & Technology",
+    style: "Grid",
+    fill_mode: "auto",
+    category_slug: "tech",
+    limit: 6,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_9",
+    zone: "body",
+    title_ur: "مقبول خبریں",
+    title_en: "Most read",
+    style: "List",
+    fill_mode: "auto",
+    category_slug: null,
+    limit: 10,
+    order_by: "views",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_10",
+    zone: "body",
+    title_ur: "صحت",
+    title_en: "Health",
+    style: "Grid",
+    fill_mode: "auto",
+    category_slug: "health",
+    limit: 6,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_11",
+    zone: "body",
+    title_ur: "جرائم",
+    title_en: "Crime",
+    style: "Grid",
+    fill_mode: "auto",
+    category_slug: "crime",
+    limit: 6,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_12",
+    zone: "body",
+    title_ur: "لائف اسٹائل",
+    title_en: "Lifestyle",
+    style: "Grid",
+    fill_mode: "auto",
+    category_slug: "lifestyle",
+    limit: 6,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_body_13",
+    zone: "body",
+    title_ur: "دلچسپ و عجیب",
+    title_en: "Weird News",
+    style: "Grid",
+    fill_mode: "auto",
+    category_slug: "weird",
+    limit: 6,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+  {
+    id: "blk_bottom_1",
+    zone: "bottom",
+    title_ur: "رائے و کالم",
+    title_en: "Opinion",
+    style: "Opinion",
+    fill_mode: "auto",
+    category_slug: "opinion",
+    limit: 4,
+    order_by: "recent",
+    featured_only: false,
+    is_active: true,
+  },
+];
+
+export async function getLayout(pageKey = "home", edition = "ur") {
+  const local = ensureLocalStore();
+  if (!local.layout_config) {
+    local.layout_config = {
+      zones: DEFAULT_LAYOUT_ZONES,
+      blocks: DEFAULT_LAYOUT_BLOCKS,
+    };
+    writeLocalStore(local);
+  }
+  return {
+    zones: local.layout_config.zones || DEFAULT_LAYOUT_ZONES,
+    blocks: local.layout_config.blocks || DEFAULT_LAYOUT_BLOCKS,
+  };
+}
+
+export async function saveLayoutBlocks(blocks) {
+  const local = ensureLocalStore();
+  if (!local.layout_config) local.layout_config = { zones: DEFAULT_LAYOUT_ZONES, blocks: [] };
+  local.layout_config.blocks = blocks;
+  writeLocalStore(local);
+  return local.layout_config.blocks;
+}
+
+export async function saveLayoutZones(zones) {
+  const local = ensureLocalStore();
+  if (!local.layout_config) local.layout_config = { zones: DEFAULT_LAYOUT_ZONES, blocks: DEFAULT_LAYOUT_BLOCKS };
+  local.layout_config.zones = zones;
+  writeLocalStore(local);
+  return local.layout_config.zones;
+}
+
+export async function createLayoutBlock(blockData) {
+  const local = ensureLocalStore();
+  const { blocks } = await getLayout();
+  const newBlock = {
+    id: `blk_${Date.now()}`,
+    zone: blockData.zone || "body",
+    title_ur: blockData.title_ur || "",
+    title_en: blockData.title_en || "Untitled block",
+    subtitle_ur: blockData.subtitle_ur || "",
+    subtitle_en: blockData.subtitle_en || "",
+    style: blockData.style || "Grid",
+    fill_mode: blockData.fill_mode || "auto",
+    category_slug: blockData.category_slug || null,
+    limit: Number(blockData.limit) || 6,
+    order_by: blockData.order_by || "recent",
+    featured_only: Boolean(blockData.featured_only),
+    is_active: blockData.is_active !== false,
+    created_at: new Date().toISOString(),
+  };
+  blocks.push(newBlock);
+  local.layout_config.blocks = blocks;
+  writeLocalStore(local);
+  return newBlock;
+}
+
+export async function updateLayoutBlock(blockId, updates) {
+  const local = ensureLocalStore();
+  const { blocks } = await getLayout();
+  const idx = blocks.findIndex((b) => b.id === blockId);
+  if (idx >= 0) {
+    blocks[idx] = { ...blocks[idx], ...updates, updated_at: new Date().toISOString() };
+    local.layout_config.blocks = blocks;
+    writeLocalStore(local);
+    return blocks[idx];
+  }
+  return null;
+}
+
+export async function deleteLayoutBlock(blockId) {
+  const local = ensureLocalStore();
+  let { blocks } = await getLayout();
+  blocks = blocks.filter((b) => b.id !== blockId);
+  local.layout_config.blocks = blocks;
+  writeLocalStore(local);
+  return { success: true };
+}

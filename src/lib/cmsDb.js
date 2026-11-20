@@ -333,49 +333,311 @@ function writeLocalStore(data) {
 }
 
 // ==========================================
-// 1. AD SLOTS API
+// 1. AD SLOTS & CREATIVES API (Daily Insaaf Parity)
 // ==========================================
+
+const DEFAULT_AD_SLOTS = [
+  { id: 1, slot_key: "footer-strip", name: "Footer · strip (all pages)", sizes: "728x90, 320x50", pages: ["all"], is_active: true },
+  { id: 2, slot_key: "home-leaderboard", name: "Home leaderboard", sizes: "728x90, 320x50", pages: ["home"], is_active: true },
+  { id: 3, slot_key: "home-infeed-1", name: "Home · in-feed #1", sizes: "728x90, 300x250", pages: ["home"], is_active: true },
+  { id: 4, slot_key: "home-infeed-2", name: "Home · in-feed #2", sizes: "728x90, 300x250", pages: ["home"], is_active: true },
+  { id: 5, slot_key: "home-mpu", name: "Home MPU", sizes: "300x250", pages: ["home"], is_active: true },
+  { id: 6, slot_key: "home-sidebar", name: "Home · sidebar", sizes: "300x600, 300x250", pages: ["home"], is_active: true },
+  { id: 7, slot_key: "section-leaderboard", name: "Section · leaderboard (top)", sizes: "728x90, 320x50", pages: ["section"], is_active: true },
+  { id: 8, slot_key: "section-infeed", name: "Section · in-feed", sizes: "728x90, 300x250", pages: ["section"], is_active: true },
+  { id: 9, slot_key: "section-sidebar", name: "Section · sidebar", sizes: "300x600, 300x250", pages: ["section"], is_active: true },
+  { id: 10, slot_key: "article-mpu", name: "Article MPU", sizes: "300x250", pages: ["story", "article"], is_active: true },
+  { id: 11, slot_key: "story-inline", name: "Story · inline (in-body)", sizes: "728x90, 300x250", pages: ["story", "article"], is_active: true },
+  { id: 12, slot_key: "story-mpu", name: "Story · MPU (sidebar / in-body)", sizes: "300x250, 300x600", pages: ["story", "article"], is_active: true },
+];
+
+const DEFAULT_AD_CREATIVES = [
+  {
+    id: 101,
+    slot_key: "footer-strip",
+    name: "AD: Meezan Bank — Apna Ghar — Footer · strip (all pages)",
+    type: "direct",
+    runs_on: "both",
+    weight: 1,
+    image_url: "",
+    image_alt: "میزان بینک اپنا گھر آسان ہوم فنانسنگ اسکیم",
+    click_url: "https://www.meezanbank.com",
+    status: "run",
+    impressions: 412,
+    clicks: 14,
+    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+  },
+  {
+    id: 102,
+    slot_key: "home-leaderboard",
+    name: "State Life Insurance — Digital Health Takaful",
+    type: "direct",
+    runs_on: "ur",
+    weight: 2,
+    image_url: "",
+    image_alt: "اسٹیٹ لائف انشورنس ڈیجیٹل ہیلتھ تکافل پلان",
+    click_url: "https://statelife.com.pk",
+    status: "run",
+    impressions: 680,
+    clicks: 22,
+    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+  },
+  {
+    id: 103,
+    slot_key: "home-infeed-1",
+    name: "HBL Mobile App — Digital Banking Freedom",
+    type: "direct",
+    runs_on: "both",
+    weight: 1,
+    image_url: "",
+    image_alt: "ایچ بی ایل موبائل ایپ آسان بینکاری",
+    click_url: "https://hbl.com",
+    status: "run",
+    impressions: 530,
+    clicks: 17,
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: 104,
+    slot_key: "home-infeed-2",
+    name: "National Bank of Pakistan — Kamyab Jawan Financing",
+    type: "direct",
+    runs_on: "ur",
+    weight: 1,
+    image_url: "",
+    image_alt: "نیشنل بینک آف پاکستان کامیاب نوجوان اسکیم",
+    click_url: "https://nbp.com.pk",
+    status: "run",
+    impressions: 310,
+    clicks: 8,
+    created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
+  },
+  {
+    id: 105,
+    slot_key: "home-mpu",
+    name: "PTCL Flash Fiber — Ultra High Speed Internet",
+    type: "direct",
+    runs_on: "both",
+    weight: 1,
+    image_url: "",
+    image_alt: "پی ٹی سی ایل فلیش فائبر تیز رفتار انٹرنیٹ",
+    click_url: "https://ptcl.com.pk",
+    status: "run",
+    impressions: 275,
+    clicks: 11,
+    created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+  },
+  {
+    id: 106,
+    slot_key: "home-sidebar",
+    name: "Afadiat Digital Edition — Mobile App Subscription",
+    type: "house",
+    runs_on: "both",
+    weight: 1,
+    image_url: "",
+    image_alt: "ڈیلی افادیت ڈیجیٹل موبائل ایپ ابھی ڈاؤنلوڈ کریں",
+    click_url: "https://dailyafadiat.com/apps",
+    status: "run",
+    impressions: 190,
+    clicks: 6,
+    created_at: new Date(Date.now() - 86400000 * 6).toISOString(),
+  },
+  {
+    id: 107,
+    slot_key: "section-leaderboard",
+    name: "Pak Suzuki — Hybrid Sedan Special Financing Offer",
+    type: "direct",
+    runs_on: "en",
+    weight: 1,
+    image_url: "",
+    image_alt: "Pak Suzuki Hybrid Sedan Financing Scheme",
+    click_url: "https://suzukipakistan.com",
+    status: "run",
+    impressions: 240,
+    clicks: 7,
+    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+  },
+  {
+    id: 108,
+    slot_key: "section-infeed",
+    name: "Jazz Super 4G — Corporate Data Packages",
+    type: "direct",
+    runs_on: "both",
+    weight: 1,
+    image_url: "",
+    image_alt: "جاز سپر فور جی کارپوریٹ ڈیٹا پیکجز",
+    click_url: "https://jazz.com.pk",
+    status: "run",
+    impressions: 185,
+    clicks: 5,
+    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+  },
+  {
+    id: 109,
+    slot_key: "article-mpu",
+    name: "article-mpu-house",
+    type: "house",
+    runs_on: "both",
+    weight: 1,
+    image_url: "",
+    image_alt: "اشتہار دینے کے لیے رابطہ کریں — 0300-1234567",
+    click_url: "https://dailyafadiat.com/advertise",
+    status: "run",
+    impressions: 345,
+    clicks: 12,
+    created_at: new Date(Date.now() - 86400000 * 7).toISOString(),
+  },
+  {
+    id: 110,
+    slot_key: "story-inline",
+    name: "Faysal Bank — Noor Islamic Digital Cards",
+    type: "direct",
+    runs_on: "both",
+    weight: 1,
+    image_url: "",
+    image_alt: "فیصل بینک نور اسلامک ڈیجیٹل کارڈز",
+    click_url: "https://faysalbank.com",
+    status: "run",
+    impressions: 290,
+    clicks: 9,
+    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+  },
+  {
+    id: 111,
+    slot_key: "story-mpu",
+    name: "Ufone 4G — Super Card Gold Subscription",
+    type: "direct",
+    runs_on: "both",
+    weight: 1,
+    image_url: "",
+    image_alt: "یو فون سپر کارڈ گولڈ سبسکربشن",
+    click_url: "https://ufone.com",
+    status: "run",
+    impressions: 210,
+    clicks: 6,
+    created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
+  },
+];
+
 export async function getAdSlots() {
-  try {
-    const { data, error } = await supabaseAdmin.from("ad_slots").select("*").order("id");
-    if (!error && data && data.length > 0) return data;
-  } catch (e) {}
   const local = ensureLocalStore();
-  return local.ad_slots || [];
+  if (!local.ad_slots_v2 || !Array.isArray(local.ad_slots_v2) || local.ad_slots_v2.length === 0) {
+    local.ad_slots_v2 = DEFAULT_AD_SLOTS;
+    if (!local.ad_creatives || local.ad_creatives.length === 0) {
+      local.ad_creatives = DEFAULT_AD_CREATIVES;
+    }
+    writeLocalStore(local);
+  }
+  return local.ad_slots_v2;
 }
 
-export async function getAdSlot(slotKey) {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("ad_slots")
-      .select("*")
-      .eq("slot_key", slotKey)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (!error && data) return data;
-  } catch (e) {}
+export async function getAdCreatives(slotKey = null) {
   const local = ensureLocalStore();
-  return (local.ad_slots || []).find((s) => s.slot_key === slotKey && s.is_active);
+  if (!local.ad_creatives || !Array.isArray(local.ad_creatives) || local.ad_creatives.length === 0) {
+    local.ad_creatives = DEFAULT_AD_CREATIVES;
+    writeLocalStore(local);
+  }
+  if (slotKey) {
+    return local.ad_creatives.filter((c) => c.slot_key === slotKey);
+  }
+  return local.ad_creatives;
+}
+
+export async function createAdSlot(slotData) {
+  const local = ensureLocalStore();
+  const slots = await getAdSlots();
+  const newSlot = {
+    id: Date.now(),
+    slot_key: (slotData.slot_key || "").toLowerCase().trim().replace(/[^a-z0-9_-]/g, "-"),
+    name: slotData.name || slotData.slot_key,
+    sizes: slotData.sizes || "728x90, 300x250",
+    pages: Array.isArray(slotData.pages) ? slotData.pages : (slotData.pages || "all").split(",").map((s) => s.trim()),
+    is_active: slotData.is_active !== false,
+    created_at: new Date().toISOString(),
+  };
+  slots.push(newSlot);
+  local.ad_slots_v2 = slots;
+  writeLocalStore(local);
+  return newSlot;
 }
 
 export async function updateAdSlot(slotKey, updates) {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("ad_slots")
-      .upsert({ slot_key: slotKey, ...updates, updated_at: new Date().toISOString() })
-      .select();
-    if (!error && data) return data[0];
-  } catch (e) {}
-
   const local = ensureLocalStore();
-  const idx = local.ad_slots.findIndex((s) => s.slot_key === slotKey);
+  const slots = await getAdSlots();
+  const idx = slots.findIndex((s) => s.slot_key === slotKey);
   if (idx >= 0) {
-    local.ad_slots[idx] = { ...local.ad_slots[idx], ...updates, updated_at: new Date().toISOString() };
-  } else {
-    local.ad_slots.push({ slot_key: slotKey, ...updates, updated_at: new Date().toISOString() });
+    slots[idx] = { ...slots[idx], ...updates, updated_at: new Date().toISOString() };
+    local.ad_slots_v2 = slots;
+    writeLocalStore(local);
+    return slots[idx];
+  }
+  return null;
+}
+
+export async function deleteAdSlot(slotKey) {
+  const local = ensureLocalStore();
+  let slots = await getAdSlots();
+  slots = slots.filter((s) => s.slot_key !== slotKey);
+  local.ad_slots_v2 = slots;
+  if (local.ad_creatives) {
+    local.ad_creatives = local.ad_creatives.filter((c) => c.slot_key !== slotKey);
   }
   writeLocalStore(local);
-  return local.ad_slots.find((s) => s.slot_key === slotKey);
+  return { success: true };
+}
+
+export async function createAdCreative(creativeData) {
+  const local = ensureLocalStore();
+  const creatives = await getAdCreatives();
+  const newCreative = {
+    id: Date.now(),
+    slot_key: creativeData.slot_key,
+    name: creativeData.name,
+    type: creativeData.type || "direct",
+    runs_on: creativeData.runs_on || "both",
+    weight: Number(creativeData.weight) || 1,
+    image_url: creativeData.image_url || "",
+    image_alt: creativeData.image_alt || "",
+    html_code: creativeData.html_code || "",
+    click_url: creativeData.click_url || "",
+    starts_at: creativeData.starts_at || null,
+    ends_at: creativeData.ends_at || null,
+    status: creativeData.status || "run",
+    impressions: 0,
+    clicks: 0,
+    created_at: new Date().toISOString(),
+  };
+  creatives.unshift(newCreative);
+  local.ad_creatives = creatives;
+  writeLocalStore(local);
+  return newCreative;
+}
+
+export async function updateAdCreative(id, updates) {
+  const local = ensureLocalStore();
+  const creatives = await getAdCreatives();
+  const idx = creatives.findIndex((c) => c.id === Number(id));
+  if (idx >= 0) {
+    creatives[idx] = { ...creatives[idx], ...updates, updated_at: new Date().toISOString() };
+    local.ad_creatives = creatives;
+    writeLocalStore(local);
+    return creatives[idx];
+  }
+  return null;
+}
+
+export async function deleteAdCreative(id) {
+  const local = ensureLocalStore();
+  let creatives = await getAdCreatives();
+  creatives = creatives.filter((c) => c.id !== Number(id));
+  local.ad_creatives = creatives;
+  writeLocalStore(local);
+  return { success: true };
+}
+
+export async function getAdSlot(slotKey) {
+  const slots = await getAdSlots();
+  return slots.find((s) => s.slot_key === slotKey && s.is_active);
 }
 
 // ==========================================

@@ -998,6 +998,187 @@ export async function deleteEpaperEdition(id) {
   return { success: true };
 }
 
+// ----------------------------------------------------
+// DAILY INSAAF EPAPER V2 (Multi-page Edition Pipeline & Hot-Zones)
+// ----------------------------------------------------
+
+const DEFAULT_EPAPER_ISSUES = [
+  {
+    id: 1,
+    edition_date: "2026-11-20",
+    paper: "ur",
+    city: "Islamabad",
+    title: "Islamabad",
+    status: "ready",
+    is_live: true,
+    file_size: "34.6 MB",
+    pdf_url: "https://daily-afadiat.sgp1.digitaloceanspaces.com/epaper/2026/11/islamabad/2026-11-20.pdf",
+    published_at: "2026-11-20T09:30:00.000Z",
+    pages: [
+      {
+        page_number: 1,
+        title: "صفحۂ اول (سرورق)",
+        image_url: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop",
+        thumbnail_url: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=400&auto=format&fit=crop",
+        regions: [
+          {
+            id: "reg_1",
+            headline: "ڈیلی افادیت ڈیجیٹل اور پرنٹ ایڈیشن کا شاندار آغاز",
+            body: "جدید ترین پرنٹنگ ٹیکنالوجی اور ڈیجیٹل سروسز کے ساتھ ملکی صحافت میں ایک نئے دور کا آغاز۔",
+            article_id: "1",
+            coordinates: { x: 20, y: 20, width: 35, height: 25 },
+          },
+        ],
+      },
+      {
+        page_number: 2,
+        title: "صفحہ 2 (قومی خبریں)",
+        image_url: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop",
+        thumbnail_url: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400&auto=format&fit=crop",
+        regions: [],
+      },
+      {
+        page_number: 3,
+        title: "صفحہ 3 (بزنس و معیشت)",
+        image_url: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&auto=format&fit=crop",
+        thumbnail_url: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&auto=format&fit=crop",
+        regions: [],
+      },
+      {
+        page_number: 4,
+        title: "صفحہ 4 (اداریہ و کالم)",
+        image_url: "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=1200&auto=format&fit=crop",
+        thumbnail_url: "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&auto=format&fit=crop",
+        regions: [],
+      },
+      {
+        page_number: 5,
+        title: "صفحہ 5 (بین الاقوامی خبریں)",
+        image_url: "https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=1200&auto=format&fit=crop",
+        thumbnail_url: "https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=400&auto=format&fit=crop",
+        regions: [],
+      },
+      {
+        page_number: 6,
+        title: "صفحہ 6 (کھیلوں کی دنیا)",
+        image_url: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1200&auto=format&fit=crop",
+        thumbnail_url: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&auto=format&fit=crop",
+        regions: [],
+      },
+      {
+        page_number: 7,
+        title: "صفحہ 7 (شہر نامہ / ریجنل)",
+        image_url: "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=1200&auto=format&fit=crop",
+        thumbnail_url: "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=400&auto=format&fit=crop",
+        regions: [],
+      },
+      {
+        page_number: 8,
+        title: "صفحہ 8 (بیک پیج / اہم پیش رفت)",
+        image_url: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop",
+        thumbnail_url: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=400&auto=format&fit=crop",
+        regions: [],
+      },
+    ],
+  },
+];
+
+export async function getEpaperEditionsV2(date = null, paper = null) {
+  const local = ensureLocalStore();
+  if (!local.epaper_issues_v2 || !Array.isArray(local.epaper_issues_v2) || local.epaper_issues_v2.length === 0) {
+    local.epaper_issues_v2 = DEFAULT_EPAPER_ISSUES;
+    writeLocalStore(local);
+  }
+  let list = local.epaper_issues_v2;
+  if (date) list = list.filter((e) => e.edition_date === date);
+  if (paper && paper !== "both") list = list.filter((e) => e.paper === paper);
+  return list;
+}
+
+export async function createEpaperEditionV2(data) {
+  const local = ensureLocalStore();
+  const list = await getEpaperEditionsV2();
+
+  const numPages = 8;
+  const samplePages = [];
+  const stockImages = [
+    "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop",
+  ];
+
+  for (let i = 1; i <= numPages; i++) {
+    samplePages.push({
+      page_number: i,
+      title: `Page ${i}`,
+      image_url: stockImages[(i - 1) % stockImages.length],
+      thumbnail_url: stockImages[(i - 1) % stockImages.length].replace("w=1200", "w=400"),
+      regions: [],
+    });
+  }
+
+  const newIssue = {
+    id: Date.now(),
+    edition_date: data.edition_date || new Date().toISOString().split("T")[0],
+    paper: data.paper || "ur",
+    city: data.city || data.title || "Islamabad",
+    title: data.title || "Islamabad",
+    status: "ready",
+    is_live: true,
+    file_size: data.file_size || "32.4 MB",
+    pdf_url: data.pdf_url || "https://daily-afadiat.sgp1.digitaloceanspaces.com/epaper/sample.pdf",
+    published_at: new Date().toISOString(),
+    pages: samplePages,
+  };
+
+  list.unshift(newIssue);
+  local.epaper_issues_v2 = list;
+  writeLocalStore(local);
+  return newIssue;
+}
+
+export async function updateEpaperEditionV2(id, updates) {
+  const local = ensureLocalStore();
+  const list = await getEpaperEditionsV2();
+  const idx = list.findIndex((e) => String(e.id) === String(id));
+  if (idx >= 0) {
+    list[idx] = { ...list[idx], ...updates, updated_at: new Date().toISOString() };
+    local.epaper_issues_v2 = list;
+    writeLocalStore(local);
+    return list[idx];
+  }
+  return null;
+}
+
+export async function deleteEpaperEditionV2(id) {
+  const local = ensureLocalStore();
+  let list = await getEpaperEditionsV2();
+  list = list.filter((e) => String(e.id) !== String(id));
+  local.epaper_issues_v2 = list;
+  writeLocalStore(local);
+  return { success: true };
+}
+
+export async function saveEpaperPageRegions(editionId, pageNumber, regions) {
+  const local = ensureLocalStore();
+  const list = await getEpaperEditionsV2();
+  const edition = list.find((e) => String(e.id) === String(editionId));
+  if (!edition) return { error: "Edition not found" };
+
+  const page = (edition.pages || []).find((p) => Number(p.page_number) === Number(pageNumber));
+  if (!page) return { error: "Page not found" };
+
+  page.regions = regions;
+  local.epaper_issues_v2 = list;
+  writeLocalStore(local);
+  return { success: true, page };
+}
+
 // ==========================================
 // 8. PAGES API (Standalone CMS Pages)
 // ==========================================

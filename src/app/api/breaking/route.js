@@ -7,7 +7,8 @@ export async function GET() {
     const { data, error } = await supabaseAdmin
       .from("breaking_news")
       .select("*")
-      .order("priority", { ascending: true });
+      .order("priority", { ascending: true })
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     return NextResponse.json({ breakingNews: data || [] });
@@ -19,7 +20,7 @@ export async function GET() {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { id, text_ur, text_en, is_active, priority } = body;
+    const { id, text_ur, text_en, link_url, is_active, priority } = body;
 
     if (!text_ur && !text_en) {
       return NextResponse.json({ error: "Text is required" }, { status: 400 });
@@ -32,18 +33,19 @@ export async function POST(req) {
         .update({
           text_ur,
           text_en,
+          link_url: link_url || null,
           is_active: is_active !== undefined ? is_active : true,
-          priority: priority || 1,
+          priority: priority !== undefined ? Number(priority) : 2,
         })
         .eq("id", id)
         .select();
 
       if (error) throw error;
       try {
-      revalidatePath("/");
-    } catch (e) {}
+        revalidatePath("/");
+      } catch (e) {}
 
-    return NextResponse.json({ success: true, item: data?.[0] });
+      return NextResponse.json({ success: true, item: data?.[0] });
     } else {
       // Insert new
       const { data, error } = await supabaseAdmin
@@ -52,18 +54,19 @@ export async function POST(req) {
           {
             text_ur: text_ur || text_en,
             text_en: text_en || text_ur,
+            link_url: link_url || null,
             is_active: is_active !== undefined ? is_active : true,
-            priority: priority || 1,
+            priority: priority !== undefined ? Number(priority) : 2,
           },
         ])
         .select();
 
       if (error) throw error;
       try {
-      revalidatePath("/");
-    } catch (e) {}
+        revalidatePath("/");
+      } catch (e) {}
 
-    return NextResponse.json({ success: true, item: data?.[0] });
+      return NextResponse.json({ success: true, item: data?.[0] });
     }
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

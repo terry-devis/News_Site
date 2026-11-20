@@ -3,6 +3,10 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Megaphone, ExternalLink } from "lucide-react";
 
+const adSlotCache = new Map();
+const adSlotPromises = new Map();
+const AD_CACHE_TTL_MS = 60_000;
+
 function pickWeightedCreative(creatives = [], isMobile = false) {
   const now = Date.now();
   const eligible = (creatives || []).filter((c) => {
@@ -37,8 +41,36 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
 
     async function fetchAd() {
       try {
-        const res = await fetch(`/api/ads?slot=${encodeURIComponent(slotKey)}`);
-        const data = await res.json();
+        const now = Date.now();
+        const cached = adSlotCache.get(slotKey);
+        if (cached && now - cached.ts < AD_CACHE_TTL_MS) {
+          if (isMounted) {
+            if (cached.data.slot) setSlot(cached.data.slot);
+            if (Array.isArray(cached.data.creatives)) {
+              setCreative(pickWeightedCreative(cached.data.creatives, isMobile));
+            }
+            setLoading(false);
+          }
+          return;
+        }
+
+        let reqPromise = adSlotPromises.get(slotKey);
+        if (!reqPromise) {
+          reqPromise = fetch(`/api/ads?slot=${encodeURIComponent(slotKey)}`)
+            .then((res) => res.json())
+            .then((data) => {
+              adSlotCache.set(slotKey, { data, ts: Date.now() });
+              adSlotPromises.delete(slotKey);
+              return data;
+            })
+            .catch((err) => {
+              adSlotPromises.delete(slotKey);
+              throw err;
+            });
+          adSlotPromises.set(slotKey, reqPromise);
+        }
+
+        const data = await reqPromise;
         if (!isMounted) return;
         if (data.slot) setSlot(data.slot);
         if (Array.isArray(data.creatives)) {

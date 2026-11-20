@@ -6,6 +6,9 @@ import { ArrowUp, Mail, Lock } from "lucide-react";
 import AdSlot from "@/component/AdSlot";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
+let footerSettingsCache = { data: null, ts: 0 };
+let footerSettingsPromise = null;
+
 export default function Footer({ categories = [] }) {
   const { isUrdu, isEnglish, dir, t } = useSiteLanguage();
   const [socialLinks, setSocialLinks] = useState({
@@ -23,9 +26,30 @@ export default function Footer({ categories = [] }) {
     let isMounted = true;
     async function loadSocial() {
       try {
-        const res = await fetch("/api/settings");
-        const data = await res.json();
-        if (isMounted) {
+        const now = Date.now();
+        if (footerSettingsCache.data && now - footerSettingsCache.ts < 60_000) {
+          const data = footerSettingsCache.data;
+          if (isMounted) {
+            if (data.social_links) setSocialLinks(data.social_links);
+            if (data.site_info?.tagline_ur) setTagline(data.site_info.tagline_ur);
+          }
+          return;
+        }
+        if (!footerSettingsPromise) {
+          footerSettingsPromise = fetch("/api/settings?public=1")
+            .then((r) => r.json())
+            .then((data) => {
+              footerSettingsCache = { data, ts: Date.now() };
+              footerSettingsPromise = null;
+              return data;
+            })
+            .catch((err) => {
+              footerSettingsPromise = null;
+              throw err;
+            });
+        }
+        const data = await footerSettingsPromise;
+        if (isMounted && data) {
           if (data.social_links) setSocialLinks(data.social_links);
           if (data.site_info?.tagline_ur) setTagline(data.site_info.tagline_ur);
         }

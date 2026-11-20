@@ -15,9 +15,20 @@ export async function GET(req) {
       return NextResponse.json({ [key]: val });
     }
 
-    const social_links = await getSiteSetting("social_links");
-    const site_info = await getSiteSetting("site_info");
-    const rawSmtp = await getSiteSetting("smtp_config");
+    const isPublicOnly = searchParams.get("public") === "1";
+    if (isPublicOnly) {
+      const [social_links, site_info] = await Promise.all([
+        getSiteSetting("social_links"),
+        getSiteSetting("site_info"),
+      ]);
+      return NextResponse.json({ social_links, site_info });
+    }
+
+    const [social_links, site_info, rawSmtp] = await Promise.all([
+      getSiteSetting("social_links"),
+      getSiteSetting("site_info"),
+      getSiteSetting("smtp_config"),
+    ]);
     const smtp_config = rawSmtp ? { ...rawSmtp, pass: rawSmtp.pass ? "••••••••" : "" } : null;
 
     return NextResponse.json({ social_links, site_info, smtp_config });

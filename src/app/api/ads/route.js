@@ -18,13 +18,17 @@ export async function GET(req) {
     const slotKey = searchParams.get("slot");
 
     if (slotKey) {
-      const slot = await getAdSlot(slotKey);
-      const creatives = await getAdCreatives(slotKey);
+      const [slot, creatives] = await Promise.all([
+        getAdSlot(slotKey),
+        getAdCreatives(slotKey),
+      ]);
       return NextResponse.json({ slot, creatives });
     }
 
-    const slots = await getAdSlots();
-    const creatives = await getAdCreatives();
+    const [slots, creatives] = await Promise.all([
+      getAdSlots(),
+      getAdCreatives(),
+    ]);
     return NextResponse.json({ success: true, slots, creatives });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

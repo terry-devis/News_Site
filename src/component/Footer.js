@@ -65,25 +65,28 @@ export default function Footer({ categories = [] }) {
   const activeCategories = categories.length > 0 ? categories : defaultCategories;
 
   // Icon size for social media
-  const iconSize = 15;
-  const btnClasses = "border border-gray-700 text-gray-400 hover:text-white inline-flex size-8 items-center justify-center rounded-full bg-gray-900/50 transition-colors";
+  const iconSize = 17;
+  const btnClasses = "border border-white/25 text-white/85 hover:text-white hover:border-white hover:bg-white/10 inline-flex size-9 items-center justify-center rounded-none transition-colors";
 
   return (
-    <footer className="w-full bg-[#07130c] border-t border-gray-800 text-gray-300 mt-14 pt-6 pb-4 font-sans" dir={dir}>
-      <div className="u-shell">
-        
-        {/* Footer Top Ad Slot (Controllable from CMS) */}
-        <AdSlot slotKey="footer-strip" className="mb-5 max-w-4xl mx-auto" />
+    <>
+      {/* Footer Top Ad Slot placed cleanly above the green footer on light canvas */}
+      <div className="u-shell mt-12 mb-6" dir={dir}>
+        <AdSlot slotKey="footer-strip" className="max-w-4xl mx-auto" />
+      </div>
+
+      <footer className="w-full bg-[#0d542f] border-t border-[#0a4224] text-white pt-7 pb-5 font-sans" dir={dir}>
+        <div className="u-shell">
 
         {/* ========================================================== */}
         {/* TIER 1: BRAND IDENTITY & OFFICIAL SOCIAL MEDIA ICONS      */}
         {/* ========================================================== */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 pb-6">
           
           {/* Brand Logo & Tagline */}
-          <div className="flex flex-col items-start gap-1.5">
-            <Link href="/" className="inline-block">
-              <div className="relative h-12 w-44 sm:h-14 sm:w-52">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <Link href="/" className="inline-block shrink-0">
+              <div className="relative h-14 w-44 sm:h-16 sm:w-52">
                 <Image
                   src="/logo.webp"
                   alt="ڈیلی افادیت / Daily Afadiat"
@@ -92,20 +95,20 @@ export default function Footer({ categories = [] }) {
                 />
               </div>
             </Link>
-            <p className={`text-gray-400 text-[11px] sm:text-xs font-medium ${isUrdu ? "font-nastaliq" : "font-sans"}`}>
+            <p className={`text-white/85 max-w-xs text-xs sm:text-[13px] font-medium leading-relaxed ${isUrdu ? "font-nastaliq" : "font-sans"}`}>
               {isEnglish ? "TRUST • FACTS • GLOBAL NEWS — Dedicated to Truthful & Independent Journalism" : tagline}
             </p>
           </div>
 
           {/* Social Icons & Contact Link */}
-          <div className={`flex flex-col gap-2.5 ${isUrdu ? "sm:items-end" : "sm:items-start"}`}>
-            <div className={`flex flex-col gap-1.5 ${isUrdu ? "sm:items-end" : "sm:items-start"}`}>
-              <p className="text-gray-400 text-[10px] font-bold tracking-widest uppercase">
+          <div className={`flex flex-col gap-3 ${isUrdu ? "sm:items-end" : "sm:items-start"}`}>
+            <div className={`flex flex-col gap-2 ${isUrdu ? "sm:items-end" : "sm:items-start"}`}>
+              <p className="text-white/75 text-[11px] font-bold tracking-widest uppercase">
                 {t("followUs")}
               </p>
               
-              {/* Social Icons — Compact, matching Daily Insaaf */}
-              <ul className="flex items-center gap-1.5">
+              {/* Social Icons — Crisp square boxes matching Daily Insaf */}
+              <ul className="flex flex-wrap items-center gap-2">
                 {/* YouTube */}
                 <li>
                   <a
@@ -223,9 +226,9 @@ export default function Footer({ categories = [] }) {
             {/* Contact Link — Full visible text like Daily Insaaf "ہم سے رابطہ کریں" */}
             <Link
               href="/contact"
-              className="text-gray-400 hover:text-gray-200 inline-flex items-center gap-1.5 text-xs font-semibold transition-colors whitespace-nowrap"
+              className="text-white/90 hover:text-white inline-flex items-center gap-2 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap"
             >
-              <Mail size={13} className="text-gray-400" />
+              <Mail size={14} className="text-white/80" />
               <span>{t("contactTitle")}</span>
             </Link>
           </div>
@@ -235,15 +238,15 @@ export default function Footer({ categories = [] }) {
         {/* ========================================================== */}
         {/* TIER 2: CATEGORIES & SERVICES HORIZONTAL STRIP            */}
         {/* ========================================================== */}
-        <nav aria-label="Sections" className="border-t border-gray-800 pt-3 pb-3">
-          <ul className="text-gray-400 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] sm:text-xs font-medium">
+        <nav aria-label="Sections" className="border-t border-white/15 pt-4 pb-4">
+          <ul className="text-white/85 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium">
             <li>
-              <Link href="/" className="hover:text-gray-200 font-bold transition-colors">
+              <Link href="/" className="hover:text-white font-bold transition-colors">
                 {t("home")}
               </Link>
             </li>
             <li>
-              <Link href="/latest" className="hover:text-gray-200 transition-colors">
+              <Link href="/latest" className="hover:text-white transition-colors">
                 {t("latest")}
               </Link>
             </li>
@@ -251,7 +254,7 @@ export default function Footer({ categories = [] }) {
               const displayName = isEnglish ? (cat.name_en || cat.name_ur) : (cat.name_ur || cat.name_en);
               return (
                 <li key={cat.id}>
-                  <Link href={`/category/${cat.slug}`} className="hover:text-gray-200 transition-colors">
+                  <Link href={`/category/${cat.slug}`} className="hover:text-white transition-colors">
                     {displayName}
                   </Link>
                 </li>
@@ -260,47 +263,44 @@ export default function Footer({ categories = [] }) {
             {/* Extra nav items matching Daily Insaaf */}
             {extraNavItems.map((item) => (
               <li key={item.slug}>
-                <Link href={`/category/${item.slug}`} className="hover:text-gray-200 transition-colors">
+                <Link href={`/category/${item.slug}`} className="hover:text-white transition-colors">
                   {isEnglish ? item.name_en : item.name_ur}
                 </Link>
               </li>
             ))}
             <li>
-              <Link href="/live" className="hover:text-gray-200 transition-colors flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
+              <Link href="/live" className="hover:text-white transition-colors flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
                 <span>{t("liveTv")}</span>
               </Link>
             </li>
             <li>
-              <Link href="/video" className="hover:text-gray-200 transition-colors">
+              <Link href="/video" className="hover:text-white transition-colors">
                 {t("videos")}
               </Link>
             </li>
             <li>
-              <Link href="/epaper" className="hover:text-gray-200 transition-colors">
+              <Link href="/epaper" className="hover:text-white transition-colors">
                 {t("epaper")}
               </Link>
             </li>
-          </ul>
-          {/* Second row for services */}
-          <ul className="text-gray-400 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] sm:text-xs font-medium mt-1.5">
             <li>
-              <Link href="/rates" className="hover:text-gray-200 transition-colors">
+              <Link href="/rates" className="hover:text-white transition-colors">
                 {t("marketRatesBadge")}
               </Link>
             </li>
             <li>
-              <Link href="/contact" className="hover:text-gray-200 transition-colors">
+              <Link href="/contact" className="hover:text-white transition-colors">
                 {t("contact")}
               </Link>
             </li>
             <li>
-              <Link href="/advertise" className="hover:text-gray-200 transition-colors">
+              <Link href="/advertise" className="hover:text-white transition-colors">
                 {t("advertise")}
               </Link>
             </li>
             <li>
-              <a href="/rss.xml" target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
+              <a href="/rss.xml" target="_blank" rel="noopener noreferrer" className="hover:text-amber-300 transition-colors">
                 {isEnglish ? "RSS Feed" : "آر ایس ایس فیڈ"}
               </a>
             </li>
@@ -310,16 +310,16 @@ export default function Footer({ categories = [] }) {
         {/* ========================================================== */}
         {/* TIER 3: COPYRIGHT NOTICE & BACK TO TOP BUTTON              */}
         {/* ========================================================== */}
-        <div className="border-t border-gray-800 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[11px] text-gray-500">
+        <div className="border-t border-white/15 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-white/75">
           <div className="flex items-center gap-2">
             <span>© {new Date().getFullYear()} Daily Afadiat (ڈیلی افادیت)</span>
-            <span aria-hidden="true" className="text-gray-700">|</span>
-            <Link href="/contact" className="hover:text-gray-300 transition-colors">
+            <span aria-hidden="true" className="text-white/35">|</span>
+            <Link href="/contact" className="hover:text-white transition-colors">
               {t("contact")}
             </Link>
-            <span aria-hidden="true" className="text-gray-700">|</span>
-            <Link href="/admin" className="hover:text-gray-300 transition-colors flex items-center gap-1">
-              <Lock size={10} />
+            <span aria-hidden="true" className="text-white/35">|</span>
+            <Link href="/admin" className="hover:text-white transition-colors flex items-center gap-1">
+              <Lock size={11} />
               <span>{t("admin")}</span>
             </Link>
           </div>
@@ -327,7 +327,7 @@ export default function Footer({ categories = [] }) {
           <div>
             <button
               onClick={scrollToTop}
-              className="hover:text-gray-300 inline-flex items-center gap-1 text-[11px] text-gray-400 transition-colors cursor-pointer"
+              className="hover:text-white inline-flex items-center gap-1 text-xs text-white/85 transition-colors cursor-pointer"
             >
               <ArrowUp size={12} />
               <span>{t("backToTop")}</span>
@@ -337,5 +337,6 @@ export default function Footer({ categories = [] }) {
 
       </div>
     </footer>
+    </>
   );
 }

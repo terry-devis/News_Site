@@ -1337,5 +1337,351 @@
       },
       "created_at": "2026-11-14T04:26:50.226Z"
     }
-  ]
+  ],
+  "epaper_issues_v2": [
+    {
+      "id": 1795150672983,
+      "edition_date": "2026-11-20",
+      "paper": "ur",
+      "city": "Islamabad",
+      "title": "اسلام آباد",
+      "status": "ready",
+      "is_live": true,
+      "file_size": "34.6 MB",
+      "pdf_url": "https://daily-afadiat.sgp1.digitaloceanspaces.com/epaper/sample.pdf",
+      "published_at": "2026-11-20T04:57:52.983Z",
+      "pages": [
+        {
+          "page_number": 1,
+          "title": "Page 1",
+          "image_url": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 2,
+          "title": "Page 2",
+          "image_url": "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 3,
+          "title": "Page 3",
+          "image_url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 4,
+          "title": "Page 4",
+          "image_url": "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 5,
+          "title": "Page 5",
+          "image_url": "https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 6,
+          "title": "Page 6",
+          "image_url": "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 7,
+          "title": "Page 7",
+          "image_url": "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 8,
+          "title": "Page 8",
+          "image_url": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=400&auto=format&fit=crop",
+          "regions": []
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "edition_date": "2026-11-20",
+      "paper": "ur",
+      "city": "Islamabad",
+      "title": "Islamabad",
+      "status": "ready",
+      "is_live": true,
+      "file_size": "34.6 MB",
+      "pdf_url": "https://daily-afadiat.sgp1.digitaloceanspaces.com/epaper/2026/11/islamabad/2026-11-20.pdf",
+      "published_at": "2026-11-20T09:30:00.000Z",
+      "pages": [
+        {
+          "page_number": 1,
+          "title": "صفحۂ اول (سرورق)",
+          "image_url": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=400&auto=format&fit=crop",
+          "regions": [
+            {
+              "id": "reg_1",
+              "headline": "ڈیلی افادیت ڈیجیٹل اور پرنٹ ایڈیشن کا شاندار آغاز",
+              "body": "جدید ترین پرنٹنگ ٹیکنالوجی اور ڈیجیٹل سروسز کے ساتھ ملکی صحافت میں ایک نئے دور کا آغاز۔",
+              "article_id": "1",
+              "coordinates": {
+                "x": 20,
+                "y": 20,
+                "width": 35,
+                "height": 25
+              }
+            }
+          ]
+        },
+        {
+          "page_number": 2,
+          "title": "صفحہ 2 (قومی خبریں)",
+          "image_url": "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 3,
+          "title": "صفحہ 3 (بزنس و معیشت)",
+          "image_url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 4,
+          "title": "صفحہ 4 (اداریہ و کالم)",
+          "image_url": "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 5,
+          "title": "صفحہ 5 (بین الاقوامی خبریں)",
+          "image_url": "https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 6,
+          "title": "صفحہ 6 (کھیلوں کی دنیا)",
+          "image_url": "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 7,
+          "title": "صفحہ 7 (شہر نامہ / ریجنل)",
+          "image_url": "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=400&auto=format&fit=crop",
+          "regions": []
+        },
+        {
+          "page_number": 8,
+          "title": "صفحہ 8 (بیک پیج / اہم پیش رفت)",
+          "image_url": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop",
+          "thumbnail_url": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=400&auto=format&fit=crop",
+          "regions": []
+        }
+      ]
+    }
+  ],
+  "widgets": {
+    "prayer": {
+      "showOnWebsite": true,
+      "asrShown": "both",
+      "hijriAdjustment": 0,
+      "calculationMethod": "University of Islamic Sciences, Karachi (Fajr & Isha 18°)",
+      "overrides": {
+        "Karachi_2026-11-20": {
+          "fajr": "05:32",
+          "sunrise": "06:51",
+          "dhuhr": "12:18",
+          "asrShafi": "15:32",
+          "asrHanafi": "16:15",
+          "maghrib": "17:45",
+          "isha": "19:04",
+          "hijri": "Jumada II 11, 1448 AH",
+          "locked": true,
+          "updatedAt": "20 Nov 2026"
+        }
+      }
+    },
+    "currency": {
+      "showOnWebsite": true,
+      "mode": "manual",
+      "rates": [
+        {
+          "code": "AED",
+          "name_ur": "اماراتی درہم",
+          "name_en": "UAE Dirham",
+          "buy": "75.40",
+          "sell": "75.95",
+          "source": "Manual · 20 Nov 2026, 09:58"
+        },
+        {
+          "code": "CNY",
+          "name_ur": "چینی یوان",
+          "name_en": "Chinese Yuan",
+          "buy": "38.20",
+          "sell": "38.65",
+          "source": "Manual · 20 Nov 2026, 09:58"
+        },
+        {
+          "code": "EUR",
+          "name_ur": "یورو",
+          "name_en": "Euro",
+          "buy": "308.80",
+          "sell": "312.40",
+          "source": "Manual · 20 Nov 2026, 09:58"
+        },
+        {
+          "code": "GBP",
+          "name_ur": "برطانوی پاؤنڈ",
+          "name_en": "British Pound",
+          "buy": "373.20",
+          "sell": "376.50",
+          "source": "Manual · 20 Nov 2026, 09:58"
+        },
+        {
+          "code": "SAR",
+          "name_ur": "سعودی ریال",
+          "name_en": "Saudi Riyal",
+          "buy": "73.85",
+          "sell": "74.50",
+          "source": "Manual · 20 Nov 2026, 09:58"
+        },
+        {
+          "code": "USD",
+          "name_ur": "امریکی ڈالر",
+          "name_en": "US Dollar",
+          "buy": "280.50",
+          "sell": "279.00",
+          "source": "Manual · 20 Nov 2026, 09:58"
+        }
+      ],
+      "updatedAt": "Manual · 20 Nov 2026, 09:58"
+    },
+    "gold": {
+      "showOnWebsite": true,
+      "mode": "manual",
+      "premium": 0,
+      "gold24k": 422095,
+      "gold22k": 389402,
+      "updatedAt": "Manual · 20 Nov 2026, 09:30"
+    },
+    "weather": {
+      "showOnWebsite": true,
+      "mode": "manual",
+      "cities": [
+        {
+          "city": "Faisalabad",
+          "name_ur": "فیصل آباد",
+          "temp": 24,
+          "feels": 24,
+          "humidity": 45,
+          "wind": 8,
+          "condition": "Clear — صاف",
+          "icon": "☀️",
+          "source": "Manual · 20 Nov 2026, 09:59"
+        },
+        {
+          "city": "Hyderabad",
+          "name_ur": "حیدرآباد",
+          "temp": 29,
+          "feels": 30,
+          "humidity": 58,
+          "wind": 12,
+          "condition": "Mostly clear — جزوی مطلع صاف",
+          "icon": "🌤️",
+          "source": "Manual · 20 Nov 2026, 09:59"
+        },
+        {
+          "city": "Islamabad",
+          "name_ur": "اسلام آباد",
+          "temp": 21,
+          "feels": 20,
+          "humidity": 50,
+          "wind": 7,
+          "condition": "Clear — صاف",
+          "icon": "☀️",
+          "source": "Manual · 20 Nov 2026, 09:59"
+        },
+        {
+          "city": "Karachi",
+          "name_ur": "کراچی",
+          "temp": 28,
+          "feels": 29,
+          "humidity": 62,
+          "wind": 14,
+          "condition": "Clear — صاف",
+          "icon": "☀️",
+          "source": "Manual · 20 Nov 2026, 09:59"
+        },
+        {
+          "city": "Lahore",
+          "name_ur": "لاہور",
+          "temp": 23,
+          "feels": 23,
+          "humidity": 55,
+          "wind": 6,
+          "condition": "Haze — دھند/گرد",
+          "icon": "🌫️",
+          "source": "Manual · 20 Nov 2026, 09:59"
+        },
+        {
+          "city": "Multan",
+          "name_ur": "ملتان",
+          "temp": 26,
+          "feels": 26,
+          "humidity": 42,
+          "wind": 9,
+          "condition": "Clear — صاف",
+          "icon": "☀️",
+          "source": "Manual · 20 Nov 2026, 09:59"
+        },
+        {
+          "city": "Peshawar",
+          "name_ur": "پشاور",
+          "temp": 22,
+          "feels": 21,
+          "humidity": 48,
+          "wind": 8,
+          "condition": "Clear — صاف",
+          "icon": "☀️",
+          "source": "Manual · 20 Nov 2026, 09:59"
+        },
+        {
+          "city": "Quetta",
+          "name_ur": "کوئٹہ",
+          "temp": 16,
+          "feels": 15,
+          "humidity": 32,
+          "wind": 11,
+          "condition": "Sunny & dry — سرد و خشک",
+          "icon": "☀️",
+          "source": "Manual · 20 Nov 2026, 09:59"
+        },
+        {
+          "city": "Rawalpindi",
+          "name_ur": "راولپنڈی",
+          "temp": 21,
+          "feels": 20,
+          "humidity": 52,
+          "wind": 7,
+          "condition": "Clear — صاف",
+          "icon": "☀️",
+          "source": "Manual · 20 Nov 2026, 09:59"
+        }
+      ],
+      "updatedAt": "Manual · 20 Nov 2026, 09:59"
+    }
+  }
 }

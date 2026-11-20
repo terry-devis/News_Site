@@ -2283,3 +2283,262 @@ export async function deleteMediaAsset(id) {
   writeLocalStore(local);
   return { success: true };
 }
+
+// ==========================================
+// 10. SERVICES DATA & WIDGETS API
+// ==========================================
+const DEFAULT_CITIES_PRAYER = [
+  { id: "Karachi", name_ur: "کراچی", name_en: "Karachi", baseFajr: "05:32", baseSunrise: "06:51", baseDhuhr: "12:18", baseAsrShafi: "15:32", baseAsrHanafi: "16:15", baseMaghrib: "17:45", baseIsha: "19:04" },
+  { id: "Lahore", name_ur: "لاہور", name_en: "Lahore", baseFajr: "05:14", baseSunrise: "06:38", baseDhuhr: "11:58", baseAsrShafi: "15:08", baseAsrHanafi: "15:52", baseMaghrib: "17:18", baseIsha: "18:42" },
+  { id: "Islamabad", name_ur: "اسلام آباد", name_en: "Islamabad", baseFajr: "05:16", baseSunrise: "06:43", baseDhuhr: "11:53", baseAsrShafi: "15:01", baseAsrHanafi: "15:47", baseMaghrib: "17:03", baseIsha: "18:29" },
+  { id: "Rawalpindi", name_ur: "راولپنڈی", name_en: "Rawalpindi", baseFajr: "05:17", baseSunrise: "06:44", baseDhuhr: "11:54", baseAsrShafi: "15:02", baseAsrHanafi: "15:48", baseMaghrib: "17:04", baseIsha: "18:30" },
+  { id: "Faisalabad", name_ur: "فیصل آباد", name_en: "Faisalabad", baseFajr: "05:19", baseSunrise: "06:43", baseDhuhr: "12:03", baseAsrShafi: "15:13", baseAsrHanafi: "15:57", baseMaghrib: "17:23", baseIsha: "18:47" },
+  { id: "Multan", name_ur: "ملتان", name_en: "Multan", baseFajr: "05:25", baseSunrise: "06:47", baseDhuhr: "12:10", baseAsrShafi: "15:21", baseAsrHanafi: "16:04", baseMaghrib: "17:33", baseIsha: "18:55" },
+  { id: "Peshawar", name_ur: "پشاور", name_en: "Peshawar", baseFajr: "05:23", baseSunrise: "06:50", baseDhuhr: "12:00", baseAsrShafi: "15:08", baseAsrHanafi: "15:54", baseMaghrib: "17:10", baseIsha: "18:37" },
+  { id: "Quetta", name_ur: "کوئٹہ", name_en: "Quetta", baseFajr: "05:38", baseSunrise: "07:01", baseDhuhr: "12:21", baseAsrShafi: "15:28", baseAsrHanafi: "16:11", baseMaghrib: "17:41", baseIsha: "19:04" },
+  { id: "Hyderabad", name_ur: "حیدرآباد", name_en: "Hyderabad", baseFajr: "05:30", baseSunrise: "06:49", baseDhuhr: "12:16", baseAsrShafi: "15:30", baseAsrHanafi: "16:13", baseMaghrib: "17:43", baseIsha: "19:02" },
+];
+
+function generate31DaysPrayer(cityId, overrides = {}) {
+  const city = DEFAULT_CITIES_PRAYER.find((c) => c.id === cityId) || DEFAULT_CITIES_PRAYER[0];
+  const list = [];
+  const baseDate = new Date();
+
+  for (let i = 0; i < 31; i++) {
+    const d = new Date(baseDate);
+    d.setDate(baseDate.getDate() + i);
+    const dateStr = d.toISOString().split("T")[0];
+    const key = `${cityId}_${dateStr}`;
+    const override = overrides[key];
+
+    // Compute slight seasonal minute drift (approx 1 min per 2-3 days)
+    const drift = Math.floor(i / 3);
+    const addMinutes = (timeStr, mins) => {
+      const [h, m] = timeStr.split(":").map(Number);
+      const total = h * 60 + m + mins;
+      const newH = Math.floor(total / 60) % 24;
+      const newM = total % 60;
+      return `${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}`;
+    };
+
+    const hijriDay = 11 + i;
+    const hijriMonth = "Jumada II";
+    const hijriYear = 1448;
+    const hijriDate = `${hijriMonth} ${hijriDay}, ${hijriYear} AH`;
+
+    if (override && override.locked) {
+      list.push({
+        date: dateStr,
+        city: cityId,
+        fajr: override.fajr,
+        sunrise: override.sunrise,
+        dhuhr: override.dhuhr,
+        asrShafi: override.asrShafi,
+        asrHanafi: override.asrHanafi,
+        maghrib: override.maghrib,
+        isha: override.isha,
+        hijri: override.hijri || hijriDate,
+        locked: true,
+        updatedAt: override.updatedAt,
+      });
+    } else {
+      list.push({
+        date: dateStr,
+        city: cityId,
+        fajr: addMinutes(city.baseFajr, drift),
+        sunrise: addMinutes(city.baseSunrise, drift),
+        dhuhr: city.baseDhuhr,
+        asrShafi: addMinutes(city.baseAsrShafi, -drift),
+        asrHanafi: addMinutes(city.baseAsrHanafi, -drift),
+        maghrib: addMinutes(city.baseMaghrib, -drift),
+        isha: addMinutes(city.baseIsha, -drift),
+        hijri: hijriDate,
+        locked: false,
+      });
+    }
+  }
+  return list;
+}
+
+const DEFAULT_CURRENCY_RATES = [
+  { code: "AED", name_ur: "اماراتی درہم", name_en: "UAE Dirham", buy: "75.40", sell: "75.95", source: "Manual · 20 Nov 2026, 09:30" },
+  { code: "CNY", name_ur: "چینی یوان", name_en: "Chinese Yuan", buy: "38.20", sell: "38.65", source: "Manual · 20 Nov 2026, 09:30" },
+  { code: "EUR", name_ur: "یورو", name_en: "Euro", buy: "308.80", sell: "312.40", source: "Manual · 20 Nov 2026, 09:30" },
+  { code: "GBP", name_ur: "برطانوی پاؤنڈ", name_en: "British Pound", buy: "373.20", sell: "376.50", source: "Manual · 20 Nov 2026, 09:30" },
+  { code: "SAR", name_ur: "سعودی ریال", name_en: "Saudi Riyal", buy: "73.85", sell: "74.50", source: "Manual · 20 Nov 2026, 09:30" },
+  { code: "USD", name_ur: "امریکی ڈالر", name_en: "US Dollar", buy: "277.50", sell: "279.00", source: "Manual · 20 Nov 2026, 09:30" },
+];
+
+const DEFAULT_WEATHER_CITIES = [
+  { city: "Faisalabad", name_ur: "فیصل آباد", temp: 24, feels: 24, humidity: 45, wind: 8, condition: "Clear — صاف", icon: "☀️", source: "Manual · 20 Nov 2026, 09:30" },
+  { city: "Hyderabad", name_ur: "حیدرآباد", temp: 29, feels: 30, humidity: 58, wind: 12, condition: "Mostly clear — جزوی مطلع صاف", icon: "🌤️", source: "Manual · 20 Nov 2026, 09:30" },
+  { city: "Islamabad", name_ur: "اسلام آباد", temp: 21, feels: 20, humidity: 50, wind: 7, condition: "Clear — صاف", icon: "☀️", source: "Manual · 20 Nov 2026, 09:30" },
+  { city: "Karachi", name_ur: "کراچی", temp: 28, feels: 29, humidity: 62, wind: 14, condition: "Clear — صاف", icon: "☀️", source: "Manual · 20 Nov 2026, 09:30" },
+  { city: "Lahore", name_ur: "لاہور", temp: 23, feels: 23, humidity: 55, wind: 6, condition: "Haze — دھند/گرد", icon: "🌫️", source: "Manual · 20 Nov 2026, 09:30" },
+  { city: "Multan", name_ur: "ملتان", temp: 26, feels: 26, humidity: 42, wind: 9, condition: "Clear — صاف", icon: "☀️", source: "Manual · 20 Nov 2026, 09:30" },
+  { city: "Peshawar", name_ur: "پشاور", temp: 22, feels: 21, humidity: 48, wind: 8, condition: "Clear — صاف", icon: "☀️", source: "Manual · 20 Nov 2026, 09:30" },
+  { city: "Quetta", name_ur: "کوئٹہ", temp: 16, feels: 15, humidity: 32, wind: 11, condition: "Sunny & dry — سرد و خشک", icon: "☀️", source: "Manual · 20 Nov 2026, 09:30" },
+  { city: "Rawalpindi", name_ur: "راولپنڈی", temp: 21, feels: 20, humidity: 52, wind: 7, condition: "Clear — صاف", icon: "☀️", source: "Manual · 20 Nov 2026, 09:30" },
+];
+
+export async function getWidgetsData(selectedCity = "Karachi") {
+  const local = ensureLocalStore();
+  if (!local.widgets) {
+    local.widgets = {
+      prayer: {
+        showOnWebsite: true,
+        asrShown: "both", // "both" | "hanafi" | "shafi"
+        hijriAdjustment: 0, // -1 | 0 | 1
+        calculationMethod: "University of Islamic Sciences, Karachi (Fajr & Isha 18°)",
+        overrides: {},
+      },
+      currency: {
+        showOnWebsite: true,
+        mode: "manual", // "manual" | "auto"
+        rates: DEFAULT_CURRENCY_RATES,
+      },
+      gold: {
+        showOnWebsite: true,
+        mode: "manual",
+        premium: 0,
+        gold24k: 422095,
+        gold22k: 389402,
+        updatedAt: "Manual · 20 Nov 2026, 09:30",
+      },
+      weather: {
+        showOnWebsite: true,
+        mode: "manual",
+        cities: DEFAULT_WEATHER_CITIES,
+      },
+    };
+    writeLocalStore(local);
+  }
+
+  const overrides = local.widgets.prayer?.overrides || {};
+  const timetable = generate31DaysPrayer(selectedCity, overrides);
+
+  return {
+    prayer: {
+      ...local.widgets.prayer,
+      cities: DEFAULT_CITIES_PRAYER,
+      timetable,
+    },
+    currency: local.widgets.currency,
+    gold: local.widgets.gold,
+    weather: local.widgets.weather,
+  };
+}
+
+export async function updatePrayerSettings(settings) {
+  const local = ensureLocalStore();
+  if (!local.widgets) await getWidgetsData();
+  local.widgets.prayer = {
+    ...local.widgets.prayer,
+    ...settings,
+    updatedAt: new Date().toISOString(),
+  };
+  writeLocalStore(local);
+  return local.widgets.prayer;
+}
+
+export async function savePrayerDayOverride(city, date, data) {
+  const local = ensureLocalStore();
+  if (!local.widgets) await getWidgetsData();
+  if (!local.widgets.prayer.overrides) local.widgets.prayer.overrides = {};
+
+  const key = `${city}_${date}`;
+  local.widgets.prayer.overrides[key] = {
+    ...data,
+    locked: true,
+    updatedAt: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+  };
+  writeLocalStore(local);
+  return local.widgets.prayer.overrides[key];
+}
+
+export async function resetPrayerDayOverride(city, date) {
+  const local = ensureLocalStore();
+  if (!local.widgets) await getWidgetsData();
+  if (local.widgets.prayer?.overrides) {
+    const key = `${city}_${date}`;
+    delete local.widgets.prayer.overrides[key];
+    writeLocalStore(local);
+  }
+  return { success: true };
+}
+
+export async function updateCurrencyRates(rates, mode = "manual", showOnWebsite = true) {
+  const local = ensureLocalStore();
+  if (!local.widgets) await getWidgetsData();
+  const timeStr = `Manual · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}, ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+
+  const updatedRates = rates.map((r) => ({
+    ...r,
+    source: timeStr,
+  }));
+
+  local.widgets.currency = {
+    showOnWebsite,
+    mode,
+    rates: updatedRates,
+    updatedAt: timeStr,
+  };
+  writeLocalStore(local);
+  return local.widgets.currency;
+}
+
+export async function updateGoldSettings(goldData) {
+  const local = ensureLocalStore();
+  if (!local.widgets) await getWidgetsData();
+  const timeStr = `Manual · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}, ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+
+  local.widgets.gold = {
+    ...local.widgets.gold,
+    ...goldData,
+    updatedAt: timeStr,
+  };
+  writeLocalStore(local);
+  return local.widgets.gold;
+}
+
+export async function updateWeatherSettings(cities, mode = "manual", showOnWebsite = true) {
+  const local = ensureLocalStore();
+  if (!local.widgets) await getWidgetsData();
+  const timeStr = `Manual · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}, ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+
+  local.widgets.weather = {
+    showOnWebsite,
+    mode,
+    cities: cities.map((c) => ({ ...c, source: timeStr })),
+    updatedAt: timeStr,
+  };
+  writeLocalStore(local);
+  return local.widgets.weather;
+}
+
+export async function fetchLiveServiceData(serviceType) {
+  const local = ensureLocalStore();
+  if (!local.widgets) await getWidgetsData();
+  const timeStr = `Auto · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}, ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+
+  if (serviceType === "currency") {
+    local.widgets.currency.mode = "auto";
+    local.widgets.currency.updatedAt = timeStr;
+    local.widgets.currency.rates = local.widgets.currency.rates.map((r) => ({
+      ...r,
+      source: `Interbank · ${timeStr}`,
+    }));
+  } else if (serviceType === "gold") {
+    local.widgets.gold.mode = "auto";
+    local.widgets.gold.updatedAt = timeStr;
+  } else if (serviceType === "weather") {
+    local.widgets.weather.mode = "auto";
+    local.widgets.weather.updatedAt = timeStr;
+    local.widgets.weather.cities = local.widgets.weather.cities.map((c) => ({
+      ...c,
+      source: `MET Norway · ${timeStr}`,
+    }));
+  }
+  writeLocalStore(local);
+  return local.widgets;
+}

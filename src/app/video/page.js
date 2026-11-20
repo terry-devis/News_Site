@@ -15,17 +15,25 @@ export default async function VideoPage() {
   let categories = [];
   let breakingNews = [];
   let videos = [];
+  let mostReadStories = [];
 
   try {
-    const [catRes, breakRes, breakingArtsRes, videoList] = await Promise.all([
+    const [catRes, breakRes, breakingArtsRes, videoList, mostReadRes] = await Promise.all([
       supabase.from("categories").select("*").order("display_order"),
       supabase.from("breaking_news").select("*").eq("is_active", true),
       supabase.from("articles").select("id, title_ur, title_en, slug, is_breaking").eq("is_breaking", true),
       getVideos(),
+      supabase
+        .from("articles")
+        .select("id, title_ur, title_en, slug, views, created_at, featured_image")
+        .eq("status", "published")
+        .order("views", { ascending: false })
+        .limit(6),
     ]);
 
     if (catRes.data) categories = catRes.data;
     if (videoList) videos = videoList;
+    if (mostReadRes.data) mostReadStories = mostReadRes.data;
 
     const artBreaking = (breakingArtsRes.data || []).map((a) => ({
       id: `art-${a.id}`,
@@ -49,5 +57,12 @@ export default async function VideoPage() {
     console.error("Video page fetch error:", err);
   }
 
-  return <VideoClient categories={categories} breakingNews={breakingNews} initialVideos={videos} />;
+  return (
+    <VideoClient
+      categories={categories}
+      breakingNews={breakingNews}
+      initialVideos={videos}
+      mostReadStories={mostReadStories}
+    />
+  );
 }

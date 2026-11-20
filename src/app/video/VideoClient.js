@@ -5,6 +5,7 @@ import Link from "next/link";
 import Header from "@/component/Header";
 import Footer from "@/component/Footer";
 import NewsletterBox from "@/component/NewsletterBox";
+import MostReadWidget from "@/component/widgets/MostReadWidget";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 import {
   Play,
@@ -29,11 +30,17 @@ function getEmbedUrl(url) {
   return url;
 }
 
-export default function VideoClient({ categories = [], breakingNews = [], initialVideos = [] }) {
+export default function VideoClient({
+  categories = [],
+  breakingNews = [],
+  initialVideos = [],
+  mostReadStories = [],
+}) {
   const { isUrdu, isEnglish, dir } = useSiteLanguage();
   const [selectedCat, setSelectedCat] = useState("all");
   const [search, setSearch] = useState("");
   const [activeVideoModal, setActiveVideoModal] = useState(null);
+  const [isHeroPlaying, setIsHeroPlaying] = useState(false);
 
   // Dynamic Video catalog from CMS / Database
   const videoList = (initialVideos && initialVideos.length > 0 ? initialVideos : []).map((v) => ({
@@ -127,42 +134,52 @@ export default function VideoClient({ categories = [], breakingNews = [], initia
           ))}
         </div>
 
-        {/* Hero Featured Video (Cinema Card) */}
-        {selectedCat === "all" && !search && (
-          <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-3xl overflow-hidden shadow-sm hover:border-emerald-700 transition">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-              
-              {/* Big 16:9 Thumbnail / Play button */}
-              <div
-                onClick={() => setActiveVideoModal(heroVideo)}
-                className="lg:col-span-8 relative aspect-video bg-black cursor-pointer group overflow-hidden"
-              >
-                <Image
-                  src={heroVideo.thumb}
-                  alt={heroVideo.title_ur}
-                  fill
-                  className="object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-center justify-center">
-                  <div className="size-16 sm:size-20 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-red-700 transition duration-300">
-                    <Play size={32} className="translate-x-1" />
+        {/* Archive Top Hero: 1 Large Lead Video (Inline Playable) + 4 Side Rail Videos */}
+        {selectedCat === "all" && !search && heroVideo && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+            {/* Lead Video Card (7 cols) */}
+            <div className="lg:col-span-7 bg-[#efeee9] border border-[#dcd8cd] overflow-hidden shadow-xs flex flex-col justify-between">
+              <div className="relative aspect-video bg-black overflow-hidden">
+                {isHeroPlaying && heroVideo.videoUrl ? (
+                  <iframe
+                    src={`${heroVideo.videoUrl}${heroVideo.videoUrl.includes("?") ? "&" : "?"}autoplay=1`}
+                    title={heroVideo.title_en || heroVideo.title_ur}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div
+                    onClick={() => setIsHeroPlaying(true)}
+                    className="w-full h-full relative cursor-pointer group"
+                  >
+                    <Image
+                      src={heroVideo.thumb}
+                      alt={heroVideo.title_ur}
+                      fill
+                      className="object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-center justify-center">
+                      <div className="size-16 sm:size-20 rounded-full bg-red-600/95 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-red-700 transition duration-300">
+                        <Play size={30} className="translate-x-0.5" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-3 left-3 bg-black/80 text-white text-xs font-mono font-bold px-2.5 py-1">
+                      {heroVideo.duration}
+                    </div>
+                    <div className="absolute top-3 right-3 bg-[#184e2d] text-white text-[11px] font-bold px-2.5 py-1 shadow-xs">
+                      {isUrdu ? "خصوصی ویڈیو" : "FEATURED VIDEO"}
+                    </div>
                   </div>
-                </div>
-                <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xs text-white text-xs font-mono font-bold px-2.5 py-1 rounded-md">
-                  {heroVideo.duration}
-                </div>
-                <div className="absolute top-3 right-3 bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-md shadow-xs">
-                  {isUrdu ? "خصوصی فیچر" : "FEATURED STORY"}
-                </div>
+                )}
               </div>
 
-              {/* Story Details Beside Video */}
-              <div className="lg:col-span-4 p-5 sm:p-7 flex flex-col justify-between space-y-4">
-                <div className="space-y-3">
+              <div className="p-4 sm:p-5 space-y-2.5 flex-1 flex flex-col justify-between">
+                <div className="space-y-2">
                   <div className="flex items-center gap-3 text-xs text-gray-500 font-sans">
                     <span className="flex items-center gap-1">
                       <Eye size={13} />
-                      <span>{heroVideo.views} views</span>
+                      <span>{heroVideo.views}</span>
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
@@ -170,112 +187,235 @@ export default function VideoClient({ categories = [], breakingNews = [], initia
                       <span>{heroVideo.date}</span>
                     </span>
                   </div>
-
                   <h2
                     onClick={() => setActiveVideoModal(heroVideo)}
-                    className="text-xl sm:text-2xl font-bold urdu-headline text-gray-900 leading-snug hover:text-emerald-800 transition cursor-pointer"
+                    className="text-xl sm:text-2xl font-bold urdu-headline text-gray-900 leading-snug hover:text-[#184e2d] transition cursor-pointer"
                   >
                     {isUrdu ? heroVideo.title_ur : heroVideo.title_en}
                   </h2>
-
-                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed font-sans line-clamp-3">
+                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed font-sans line-clamp-2">
                     {isUrdu ? heroVideo.summary_ur : heroVideo.summary_en}
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-[#dcd8cd] flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-800">
+                <div className="pt-2.5 border-t border-[#dcd8cd] flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#184e2d]">
                     {isEnglish ? heroVideo.author_en : heroVideo.author_ur}
                   </span>
-                  <button
-                    onClick={() => setActiveVideoModal(heroVideo)}
-                    className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                  >
-                    <Play size={13} />
-                    <span>{isUrdu ? "ویڈیو دیکھیں" : "Watch Video"}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {!isHeroPlaying && (
+                      <button
+                        type="button"
+                        onClick={() => setIsHeroPlaying(true)}
+                        className="bg-[#184e2d] hover:bg-[#113820] text-white text-xs font-bold px-3.5 py-1.5 flex items-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Play size={12} />
+                        <span>{isUrdu ? "یہاں چلائیں" : "Play Inline"}</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setActiveVideoModal(heroVideo)}
+                      className="bg-white border border-[#dcd8cd] hover:border-[#184e2d] text-gray-800 text-xs font-bold px-3 py-1.5 transition cursor-pointer"
+                    >
+                      {isUrdu ? "تفصیل" : "Details"}
+                    </button>
+                  </div>
                 </div>
               </div>
-
             </div>
-          </div>
-        )}
 
-        {/* Video Grid Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#dcd8cd]">
-            <h2 className="text-lg sm:text-xl font-bold urdu-headline text-gray-900">
-              {isUrdu ? "تازہ ترین ویڈیو پیکجز" : "Latest Video Packages"}
-            </h2>
-            <span className="text-xs text-gray-500 font-mono">
-              {filtered.length} {isUrdu ? "ویڈیوز" : "videos"}
-            </span>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="p-12 text-center text-sm text-gray-500 bg-[#efeee9] rounded-2xl border border-[#dcd8cd]">
-              {isUrdu ? "کوئی ویڈیو دستیاب نہیں ہے۔" : "No videos found matching your search."}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((v) => (
+            {/* 4 Side Rail Videos (5 cols) */}
+            <div className="lg:col-span-5 flex flex-col gap-3 justify-between">
+              {videoList.slice(1, 5).map((sv) => (
                 <div
-                  key={v.id}
-                  onClick={() => setActiveVideoModal(v)}
-                  className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl overflow-hidden shadow-xs hover:border-emerald-600 transition group cursor-pointer flex flex-col justify-between"
+                  key={sv.id}
+                  onClick={() => setActiveVideoModal(sv)}
+                  className="bg-[#efeee9] border border-[#dcd8cd] hover:border-[#184e2d] p-2.5 flex gap-3 items-center cursor-pointer group transition flex-1"
                 >
-                  <div>
-                    {/* Thumbnail */}
-                    <div className="relative aspect-video w-full overflow-hidden bg-gray-200">
-                      <Image
-                        src={v.thumb}
-                        alt={v.title_ur}
-                        fill
-                        className="object-cover group-hover:scale-105 transition duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-80 group-hover:opacity-100 transition">
-                        <div className="size-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
-                          <Play size={20} className="translate-x-0.5" />
-                        </div>
+                  <div className="relative w-32 sm:w-36 aspect-video shrink-0 bg-black overflow-hidden">
+                    <Image
+                      src={sv.thumb}
+                      alt={sv.title_ur}
+                      fill
+                      className="object-cover group-hover:scale-105 transition duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <div className="size-8 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow">
+                        <Play size={14} className="translate-x-0.5" />
                       </div>
-                      <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-mono px-2 py-0.5 rounded font-bold">
-                        {v.duration}
+                    </div>
+                    <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-mono px-1.5 py-0.5 font-bold">
+                      {sv.duration}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <h3 className="text-sm font-bold urdu-headline text-gray-900 line-clamp-2 leading-snug group-hover:text-[#184e2d] transition">
+                      {isUrdu ? sv.title_ur : sv.title_en}
+                    </h3>
+                    <div className="flex items-center gap-2 text-[11px] text-gray-500 font-sans">
+                      <span>{sv.date}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Eye size={11} />
+                        {sv.views}
                       </span>
                     </div>
-
-                    {/* Metadata & Title */}
-                    <div className="p-4 space-y-2">
-                      <div className="flex items-center justify-between text-[11px] text-gray-500 font-sans">
-                        <span className="flex items-center gap-1">
-                          <Eye size={12} />
-                          <span>{v.views}</span>
-                        </span>
-                        <span>{v.date}</span>
-                      </div>
-
-                      <h3 className="text-sm font-bold urdu-headline text-gray-900 line-clamp-2 leading-snug group-hover:text-emerald-800 transition">
-                        {isUrdu ? v.title_ur : v.title_en}
-                      </h3>
-
-                      <p className="text-[11px] text-gray-600 line-clamp-2 leading-relaxed">
-                        {isUrdu ? v.summary_ur : v.summary_en}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-4 pt-0 border-t border-[#dcd8cd]/50 flex items-center justify-between text-xs text-gray-500">
-                    <span className="font-semibold text-emerald-800 text-[11px]">
-                      {isEnglish ? v.author_en : v.author_ur}
-                    </span>
-                    <span className="text-emerald-700 font-bold group-hover:underline flex items-center gap-1">
-                      <span>{isUrdu ? "چلائیں" : "Play"}</span>
-                      <Play size={10} />
-                    </span>
                   </div>
                 </div>
               ))}
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Main Videos Grid + Right Sidebar (Most Read & Follow Us) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left / Main Column (8 cols) */}
+          <div className="lg:col-span-8 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b-2 border-[#184e2d]">
+              <h2 className="text-lg sm:text-xl font-bold urdu-headline text-gray-900">
+                {isUrdu ? "مزید ویڈیوز و پیکجز" : "More Video Reports"}
+              </h2>
+              <span className="text-xs text-gray-500 font-mono">
+                {filtered.length} {isUrdu ? "ویڈیوز" : "videos"}
+              </span>
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="p-12 text-center text-sm text-gray-500 bg-[#efeee9] border border-[#dcd8cd]">
+                {isUrdu ? "کوئی ویڈیو دستیاب نہیں ہے۔" : "No videos found matching your search."}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {filtered.map((v) => (
+                  <div
+                    key={v.id}
+                    onClick={() => setActiveVideoModal(v)}
+                    className="bg-[#efeee9] border border-[#dcd8cd] overflow-hidden shadow-xs hover:border-[#184e2d] transition group cursor-pointer flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Thumbnail */}
+                      <div className="relative aspect-video w-full overflow-hidden bg-gray-200">
+                        <Image
+                          src={v.thumb}
+                          alt={v.title_ur}
+                          fill
+                          className="object-cover group-hover:scale-105 transition duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-80 group-hover:opacity-100 transition">
+                          <div className="size-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                            <Play size={20} className="translate-x-0.5" />
+                          </div>
+                        </div>
+                        <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-mono px-2 py-0.5 font-bold">
+                          {v.duration}
+                        </span>
+                      </div>
+
+                      {/* Metadata & Title */}
+                      <div className="p-4 space-y-2">
+                        <div className="flex items-center justify-between text-[11px] text-gray-500 font-sans">
+                          <span className="flex items-center gap-1">
+                            <Eye size={12} />
+                            <span>{v.views}</span>
+                          </span>
+                          <span>{v.date}</span>
+                        </div>
+
+                        <h3 className="text-sm font-bold urdu-headline text-gray-900 line-clamp-2 leading-snug group-hover:text-[#184e2d] transition">
+                          {isUrdu ? v.title_ur : v.title_en}
+                        </h3>
+
+                        <p className="text-[11px] text-gray-600 line-clamp-2 leading-relaxed">
+                          {isUrdu ? v.summary_ur : v.summary_en}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 pt-2 border-t border-[#dcd8cd]/50 flex items-center justify-between text-xs text-gray-500">
+                      <span className="font-semibold text-[#184e2d] text-[11px]">
+                        {isEnglish ? v.author_en : v.author_ur}
+                      </span>
+                      <span className="text-[#184e2d] font-bold group-hover:underline flex items-center gap-1">
+                        <span>{isUrdu ? "چلائیں" : "Play"}</span>
+                        <Play size={10} />
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right Sidebar (4 cols): Most Read + Follow Us */}
+          <aside className="lg:col-span-4 space-y-6">
+            {mostReadStories && mostReadStories.length > 0 && (
+              <MostReadWidget stories={mostReadStories} />
+            )}
+
+            {/* Follow Us Card (scraped-site style, safe inline SVGs) */}
+            <div className="bg-[#efeee9] border border-[#dcd8cd] p-4 space-y-3">
+              <div className="border-b-2 border-[#184e2d] pb-2 flex items-center justify-between">
+                <h3 className="text-base font-black text-gray-900 urdu-headline">
+                  {isUrdu ? "ہمیں فالو کریں" : "Follow Us"}
+                </h3>
+                <span className="text-[11px] font-bold text-[#184e2d] font-sans">
+                  @dailyafadiat
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                {isUrdu
+                  ? "تازہ ترین ویڈیو رپورٹس، بریکنگ نیوز اور خصوصی پروگرامز کے لیے ہمارے سوشل میڈیا چینلز جوائن کریں۔"
+                  : "Join our official social channels for breaking news alerts, field reports, and special shows."}
+              </p>
+              <div className="grid grid-cols-2 gap-2.5 text-xs font-bold">
+                <a
+                  href="https://youtube.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-[#cc0000] hover:opacity-90 text-white py-2.5 px-3 transition"
+                >
+                  <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
+                    <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.2 31.2 0 0 0 0 12a31.2 31.2 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.2 31.2 0 0 0 24 12a31.2 31.2 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z" />
+                  </svg>
+                  <span>YouTube</span>
+                </a>
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-[#1877f2] hover:opacity-90 text-white py-2.5 px-3 transition"
+                >
+                  <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
+                    <path d="M22 12a10 10 0 1 0-11.6 9.9v-7h-2.5V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z" />
+                  </svg>
+                  <span>Facebook</span>
+                </a>
+                <a
+                  href="https://x.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-black hover:opacity-90 text-white py-2.5 px-3 transition"
+                >
+                  <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
+                    <path d="M18.2 2.25h3.3l-7.2 8.23 8.5 11.27h-6.6l-5.2-6.8-6 6.8H1.7l7.7-8.8L1.2 2.25H8l4.7 6.2 5.5-6.2zm-1.2 17.5h1.8L7.1 4.1H5.2l11.8 15.65z" />
+                  </svg>
+                  <span>X / Twitter</span>
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-[#e1306c] hover:opacity-90 text-white py-2.5 px-3 transition"
+                >
+                  <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
+                    <path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6zm9.65 1.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+                  </svg>
+                  <span>Instagram</span>
+                </a>
+              </div>
+            </div>
+          </aside>
         </div>
 
         {/* Modal Player when Video Clicked */}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Header from "@/component/Header";
@@ -12,9 +12,11 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  Minimize2,
   ChevronLeft,
   ChevronRight,
   Layers,
+  LayoutGrid,
   MapPin,
   Share2,
   FileText,
@@ -38,6 +40,9 @@ export default function EPaperClient({
   const [activePage, setActivePage] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [activeClip, setActiveClip] = useState(null);
+  const [showAllPages, setShowAllPages] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const viewerRef = useRef(null);
 
   const cities = [
     { key: "islamabad", name_ur: "اسلام آباد / راولپنڈی", name_en: "Islamabad" },
@@ -47,12 +52,16 @@ export default function EPaperClient({
     { key: "international", name_ur: "انٹرنیشنل ایڈیشن", name_en: "International" },
   ];
 
-  // Available pages for current city/date or default 1..4
+  // Available pages 1..8 matching broadsheet print edition
   const pagesList = [
     { num: 1, title_ur: "صفحۂ اول (اہم سرخیاں)", title_en: "Front Page" },
     { num: 2, title_ur: "قومی و علاقائی خبریں", title_en: "National News" },
     { num: 3, title_ur: "اداریہ، کالم و تجارت", title_en: "Editorial & Business" },
     { num: 4, title_ur: "بین الاقوامی و کھیل", title_en: "World & Sports" },
+    { num: 5, title_ur: "صوبائی و شہری خبریں", title_en: "Regional News" },
+    { num: 6, title_ur: "معیشت و کاروبار", title_en: "Economy & Markets" },
+    { num: 7, title_ur: "سائنس، ٹیکنالوجی و صحت", title_en: "Tech & Health" },
+    { num: 8, title_ur: "آخری صفحہ (تازہ ترین)", title_en: "Back Page" },
   ];
 
   // Find edition matching page and city, or fallback to first matching page
@@ -110,9 +119,58 @@ export default function EPaperClient({
       image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop",
     };
 
-  const handleZoom = (delta) => {
+  const handleZoom = useCallback((delta) => {
     setZoomLevel((prev) => Math.max(75, Math.min(175, prev + delta)));
-  };
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!viewerRef.current) return;
+    if (!document.fullscreenElement) {
+      viewerRef.current.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (activeClip) {
+        if (e.key === "Escape") setActiveClip(null);
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        setShowAllPages(false);
+        setActivePage((p) => (isUrdu ? Math.min(pagesList.length, p + 1) : Math.max(1, p - 1)));
+      } else if (e.key === "ArrowRight") {
+        setShowAllPages(false);
+        setActivePage((p) => (isUrdu ? Math.max(1, p - 1) : Math.min(pagesList.length, p + 1)));
+      } else if (e.key === "+" || e.key === "=") {
+        e.preventDefault();
+        handleZoom(15);
+      } else if (e.key === "-") {
+        e.preventDefault();
+        handleZoom(-15);
+      } else if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeClip, handleZoom, isUrdu, pagesList.length, toggleFullscreen]);
+
+  const currentCityObj = cities.find((c) => c.key === selectedCity) || cities[0];
 
   const handleDownloadPDF = () => {
     if (activeEdition?.pdf_url) {
@@ -194,7 +252,7 @@ export default function EPaperClient({
           {/* Page Switcher & Zoom Controls Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2.5 border-t border-[#dcd8cd]">
             
-            {/* Page Buttons */}
+            {/* Page Buttons + All Pages Toggle */}
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
               <span className="text-xs font-bold text-gray-700 flex items-center gap-1 shrink-0 px-1">
                 <Layers size={14} className="text-emerald-700" />
@@ -203,9 +261,12 @@ export default function EPaperClient({
               {pagesList.map((p) => (
                 <button
                   key={p.num}
-                  onClick={() => setActivePage(p.num)}
+                  onClick={() => {
+                    setActivePage(p.num);
+                    setShowAllPages(false);
+                  }}
                   className={`text-xs px-3 py-1 rounded-none font-bold transition cursor-pointer whitespace-nowrap ${
-                    activePage === p.num
+                    !showAllPages && activePage === p.num
                       ? "bg-emerald-700 text-white shadow-xs"
                       : "bg-white text-gray-700 hover:bg-gray-100 border border-[#dcd8cd]"
                   }`}
@@ -213,15 +274,28 @@ export default function EPaperClient({
                   <span>{isUrdu ? `صفحہ ${p.num}` : `Page ${p.num}`}</span>
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setShowAllPages((prev) => !prev)}
+                className={`text-xs px-3 py-1 rounded-none font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  showAllPages
+                    ? "bg-[#184e2d] text-white shadow-xs"
+                    : "bg-white text-[#184e2d] hover:bg-emerald-50 border border-[#184e2d]/40"
+                }`}
+              >
+                <LayoutGrid size={13} />
+                <span>{isUrdu ? "تمام صفحات" : "All Pages"}</span>
+              </button>
             </div>
 
-            {/* Zoom Controls */}
+            {/* Zoom & Fullscreen Controls */}
             <div className="flex items-center gap-1.5 self-end sm:self-auto">
               <div className="flex items-center bg-white border border-[#dcd8cd] rounded-none p-0.5 shadow-2xs">
                 <button
+                  type="button"
                   onClick={() => handleZoom(-15)}
-                  className="p-1.5 text-gray-600 hover:text-emerald-800 hover:bg-gray-100 rounded-none transition"
-                  title="Zoom Out"
+                  className="p-1.5 text-gray-600 hover:text-emerald-800 hover:bg-gray-100 rounded-none transition cursor-pointer"
+                  title={isUrdu ? "زوم کم کریں (-)" : "Zoom Out (-)"}
                 >
                   <ZoomOut size={15} />
                 </button>
@@ -229,27 +303,127 @@ export default function EPaperClient({
                   {zoomLevel}%
                 </span>
                 <button
+                  type="button"
                   onClick={() => handleZoom(15)}
-                  className="p-1.5 text-gray-600 hover:text-emerald-800 hover:bg-gray-100 rounded-none transition"
-                  title="Zoom In"
+                  className="p-1.5 text-gray-600 hover:text-emerald-800 hover:bg-gray-100 rounded-none transition cursor-pointer"
+                  title={isUrdu ? "زوم بڑھائیں (+)" : "Zoom In (+)"}
                 >
                   <ZoomIn size={15} />
                 </button>
               </div>
 
               <button
+                type="button"
                 onClick={() => setZoomLevel(100)}
-                className="text-[11px] font-semibold bg-white border border-[#dcd8cd] text-gray-700 px-2.5 py-1.5 rounded-none hover:bg-gray-50 transition"
+                className="text-[11px] font-semibold bg-white border border-[#dcd8cd] text-gray-700 px-2.5 py-1.5 rounded-none hover:bg-gray-50 transition cursor-pointer"
               >
-                Reset
+                {isUrdu ? "ری سیٹ" : "Reset"}
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                className="p-1.5 bg-white border border-[#dcd8cd] text-gray-700 hover:text-[#184e2d] hover:bg-gray-50 rounded-none transition cursor-pointer flex items-center gap-1 text-[11px] font-bold px-2.5"
+                title={isUrdu ? "فل اسکرین (F)" : "Fullscreen (F)"}
+              >
+                {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                <span className="hidden md:inline">
+                  {isFullscreen
+                    ? isUrdu ? "بند کریں" : "Exit"
+                    : isUrdu ? "فل اسکرین" : "Fullscreen"}
+                </span>
               </button>
             </div>
 
           </div>
 
+          {/* Scraped-style Meta Strip & Keyboard Shortcut Hint */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#dcd8cd]/70 text-[11px] text-gray-600">
+            <div className="flex items-center gap-2 font-bold text-[#184e2d]">
+              <span>{isUrdu ? "ای پیپر" : "ePaper"}</span>
+              <span>|</span>
+              <span className="font-sans">{selectedDate}</span>
+              <span>|</span>
+              <span>{isUrdu ? currentCityObj.name_ur : currentCityObj.name_en}</span>
+              <span>|</span>
+              <span>{isUrdu ? `${pagesList.length} صفحات` : `${pagesList.length} Pages`}</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-[10px] text-gray-500 font-sans">
+              <span>{isUrdu ? "شارٹ کٹس: ← → صفحہ | + - زوم | F فل اسکرین" : "Shortcuts: ← → Page | + - Zoom | F Fullscreen"}</span>
+            </div>
+          </div>
+
         </div>
 
-        {/* Newspaper Broadsheet Sheet Viewer (Classic sharp non-round edge broadsheet) */}
+        {/* Viewer Container (Fullscreen Target) */}
+        <div
+          ref={viewerRef}
+          className={isFullscreen ? "bg-[#f7f6f3] p-4 sm:p-6 overflow-y-auto h-screen" : ""}
+        >
+        {showAllPages ? (
+          /* All Pages Overview Grid (scraped-site style) */
+          <div className="bg-white border border-[#dcd8cd] p-4 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-[#dcd8cd] pb-3">
+              <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                <LayoutGrid size={18} className="text-[#184e2d]" />
+                <span>{isUrdu ? `تمام صفحات — ${currentCityObj.name_ur} (${selectedDate})` : `All Pages — ${currentCityObj.name_en} (${selectedDate})`}</span>
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAllPages(false)}
+                className="text-xs font-bold text-[#184e2d] hover:underline cursor-pointer"
+              >
+                {isUrdu ? "واپس صفحہ ویو پر جائیں" : "Back to Page View"}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {pagesList.map((p) => {
+                const ed =
+                  editions.find((e) => e.page_number === p.num && (e.city_slug === selectedCity || !e.city_slug)) ||
+                  editions.find((e) => e.page_number === p.num);
+                const pageLead = ed?.stories?.find((s) => s.position === "lead") || ed?.stories?.[0];
+                const isActive = activePage === p.num;
+                return (
+                  <button
+                    key={p.num}
+                    type="button"
+                    onClick={() => {
+                      setActivePage(p.num);
+                      setShowAllPages(false);
+                    }}
+                    className={`group text-start bg-[#f7f6f3] border transition p-3 flex flex-col justify-between min-h-[210px] cursor-pointer ${
+                      isActive ? "border-[#184e2d] ring-2 ring-[#184e2d]/30" : "border-[#dcd8cd] hover:border-[#184e2d]"
+                    }`}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between border-b border-[#dcd8cd] pb-1.5">
+                        <span className="bg-[#184e2d] text-white text-[11px] font-bold px-2 py-0.5">
+                          {isUrdu ? `صفحہ ${p.num}` : `Page ${p.num}`}
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-semibold">
+                          {ed?.stories?.length ? `${ed.stories.length} ${isUrdu ? "خبریں" : "stories"}` : isUrdu ? "پرنٹ شیٹ" : "Broadsheet"}
+                        </span>
+                      </div>
+                      <h3 className="text-xs font-bold text-gray-800 group-hover:text-[#184e2d]">
+                        {isUrdu ? p.title_ur : p.title_en}
+                      </h3>
+                      <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                        {pageLead
+                          ? (isEnglish ? pageLead.headline_en || pageLead.headline_ur : pageLead.headline_ur)
+                          : (isUrdu ? "روزنامہ افادیت مکمل براڈ شیٹ پرنٹ صفحہ دیکھنے کے لیے کلک کریں۔" : "Click to inspect full broadsheet print page.")}
+                      </p>
+                    </div>
+                    <div className="pt-2 mt-2 border-t border-[#dcd8cd]/70 flex items-center justify-between text-[11px] font-bold text-[#184e2d]">
+                      <span>{isUrdu ? "صفحہ کھولیں" : "Open Page"}</span>
+                      {isUrdu ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+        /* Newspaper Broadsheet Sheet Viewer (Classic sharp non-round edge broadsheet) */
         <div className="w-full overflow-x-auto pb-4 scrollbar-thin">
           <div
             style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
@@ -491,6 +665,8 @@ export default function EPaperClient({
             </div>
 
           </div>
+        </div>
+        )}
         </div>
 
         {/* Newspaper Page Thumbnails Reel at bottom */}

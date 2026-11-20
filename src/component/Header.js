@@ -1,8 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Menu, X, Globe, Tv, Newspaper, Flame, Home, Video, PhoneCall, Megaphone, ArrowUp, Lock, ChevronLeft, ChevronRight, Briefcase, Info, ShieldCheck, TrendingUp } from "lucide-react";
+import { Search, Menu, X, Globe, Tv, Newspaper, Flame, Home, Video, PhoneCall, Megaphone, ArrowUp, Lock, ChevronLeft, ChevronRight, ChevronDown, Briefcase, Info, ShieldCheck, TrendingUp } from "lucide-react";
 import AdSlot from "@/component/AdSlot";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
@@ -11,6 +11,78 @@ export default function Header({ categories = [], breakingNews = [] }) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hoveredCat, setHoveredCat] = useState(null);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [megaCache, setMegaCache] = useState({});
+  const fetchedSlugsRef = useRef(new Set());
+  const closeTimerRef = useRef(null);
+  const navContainerRef = useRef(null);
+
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  const closeAllMenus = useCallback(() => {
+    clearCloseTimer();
+    setHoveredCat(null);
+    setMoreMenuOpen(false);
+  }, [clearCloseTimer]);
+
+  const scheduleClose = useCallback(() => {
+    clearCloseTimer();
+    closeTimerRef.current = setTimeout(() => {
+      setHoveredCat(null);
+      setMoreMenuOpen(false);
+    }, 120);
+  }, [clearCloseTimer]);
+
+  const loadCategoryPreview = useCallback((slug) => {
+    if (!slug || fetchedSlugsRef.current.has(slug)) return;
+    fetchedSlugsRef.current.add(slug);
+    setMegaCache((prev) => ({ ...prev, [slug]: { status: "loading", articles: [] } }));
+    fetch(`/api/public/category-preview?slug=${encodeURIComponent(slug)}&limit=4`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        setMegaCache((prev) => ({
+          ...prev,
+          [slug]: { status: "ready", articles: (data.articles || []).slice(0, 4) },
+        }));
+      })
+      .catch(() => {
+        fetchedSlugsRef.current.delete(slug);
+        setMegaCache((prev) => ({ ...prev, [slug]: { status: "error", articles: [] } }));
+      });
+  }, []);
+
+  const handleCatHover = useCallback(
+    (cat) => {
+      clearCloseTimer();
+      setMoreMenuOpen(false);
+      setHoveredCat(cat);
+      if (cat?.slug) loadCategoryPreview(cat.slug);
+    },
+    [clearCloseTimer, loadCategoryPreview]
+  );
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") closeAllMenus();
+    };
+    const onPointerDown = (e) => {
+      if (navContainerRef.current && !navContainerRef.current.contains(e.target)) {
+        closeAllMenus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [closeAllMenus]);
 
   // Lock body scroll when mobile drawer is open
   useEffect(() => {
@@ -245,15 +317,21 @@ export default function Header({ categories = [], breakingNews = [] }) {
         </Link>
       </div>
 
-      {/* 3. STICKY CATEGORY NAVBAR (Both Desktop & Mobile with Horizontal Swipe & Search) */}
-      <nav className="border-y-2 border-[#1a1a1a] bg-[#f7f6f3] sticky top-0 z-40 shadow-xs">
-        <div className="w-full max-w-[1440px] mx-auto px-2 sm:px-6 lg:px-8 flex items-center justify-between gap-2">
+      {/* 3. STICKY CATEGORY NAVBAR WITH HOVER MEGA-MENU (Matches Daily Insaf NavMegaMenu) */}
+      <nav
+        ref={navContainerRef}
+        onMouseLeave={scheduleClose}
+        onMouseEnter={clearCloseTimer}
+        className="border-y-2 border-[#1a1a1a] bg-[#f7f6f3] sticky top-0 z-40 shadow-xs"
+      >
+        <div className="w-full max-w-[1440px] mx-auto px-2 sm:px-6 lg:px-8 flex items-center justify-between gap-2 relative">
           
           {/* Main Category Links: Smooth Horizontal Scroll on Mobile, Full on Desktop */}
-          <div className="flex items-center overflow-x-auto scrollbar-none flex-1 py-0 text-xs sm:text-sm font-semibold select-none">
+          <div className="flex items-center overflow-x-auto lg:overflow-visible scrollbar-none flex-1 py-0 text-xs sm:text-sm font-semibold select-none">
             <Link
               href="/"
-              className="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-900 hover:text-emerald-700 transition shrink-0 border-b-2 border-transparent hover:border-emerald-600 flex items-center"
+              onMouseEnter={closeAllMenus}
+              className="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-900 hover:text-[#184e2d] transition shrink-0 border-b-2 border-transparent hover:border-[#184e2d] flex items-center"
               aria-label={t("home")}
             >
               <Home size={16} />
@@ -261,23 +339,84 @@ export default function Header({ categories = [], breakingNews = [] }) {
 
             <Link
               href="/latest"
-              className="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-900 hover:text-emerald-700 transition whitespace-nowrap shrink-0 border-b-2 border-transparent hover:border-emerald-600 font-bold"
+              onMouseEnter={closeAllMenus}
+              className="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-900 hover:text-[#184e2d] transition whitespace-nowrap shrink-0 border-b-2 border-transparent hover:border-[#184e2d] font-bold"
             >
               {t("latest")}
             </Link>
 
-            {activeCategories.map((cat) => {
+            {activeCategories.slice(0, 10).map((cat) => {
               const displayName = isEnglish ? (cat.name_en || cat.name_ur) : (cat.name_ur || cat.name_en);
+              const isHovered = hoveredCat?.id === cat.id;
               return (
                 <Link
                   key={cat.id}
                   href={`/category/${cat.slug}`}
-                  className="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-900 hover:text-emerald-700 transition whitespace-nowrap shrink-0 border-b-2 border-transparent hover:border-emerald-600 font-bold"
+                  onMouseEnter={() => handleCatHover(cat)}
+                  onFocus={() => handleCatHover(cat)}
+                  onClick={closeAllMenus}
+                  aria-expanded={isHovered}
+                  className={`relative px-2.5 sm:px-3 py-2 sm:py-2.5 transition whitespace-nowrap shrink-0 font-bold ${
+                    isHovered ? "text-[#184e2d]" : "text-gray-900 hover:text-[#184e2d]"
+                  }`}
                 >
                   {displayName}
+                  {isHovered && (
+                    <span
+                      aria-hidden="true"
+                      className="bg-[#184e2d] absolute inset-x-2 bottom-0 h-0.5 rounded-full"
+                    />
+                  )}
                 </Link>
               );
             })}
+
+            {activeCategories.length > 10 && (
+              <div className="relative shrink-0 hidden lg:block">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHoveredCat(null);
+                    setMoreMenuOpen((prev) => !prev);
+                  }}
+                  onMouseEnter={() => {
+                    clearCloseTimer();
+                    setHoveredCat(null);
+                    setMoreMenuOpen(true);
+                  }}
+                  aria-expanded={moreMenuOpen}
+                  aria-haspopup="true"
+                  className={`flex items-center gap-1 whitespace-nowrap px-2.5 sm:px-3 py-2 sm:py-2.5 font-bold transition cursor-pointer ${
+                    moreMenuOpen ? "text-[#184e2d]" : "text-gray-900 hover:text-[#184e2d]"
+                  }`}
+                >
+                  <span>{isUrdu ? "مزید" : "More"}</span>
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-200 ${moreMenuOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {moreMenuOpen && (
+                  <ul className="border-[#dcd8cd] bg-[#f7f6f3] absolute end-0 top-full z-50 mt-px min-w-52 rounded-b border py-1 shadow-[0_18px_40px_-14px_rgba(0,0,0,0.4)]">
+                    {activeCategories.slice(10).map((cat) => {
+                      const displayName = isEnglish ? (cat.name_en || cat.name_ur) : (cat.name_ur || cat.name_en);
+                      return (
+                        <li key={cat.id}>
+                          <Link
+                            href={`/category/${cat.slug}`}
+                            onClick={closeAllMenus}
+                            className="hover:bg-[#efeee9] hover:text-[#184e2d] block whitespace-nowrap px-4 py-2.5 text-sm font-semibold text-gray-800 transition-colors"
+                          >
+                            {displayName}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Search Button & Expandable Box */}
@@ -309,6 +448,99 @@ export default function Header({ categories = [], breakingNews = [] }) {
           </div>
 
         </div>
+
+        {/* Expanding Mega-Menu Panel on Category Hover (Desktop) */}
+        {hoveredCat && (
+          <div
+            role="region"
+            aria-label={isEnglish ? hoveredCat.name_en || hoveredCat.name_ur : hoveredCat.name_ur}
+            onMouseEnter={clearCloseTimer}
+            className="hidden lg:block border-[#184e2d] bg-[#f7f6f3] absolute inset-x-0 top-full z-50 mt-px border-t-2 border-b border-b-[#dcd8cd] shadow-[0_28px_56px_-18px_rgba(0,0,0,0.45)]"
+          >
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 grid gap-6 py-5 lg:grid-cols-[2fr_1fr]">
+              {/* Left 2fr: Latest 4 Posts in Hovered Category */}
+              <div>
+                <p className="text-gray-500 mb-3 text-[0.6875rem] font-bold tracking-wider uppercase font-sans">
+                  {isUrdu ? "تازہ ترین خبریں" : "Latest News"}
+                </p>
+
+                {!megaCache[hoveredCat.slug] || megaCache[hoveredCat.slug].status === "loading" ? (
+                  <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2" aria-busy="true">
+                    {[0, 1, 2, 3].map((idx) => (
+                      <li key={idx} className="flex gap-3">
+                        <span className="bg-[#efeee9] block h-14 w-20 shrink-0 animate-pulse rounded" />
+                        <span className="flex-1 space-y-2 py-1">
+                          <span className="bg-[#efeee9] block h-3 w-full animate-pulse rounded" />
+                          <span className="bg-[#efeee9] block h-3 w-2/3 animate-pulse rounded" />
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : megaCache[hoveredCat.slug].articles.length === 0 ? (
+                  <p className="text-gray-500 py-4 text-sm">—</p>
+                ) : (
+                  <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                    {megaCache[hoveredCat.slug].articles.map((art) => (
+                      <li key={art.id}>
+                        <Link
+                          href={`/story/${art.slug || art.id}`}
+                          onClick={closeAllMenus}
+                          className="group flex gap-3 items-start"
+                        >
+                          <div className="relative w-20 aspect-[16/10] shrink-0 rounded overflow-hidden bg-[#efeee9] border border-[#dcd8cd]">
+                            {art.thumb ? (
+                              <Image
+                                src={art.thumb}
+                                alt={isEnglish ? art.title_en || art.title_ur : art.title_ur}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-[#184e2d]">
+                                AFADIAT
+                              </div>
+                            )}
+                          </div>
+                          <span className="group-hover:text-[#184e2d] line-clamp-3 flex-1 text-sm font-bold leading-snug text-gray-900 transition-colors urdu-headline">
+                            {isEnglish ? art.title_en || art.title_ur : art.title_ur}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Right 1fr: Section Summary & View All Link */}
+              <div className="border-[#dcd8cd] ltr:border-l rtl:border-r ltr:pl-6 rtl:pr-6 flex flex-col justify-between space-y-4">
+                <div className="space-y-1.5">
+                  <p className="text-gray-500 text-[0.6875rem] font-bold tracking-wider uppercase font-sans">
+                    {isUrdu ? "سیکشن" : "Section"}
+                  </p>
+                  <h3 className="text-lg font-black text-gray-900 urdu-headline">
+                    {isEnglish ? hoveredCat.name_en || hoveredCat.name_ur : hoveredCat.name_ur}
+                  </h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    {isUrdu
+                      ? `${hoveredCat.name_ur} کی تازہ ترین اور مصدقہ خبریں، رپورٹس اور تجزیے پڑھیں۔`
+                      : `Read the latest verified news, reports, and analysis from ${hoveredCat.name_en || hoveredCat.name_ur}.`}
+                  </p>
+                </div>
+
+                <div>
+                  <Link
+                    href={`/category/${hoveredCat.slug}`}
+                    onClick={closeAllMenus}
+                    className="text-[#184e2d] inline-flex items-center gap-1.5 text-sm font-bold hover:underline"
+                  >
+                    <span>{isUrdu ? "مزید خبریں" : "More News"}</span>
+                    {isUrdu ? <ChevronLeft size={15} /> : <ChevronRight size={15} />}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* 4. MARKET RATES BAR: FULL WIDTH & FLUSH */}

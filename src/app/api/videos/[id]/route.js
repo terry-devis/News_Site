@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getVideoById, saveVideo, deleteVideo } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,9 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
+  const { errorResponse } = await requirePermission("video.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const { id } = params;
     const body = await req.json();
@@ -28,6 +32,9 @@ export async function PUT(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
+  const { errorResponse } = await requirePermission("video.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const { id } = params;
     await deleteVideo(id);

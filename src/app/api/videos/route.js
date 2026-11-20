@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getVideos, saveVideo } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,9 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  const { errorResponse } = await requirePermission("video.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     if (!body.title_ur) {

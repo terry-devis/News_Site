@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { savePage, deletePage, getPageBySlug } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function PUT(req, { params }) {
+  const { errorResponse } = await requirePermission("page.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const { id } = params;
     const body = await req.json();
@@ -15,6 +19,9 @@ export async function PUT(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
+  const { errorResponse } = await requirePermission("page.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const { id } = params;
     await deletePage(id);

@@ -138,19 +138,13 @@ export default function NewsletterBox({ variant = "ribbon", className = "" }) {
         
         {/* Leading Content: Icon, Title, and Editorial Subtitle */}
         <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 flex-1">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 bg-emerald-800 text-white flex items-center justify-center rounded-none shadow-xs">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 bg-[#184e2d] text-white flex items-center justify-center rounded-none shadow-xs">
             <Mail size={22} className="sm:size-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="bg-emerald-100 text-emerald-900 text-[10px] font-bold px-2 py-0.5 rounded-none uppercase font-sans tracking-wide">
-                {isUrdu ? "روزانہ کا نیوز لیٹر" : "MORNING BRIEFING"}
-              </span>
-              <span className="text-gray-400 text-xs hidden sm:inline">•</span>
-              <span className="text-xs text-gray-500 font-sans hidden sm:inline">
-                {isUrdu ? "مفت سبسکرپشن" : "Free Subscription"}
-              </span>
-            </div>
+            <p className="text-[11px] font-bold text-[#184e2d] tracking-wide mb-0.5 font-sans">
+              {isUrdu ? "روزانہ کا نیوز لیٹر — مفت سبسکرپشن" : "DAILY BRIEFING — FREE SUBSCRIPTION"}
+            </p>
             <h3 className={`text-lg sm:text-xl font-black text-gray-950 leading-snug ${isUrdu ? "urdu-headline" : "font-sans"}`}>
               {t("newsletterTitle")}
             </h3>
@@ -186,7 +180,7 @@ export default function NewsletterBox({ variant = "ribbon", className = "" }) {
                 <button
                   type="submit"
                   disabled={status === "loading"}
-                  className="h-11 px-5 sm:px-6 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs sm:text-sm transition shrink-0 disabled:opacity-50 cursor-pointer flex items-center justify-center whitespace-nowrap rounded-none font-sans"
+                  className="h-11 px-5 sm:px-6 bg-[#184e2d] hover:bg-[#113820] text-white font-bold text-xs sm:text-sm transition shrink-0 disabled:opacity-50 cursor-pointer flex items-center justify-center whitespace-nowrap rounded-none font-sans"
                 >
                   {status === "loading" ? t("subscribing") : t("subscribeBtn")}
                 </button>

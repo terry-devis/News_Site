@@ -72,7 +72,7 @@ export default function Footer({ categories = [] }) {
     <>
       {/* Footer Top Ad Slot placed cleanly above the green footer on light canvas */}
       <div className="u-shell mt-12 mb-6" dir={dir}>
-        <AdSlot slotKey="footer-strip" className="max-w-4xl mx-auto" />
+        <AdSlot slotKey="footer-strip" className="max-w-[970px] mx-auto" />
       </div>
 
       <footer className="w-full bg-[#0d542f] border-t border-[#0a4224] text-white pt-7 pb-5 font-sans" dir={dir}>

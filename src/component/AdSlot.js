@@ -153,34 +153,37 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
     );
   }
 
-  // Horizontal Leaderboard / In-feed Frame
+  // Horizontal Leaderboard / Billboard / In-feed Frame
+  const isBillboard = slotKey === "footer-strip" || slotKey.includes("billboard");
   return (
     <div
-      className={`relative border border-[#dcd8cd] bg-[#efeee9] px-4 py-3 shadow-xs overflow-hidden min-h-[82px] sm:min-h-[100px] flex items-center ${className}`}
+      className={`relative border border-[#dcd8cd] bg-[#efeee9] px-5 py-4 shadow-xs overflow-hidden flex items-center ${
+        isBillboard ? "min-h-[110px] sm:min-h-[150px]" : "min-h-[82px] sm:min-h-[100px]"
+      } ${className}`}
     >
       <span className="absolute top-1 start-1.5 bg-black/60 text-white text-[8px] font-bold px-1.5 py-0.5 font-sans uppercase tracking-wider">
         اشتہار
       </span>
       <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 sm:pt-0 sm:ps-10">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-emerald-800/10 flex items-center justify-center text-emerald-800 shrink-0">
-            <Megaphone size={15} />
+          <div className="w-9 h-9 rounded-full bg-emerald-800/10 flex items-center justify-center text-emerald-800 shrink-0">
+            <Megaphone size={16} />
           </div>
           <div className="text-center sm:text-start">
-            <h4 className="text-xs sm:text-sm font-bold text-gray-900 urdu-headline">
+            <h4 className="text-sm sm:text-base font-bold text-gray-900 urdu-headline">
               ڈیلی افادیت پر اشتہار کے لیے رابطہ کریں
             </h4>
-            <p className="text-[11px] text-gray-500 font-sans">
-              روزانہ لاکھوں قارئین تک رسائی • {slot.sizes || "728×90 / 970×90"}
+            <p className="text-[11px] sm:text-xs text-gray-500 font-sans">
+              روزانہ لاکھوں قارئین تک رسائی • {isBillboard ? "970×250 / 970×90" : slot.sizes || "728×90 / 970×90"}
             </p>
           </div>
         </div>
         <Link
           href="/advertise"
-          className="inline-flex items-center gap-1.5 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold px-3.5 py-1.5 transition shrink-0 font-sans"
+          className="inline-flex items-center gap-1.5 bg-[#184e2d] hover:bg-[#113820] text-white text-xs sm:text-sm font-bold px-4 py-2 transition shrink-0 font-sans"
         >
           <span>بُک کریں</span>
-          <ExternalLink size={11} />
+          <ExternalLink size={12} />
         </Link>
       </div>
     </div>

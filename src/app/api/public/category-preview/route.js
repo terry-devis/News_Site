@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCategories } from "@/lib/cmsDb";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
@@ -13,20 +14,22 @@ export async function GET(req) {
       return NextResponse.json({ articles: [] });
     }
 
-    const { data: cat } = await supabaseAdmin
-      .from("categories")
-      .select("id, slug, name_ur, name_en")
-      .eq("slug", slug)
-      .maybeSingle();
+    const allCats = await getCategories();
+    const cat = (allCats || []).find((c) => c.slug === slug);
 
     if (!cat) {
       return NextResponse.json({ articles: [] });
     }
 
+    const childIds = (allCats || [])
+      .filter((c) => c.parent_id === cat.id)
+      .map((c) => c.id);
+    const targetIds = [cat.id, ...childIds];
+
     const { data: articles, error } = await supabaseAdmin
       .from("articles")
       .select("id, title_ur, title_en, slug, featured_image, created_at")
-      .eq("category_id", cat.id)
+      .in("category_id", targetIds)
       .order("created_at", { ascending: false })
       .limit(limit);
 

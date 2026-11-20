@@ -35,6 +35,7 @@ export default function AdminAdsPage() {
   // Creative Modal State
   const [showCreativeModal, setShowCreativeModal] = useState(false);
   const [editingCreative, setEditingCreative] = useState(null);
+  const [uploadingArtwork, setUploadingArtwork] = useState(false);
   const [creativeForm, setCreativeForm] = useState({
     page_type: "home",
     slot_key: "",
@@ -890,13 +891,67 @@ export default function AdminAdsPage() {
                 </label>
 
                 <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={creativeForm.image_url}
-                    onChange={(e) => setCreativeForm({ ...creativeForm, image_url: e.target.value })}
-                    placeholder="https://example.com/banner.webp or /uploads/ads/banner.webp"
-                    className="w-full text-xs border border-[#e5e2da] rounded-lg p-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={creativeForm.image_url}
+                      onChange={(e) => setCreativeForm({ ...creativeForm, image_url: e.target.value })}
+                      placeholder="https://example.com/banner.webp or upload image"
+                      className="flex-1 text-xs border border-[#e5e2da] rounded-lg p-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
+                    />
+                    <label className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-[#124e2b] hover:bg-[#0d3b20] text-white text-xs font-semibold cursor-pointer transition">
+                      <Upload size={14} />
+                      <span>{uploadingArtwork ? "Uploading..." : "Upload"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingArtwork}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploadingArtwork(true);
+                          try {
+                            const fd = new FormData();
+                            fd.append("file", file);
+                            fd.append("folder", "ads");
+                            const res = await fetch("/api/upload", { method: "POST", body: fd });
+                            const data = await res.json();
+                            if (res.ok && data.url) {
+                              setCreativeForm((prev) => ({ ...prev, image_url: data.url }));
+                              setToast({ type: "success", message: "Ad artwork uploaded!" });
+                            } else {
+                              setToast({ type: "error", message: data.error || "Upload failed" });
+                            }
+                          } catch {
+                            setToast({ type: "error", message: "Network error uploading artwork" });
+                          } finally {
+                            setUploadingArtwork(false);
+                            e.target.value = "";
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {creativeForm.image_url && (
+                    <div className="relative rounded-lg border border-[#e5e2da] bg-[#f8f7f4] p-2 flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={creativeForm.image_url}
+                        alt={creativeForm.image_alt || "Ad banner preview"}
+                        className="max-h-28 w-auto object-contain rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setCreativeForm({ ...creativeForm, image_url: "" })}
+                        title="Remove image"
+                        className="absolute top-1.5 right-1.5 size-6 rounded-full bg-black/70 text-white hover:bg-red-600 flex items-center justify-center cursor-pointer"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
 
                   <input
                     type="text"

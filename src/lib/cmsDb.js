@@ -826,49 +826,176 @@ export async function deletePage(id) {
 // DAILY VOTING POLL (رائے شماری) FUNCTIONS
 // ----------------------------------------------------
 
-export async function getActivePoll() {
+export async function getAllPolls() {
   const local = ensureLocalStore();
-  if (!local.daily_poll) {
-    local.daily_poll = {
-      id: 1,
-      question_ur: "کیا حالیہ معاشی و مالیاتی اصلاحات سے ملک میں مہنگائی میں کمی اور عوام کو حقیقی ریلیف ملے گا؟",
-      question_en: "Do you believe current macroeconomic reforms will provide genuine relief from inflation to the public?",
-      options: [
-        { id: "yes", label_ur: "ہاں، بہتری آئے گی", label_en: "Yes, definitely", votes: 384 },
-        { id: "no", label_ur: "نہیں، ریلیف نہیں ملے گا", label_en: "No, unlikely", votes: 142 },
-        { id: "undecided", label_ur: "کہہ نہیں سکتے / قبل از وقت", label_en: "Undecided / Too early", votes: 48 },
-      ],
-      total_votes: 574,
-      is_active: true,
-      created_at: new Date().toISOString(),
-    };
+  if (!local.polls || !Array.isArray(local.polls) || local.polls.length === 0) {
+    local.polls = [
+      {
+        id: 1,
+        question_ur: "کیا حالیہ معاشی و مالیاتی اصلاحات سے ملک میں مہنگائی میں کمی اور عوام کو حقیقی ریلیف ملے گا؟",
+        question_en: "Do you believe current macroeconomic reforms will provide genuine relief from inflation to the public?",
+        options: [
+          { id: "opt_1", label_ur: "ہاں، بہتری آئے گی", label_en: "Yes, definitely", votes: 384 },
+          { id: "opt_2", label_ur: "نہیں، ریلیف نہیں ملے گا", label_en: "No, unlikely", votes: 142 },
+          { id: "opt_3", label_ur: "کہہ نہیں سکتے / قبل از وقت", label_en: "Undecided / Too early", votes: 48 },
+        ],
+        total_votes: 574,
+        status: "open",
+        is_active: true,
+        target_stories: [],
+        created_at: new Date(Date.now() - 3600000 * 6).toISOString(),
+      },
+      {
+        id: 2,
+        question_ur: "کیا مصنوعی ذہانت (AI) کا صحافت میں بڑھتا ہوا استعمال خبروں کی ساکھ کو متاثر کرے گا؟",
+        question_en: "Will the increasing adoption of AI in newsrooms impact editorial credibility?",
+        options: [
+          { id: "opt_1", label_ur: "ہاں، ساکھ متاثر ہو سکتی ہے", label_en: "Yes, credibility risk", votes: 215 },
+          { id: "opt_2", label_ur: "نہیں، تحقیق اور تصدیق تیز ہوگی", label_en: "No, aids verification", votes: 180 },
+          { id: "opt_3", label_ur: "مدیران کی اخلاقی نگرانی پر منحصر ہے", label_en: "Depends on editorial oversight", votes: 95 },
+        ],
+        total_votes: 490,
+        status: "closed",
+        is_active: false,
+        target_stories: [],
+        created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+      },
+    ];
+    local.daily_poll = local.polls[0];
     writeLocalStore(local);
   }
-  return local.daily_poll;
+  return local.polls;
 }
 
-export async function voteOnPoll(optionId) {
+export async function getActivePoll(storyId = null) {
+  const polls = await getAllPolls();
+  if (storyId) {
+    const storyPoll = polls.find(
+      (p) => (p.status === "open" || p.is_active) && p.target_stories && p.target_stories.includes(Number(storyId))
+    );
+    if (storyPoll) return storyPoll;
+  }
+  const generalPoll = polls.find((p) => p.status === "open" || p.is_active);
+  return generalPoll || polls[0] || null;
+}
+
+export async function createPoll(pollData) {
   const local = ensureLocalStore();
-  const poll = await getActivePoll();
+  const polls = await getAllPolls();
+  const newPoll = {
+    id: Date.now(),
+    question_ur: pollData.question_ur || "",
+    question_en: pollData.question_en || "",
+    options: (pollData.options || []).map((opt, idx) => ({
+      id: opt.id || `opt_${idx + 1}`,
+      label_ur: opt.label_ur || "",
+      label_en: opt.label_en || "",
+      votes: 0,
+    })),
+    total_votes: 0,
+    status: pollData.status || "open",
+    is_active: pollData.status === "open" || pollData.is_active !== false,
+    target_stories: pollData.target_stories || [],
+    target_story_title: pollData.target_story_title || null,
+    created_at: new Date().toISOString(),
+  };
+
+  // If new poll is open, close others or keep as active
+  polls.unshift(newPoll);
+  local.polls = polls;
+  local.daily_poll = newPoll;
+  writeLocalStore(local);
+  return newPoll;
+}
+
+export async function voteOnPoll(optionId, pollId = null) {
+  const local = ensureLocalStore();
+  const polls = await getAllPolls();
+  let poll = null;
+  if (pollId) {
+    poll = polls.find((p) => p.id === Number(pollId));
+  }
+  if (!poll) {
+    poll = polls.find((p) => p.status === "open" || p.is_active) || polls[0];
+  }
+  if (!poll) return { error: "No poll found" };
 
   const opt = poll.options.find((o) => o.id === optionId);
   if (!opt) return { error: "Option not found" };
 
   opt.votes = (opt.votes || 0) + 1;
   poll.total_votes = (poll.total_votes || 0) + 1;
-  local.daily_poll = poll;
+
+  local.polls = polls;
+  if (local.daily_poll && local.daily_poll.id === poll.id) {
+    local.daily_poll = poll;
+  }
   writeLocalStore(local);
   return poll;
 }
 
-export async function updatePoll(pollData) {
+export async function updatePoll(pollIdOrData, maybeData = null) {
   const local = ensureLocalStore();
-  const poll = await getActivePoll();
-  local.daily_poll = {
-    ...poll,
-    ...pollData,
+  const polls = await getAllPolls();
+
+  let targetId = null;
+  let updateData = {};
+
+  if (typeof pollIdOrData === "object" && pollIdOrData !== null) {
+    targetId = pollIdOrData.id;
+    updateData = pollIdOrData;
+  } else {
+    targetId = pollIdOrData;
+    updateData = maybeData || {};
+  }
+
+  let index = targetId ? polls.findIndex((p) => p.id === Number(targetId)) : 0;
+  if (index === -1) index = 0;
+
+  polls[index] = {
+    ...polls[index],
+    ...updateData,
     updated_at: new Date().toISOString(),
   };
+
+  if (updateData.status) {
+    polls[index].is_active = updateData.status === "open";
+  }
+
+  local.polls = polls;
+  if (local.daily_poll && local.daily_poll.id === polls[index].id) {
+    local.daily_poll = polls[index];
+  }
   writeLocalStore(local);
-  return local.daily_poll;
+  return polls[index];
+}
+
+export async function resetPollVotes(pollId) {
+  const local = ensureLocalStore();
+  const polls = await getAllPolls();
+  const poll = polls.find((p) => p.id === Number(pollId));
+  if (!poll) return { error: "Poll not found" };
+
+  poll.options.forEach((opt) => {
+    opt.votes = 0;
+  });
+  poll.total_votes = 0;
+  local.polls = polls;
+  if (local.daily_poll && local.daily_poll.id === poll.id) {
+    local.daily_poll = poll;
+  }
+  writeLocalStore(local);
+  return poll;
+}
+
+export async function deletePoll(pollId) {
+  const local = ensureLocalStore();
+  let polls = await getAllPolls();
+  polls = polls.filter((p) => p.id !== Number(pollId));
+  local.polls = polls;
+  if (local.daily_poll && local.daily_poll.id === Number(pollId)) {
+    local.daily_poll = polls[0] || null;
+  }
+  writeLocalStore(local);
+  return { success: true };
 }

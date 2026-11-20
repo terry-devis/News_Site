@@ -28,7 +28,7 @@ export async function GET(req) {
 
     const { data: articles, error } = await supabaseAdmin
       .from("articles")
-      .select("id, title_ur, title_en, slug, featured_image, created_at")
+      .select("id, title_ur, title_en, slug, cover_image, created_at")
       .in("category_id", targetIds)
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -42,7 +42,7 @@ export async function GET(req) {
         title_ur: a.title_ur,
         title_en: a.title_en,
         slug: a.slug,
-        thumb: a.featured_image || "",
+        thumb: a.cover_image || "",
         created_at: a.created_at,
       })),
     });

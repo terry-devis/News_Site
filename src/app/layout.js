@@ -3,8 +3,19 @@ import NextTopLoader from "nextjs-toploader";
 import { SiteLanguageProvider } from "@/context/SiteLanguageContext";
 
 export const metadata = {
-  title: "ڈیلی افادیت — سچ کے ساتھ، ہر خبر",
+  title: {
+    default: "ڈیلی افادیت — سچ کے ساتھ، ہر خبر",
+    template: "%s — ڈیلی افادیت",
+  },
   description: "ڈیلی افادیت نیوز پورٹل: پاکستان، دنیا، کھیل اور بزنس کی تازہ ترین اور مصدقہ خبریں | Daily Afadiat News",
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({ children }) {

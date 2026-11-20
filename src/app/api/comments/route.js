@@ -48,7 +48,7 @@ export async function PATCH(req) {
     const body = await req.json();
     const { comment_id, status } = body; // 'approved' or 'rejected'
 
-    if (!comment_id || !["approved", "rejected", "pending"].includes(status)) {
+    if (!comment_id || !["approved", "rejected", "pending", "spam"].includes(status)) {
       return NextResponse.json({ error: "Invalid parameters" }, { status: 400 });
     }
 

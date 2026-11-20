@@ -42,6 +42,7 @@ export default function EPaperClient({
   const [activeClip, setActiveClip] = useState(null);
   const [showAllPages, setShowAllPages] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const viewerRef = useRef(null);
 
   const cities = [
@@ -172,6 +173,97 @@ export default function EPaperClient({
 
   const currentCityObj = cities.find((c) => c.key === selectedCity) || cities[0];
 
+  const formatDisplayDate = (dateStr) => {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const handleSharePage = async () => {
+    const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: isUrdu ? `ای پیپر — صفحہ ${activePage}` : `ePaper — Page ${activePage}`,
+          url: shareUrl,
+        });
+      } else if (navigator.clipboard && shareUrl) {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      }
+    } catch {
+      // ignore cancel
+    }
+  };
+
+  const renderPager = (extraClass = "") => {
+    const visiblePages =
+      pagesList.length <= 6
+        ? pagesList.map((p) => p.num)
+        : [1, 2, 3, 4, 5, "...", pagesList.length];
+
+    return (
+      <nav aria-label={isUrdu ? "صفحات کی ترتیب" : "Page Navigation"} className={extraClass}>
+        <ul className="flex items-center justify-center gap-0.5 sm:gap-1">
+          <li>
+            <button
+              type="button"
+              disabled={activePage <= 1}
+              onClick={() => setActivePage((p) => Math.max(1, p - 1))}
+              aria-label={isUrdu ? "پچھلا صفحہ" : "Previous Page"}
+              className="grid h-8 min-w-8 place-items-center rounded-md px-1.5 text-sm tabular-nums transition-colors sm:h-10 sm:min-w-10 sm:px-2 text-gray-800 hover:bg-[#efeee9] hover:text-[#184e2d] disabled:pointer-events-none disabled:opacity-30 cursor-pointer"
+            >
+              {isUrdu ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            </button>
+          </li>
+          {visiblePages.map((item, idx) =>
+            item === "..." ? (
+              <li
+                key={`dots-${idx}`}
+                aria-hidden="true"
+                className="text-gray-400 grid h-8 w-5 place-items-center text-sm sm:h-10 sm:w-6"
+              >
+                …
+              </li>
+            ) : (
+              <li key={item}>
+                <button
+                  type="button"
+                  onClick={() => setActivePage(item)}
+                  aria-label={isUrdu ? `صفحہ ${item}` : `Page ${item}`}
+                  aria-current={activePage === item ? "page" : undefined}
+                  className={`grid h-8 min-w-8 place-items-center rounded-md px-1.5 text-sm tabular-nums transition-colors sm:h-10 sm:min-w-10 sm:px-2 cursor-pointer ${
+                    activePage === item
+                      ? "bg-[#184e2d] text-white font-semibold"
+                      : "text-gray-800 hover:bg-[#efeee9] hover:text-[#184e2d]"
+                  }`}
+                >
+                  {item}
+                </button>
+              </li>
+            )
+          )}
+          <li>
+            <button
+              type="button"
+              disabled={activePage >= pagesList.length}
+              onClick={() => setActivePage((p) => Math.min(pagesList.length, p + 1))}
+              aria-label={isUrdu ? "اگلا صفحہ" : "Next Page"}
+              className="grid h-8 min-w-8 place-items-center rounded-md px-1.5 text-sm tabular-nums transition-colors sm:h-10 sm:min-w-10 sm:px-2 text-gray-800 hover:bg-[#efeee9] hover:text-[#184e2d] disabled:pointer-events-none disabled:opacity-30 cursor-pointer"
+            >
+              {isUrdu ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+            </button>
+          </li>
+        </ul>
+      </nav>
+    );
+  };
+
   const handleDownloadPDF = () => {
     if (activeEdition?.pdf_url) {
       window.open(activeEdition.pdf_url, "_blank");
@@ -185,174 +277,156 @@ export default function EPaperClient({
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f6f3] flex flex-col font-sans" dir={dir}>
+    <div className="min-h-screen bg-[#f7f6f3] flex flex-col font-sans text-[#1a1a1a]" dir={dir}>
       <Header categories={categories} breakingNews={breakingNews} />
 
-      <main className="flex-1 w-full max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-5 space-y-6">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-6 py-6">
         
-        {/* Top Control Bar: City Edition + Date + Zoom + PDF Download + CMS Direct Link */}
-        <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-none p-3 sm:p-4 shadow-xs space-y-3">
-          
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            
-            {/* Left: City Selector Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 lg:pb-0">
-              <span className="text-xs font-bold text-gray-700 flex items-center gap-1 shrink-0 px-1">
-                <MapPin size={14} className="text-emerald-700" />
-                <span>{isUrdu ? "شہر منتخب کریں:" : "Edition:"}</span>
-              </span>
-              {cities.map((c) => (
-                <button
-                  key={c.key}
-                  onClick={() => setSelectedCity(c.key)}
-                  className={`text-xs px-3 py-1.5 rounded-none font-bold whitespace-nowrap transition cursor-pointer ${
-                    selectedCity === c.key
-                      ? "bg-emerald-800 text-white shadow-xs"
-                      : "bg-white text-gray-700 hover:bg-gray-100 border border-[#dcd8cd]"
-                  }`}
-                >
-                  {isUrdu ? c.name_ur : c.name_en}
-                </button>
-              ))}
-            </div>
-
-            {/* Right: Date Picker, CMS Story Link & PDF Download */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5 bg-white border border-[#dcd8cd] rounded-none px-2.5 py-1 text-xs shadow-xs">
-                <Calendar size={14} className="text-emerald-700" />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="outline-none bg-transparent font-sans text-xs text-gray-800 cursor-pointer"
-                />
-              </div>
-
-              <Link
-                href="/admin/epaper"
-                className="bg-zinc-800 hover:bg-zinc-900 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-none flex items-center gap-1.5 transition shadow-xs"
-                title={isUrdu ? "ای پیپر مضامین اور صفحات ایڈٹ کریں" : "Manage ePaper stories in CMS"}
-              >
-                <Edit size={13} />
-                <span>{isUrdu ? "مضامین ایڈٹ کریں (CMS)" : "Edit in CMS"}</span>
-              </Link>
-
-              <button
-                type="button"
-                onClick={handleDownloadPDF}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-1.5 rounded-none flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-              >
-                <Download size={13} />
-                <span>{isUrdu ? "مکمل اخبار PDF ڈاؤنلوڈ" : "Download PDF"}</span>
-              </button>
-            </div>
-
+        {/* Editorial Header (Matches Daily Insaf reference) */}
+        <header className="mb-4 flex flex-wrap items-end justify-between gap-3 sm:mb-5">
+          <div>
+            <h1 className="text-xl leading-tight sm:text-2xl lg:text-3xl font-black text-gray-900 urdu-headline">
+              {isUrdu ? "ای پیپر" : "ePaper"}
+            </h1>
+            <p className="text-gray-500 mt-1 text-sm font-sans">
+              {formatDisplayDate(selectedDate)} · {isUrdu ? currentCityObj.name_ur : currentCityObj.name_en} · {pagesList.length} {isUrdu ? "صفحات" : "Pages"}
+            </p>
           </div>
 
-          {/* Page Switcher & Zoom Controls Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2.5 border-t border-[#dcd8cd]">
-            
-            {/* Page Buttons + All Pages Toggle */}
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-              <span className="text-xs font-bold text-gray-700 flex items-center gap-1 shrink-0 px-1">
-                <Layers size={14} className="text-emerald-700" />
-                <span>{isUrdu ? "صفحات:" : "Pages:"}</span>
-              </span>
-              {pagesList.map((p) => (
-                <button
-                  key={p.num}
-                  onClick={() => {
-                    setActivePage(p.num);
-                    setShowAllPages(false);
-                  }}
-                  className={`text-xs px-3 py-1 rounded-none font-bold transition cursor-pointer whitespace-nowrap ${
-                    !showAllPages && activePage === p.num
-                      ? "bg-emerald-700 text-white shadow-xs"
-                      : "bg-white text-gray-700 hover:bg-gray-100 border border-[#dcd8cd]"
-                  }`}
-                >
-                  <span>{isUrdu ? `صفحہ ${p.num}` : `Page ${p.num}`}</span>
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setShowAllPages((prev) => !prev)}
-                className={`text-xs px-3 py-1 rounded-none font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                  showAllPages
-                    ? "bg-[#184e2d] text-white shadow-xs"
-                    : "bg-white text-[#184e2d] hover:bg-emerald-50 border border-[#184e2d]/40"
-                }`}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Compact City Edition Selector */}
+            <div className="flex items-center gap-1.5 border border-[#dcd8cd] bg-white hover:border-[#184e2d] rounded-lg px-3 min-h-11 text-sm font-semibold text-gray-800 transition-colors">
+              <MapPin size={15} className="text-[#184e2d] shrink-0" />
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                aria-label={isUrdu ? "شہر منتخب کریں" : "Select City Edition"}
+                className="bg-transparent outline-none cursor-pointer text-xs sm:text-sm font-semibold text-gray-800"
               >
-                <LayoutGrid size={13} />
-                <span>{isUrdu ? "تمام صفحات" : "All Pages"}</span>
-              </button>
+                {cities.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {isUrdu ? c.name_ur : c.name_en}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Zoom & Fullscreen Controls */}
-            <div className="flex items-center gap-1.5 self-end sm:self-auto">
-              <div className="flex items-center bg-white border border-[#dcd8cd] rounded-none p-0.5 shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => handleZoom(-15)}
-                  className="p-1.5 text-gray-600 hover:text-emerald-800 hover:bg-gray-100 rounded-none transition cursor-pointer"
-                  title={isUrdu ? "زوم کم کریں (-)" : "Zoom Out (-)"}
+            {/* Date Picker Button */}
+            <label className="border border-[#dcd8cd] bg-white hover:border-[#184e2d] hover:text-[#184e2d] flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-800 transition-colors cursor-pointer">
+              <Calendar size={16} className="text-[#184e2d] shrink-0" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="outline-none bg-transparent font-sans text-xs sm:text-sm text-gray-800 cursor-pointer"
+              />
+            </label>
+
+            {/* Subtle CMS Link */}
+            <Link
+              href="/admin/epaper"
+              className="border border-[#dcd8cd] bg-white hover:border-[#184e2d] hover:text-[#184e2d] flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-gray-700 transition-colors"
+              title={isUrdu ? "ای پیپر مضامین اور صفحات ایڈٹ کریں" : "Manage ePaper in CMS"}
+            >
+              <Edit size={14} />
+              <span className="hidden sm:inline">{isUrdu ? "ایڈٹ (CMS)" : "CMS"}</span>
+            </Link>
+          </div>
+        </header>
+
+        {/* Single Unified Toolbar (Pager on left, Actions on right) */}
+        <div className="border-b border-[#dcd8cd] mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pb-3">
+          {renderPager("max-sm:w-full")}
+
+          <div className="flex flex-wrap items-center gap-0.5 max-sm:w-full max-sm:justify-center">
+            {/* All Pages Modal Trigger */}
+            <button
+              type="button"
+              onClick={() => setShowAllPages(true)}
+              title={isUrdu ? "تمام صفحات" : "All Pages"}
+              className="flex h-10 items-center justify-center gap-1.5 rounded-md transition-colors px-2.5 text-sm font-semibold text-gray-800 hover:bg-[#efeee9] hover:text-[#184e2d] cursor-pointer"
+            >
+              <LayoutGrid size={18} />
+              <span className="max-sm:sr-only">{isUrdu ? "تمام صفحات" : "All Pages"}</span>
+            </button>
+
+            <span aria-hidden="true" className="bg-[#dcd8cd] mx-1 h-5 w-px" />
+
+            {/* Zoom Controls */}
+            <button
+              type="button"
+              disabled={zoomLevel <= 75}
+              onClick={() => handleZoom(-15)}
+              title={isUrdu ? "زوم کم کریں" : "Zoom Out"}
+              aria-label={isUrdu ? "زوم کم کریں" : "Zoom Out"}
+              className="flex h-10 w-10 items-center justify-center rounded-md transition-colors disabled:pointer-events-none disabled:opacity-30 text-gray-800 hover:bg-[#efeee9] hover:text-[#184e2d] cursor-pointer"
+            >
+              <ZoomOut size={18} />
+            </button>
+            <button
+              type="button"
+              disabled={zoomLevel === 100}
+              onClick={() => setZoomLevel(100)}
+              title={isUrdu ? "اصل سائز" : "Reset Size (100%)"}
+              className="text-gray-600 hover:text-[#184e2d] h-10 min-w-12 rounded-md text-xs font-mono tabular-nums transition-colors disabled:pointer-events-none cursor-pointer"
+            >
+              {zoomLevel}%
+            </button>
+            <button
+              type="button"
+              disabled={zoomLevel >= 175}
+              onClick={() => handleZoom(15)}
+              title={isUrdu ? "زوم کریں" : "Zoom In"}
+              aria-label={isUrdu ? "زوم کریں" : "Zoom In"}
+              className="flex h-10 w-10 items-center justify-center rounded-md transition-colors disabled:pointer-events-none disabled:opacity-30 text-gray-800 hover:bg-[#efeee9] hover:text-[#184e2d] cursor-pointer"
+            >
+              <ZoomIn size={18} />
+            </button>
+
+            <span aria-hidden="true" className="bg-[#dcd8cd] mx-1 h-5 w-px" />
+
+            {/* Share Page */}
+            <span className="relative">
+              <button
+                type="button"
+                onClick={handleSharePage}
+                title={isUrdu ? "صفحہ شیئر کریں" : "Share Page"}
+                aria-label={isUrdu ? "صفحہ شیئر کریں" : "Share Page"}
+                className="flex h-10 w-10 items-center justify-center rounded-md transition-colors text-gray-800 hover:bg-[#efeee9] hover:text-[#184e2d] cursor-pointer"
+              >
+                <Share2 size={18} />
+              </button>
+              {shareCopied && (
+                <span
+                  role="status"
+                  className="bg-gray-900 text-white pointer-events-none absolute top-full start-1/2 z-10 mt-1 -translate-x-1/2 whitespace-nowrap rounded px-2 py-1 text-xs"
                 >
-                  <ZoomOut size={15} />
-                </button>
-                <span className="text-[11px] font-mono font-bold px-2 text-gray-700">
-                  {zoomLevel}%
+                  {isUrdu ? "لنک کاپی ہو گیا!" : "Link copied!"}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => handleZoom(15)}
-                  className="p-1.5 text-gray-600 hover:text-emerald-800 hover:bg-gray-100 rounded-none transition cursor-pointer"
-                  title={isUrdu ? "زوم بڑھائیں (+)" : "Zoom In (+)"}
-                >
-                  <ZoomIn size={15} />
-                </button>
-              </div>
+              )}
+            </span>
 
-              <button
-                type="button"
-                onClick={() => setZoomLevel(100)}
-                className="text-[11px] font-semibold bg-white border border-[#dcd8cd] text-gray-700 px-2.5 py-1.5 rounded-none hover:bg-gray-50 transition cursor-pointer"
-              >
-                {isUrdu ? "ری سیٹ" : "Reset"}
-              </button>
+            {/* Fullscreen / Open */}
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              title={isUrdu ? "پوری اسکرین (F)" : "Fullscreen (F)"}
+              aria-label={isUrdu ? "پوری اسکرین" : "Fullscreen"}
+              className="hover:bg-[#efeee9] hover:text-[#184e2d] text-gray-800 grid size-10 place-items-center rounded-md transition-colors cursor-pointer"
+            >
+              {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            </button>
 
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                className="p-1.5 bg-white border border-[#dcd8cd] text-gray-700 hover:text-[#184e2d] hover:bg-gray-50 rounded-none transition cursor-pointer flex items-center gap-1 text-[11px] font-bold px-2.5"
-                title={isUrdu ? "فل اسکرین (F)" : "Fullscreen (F)"}
-              >
-                {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-                <span className="hidden md:inline">
-                  {isFullscreen
-                    ? isUrdu ? "بند کریں" : "Exit"
-                    : isUrdu ? "فل اسکرین" : "Fullscreen"}
-                </span>
-              </button>
-            </div>
-
+            {/* PDF Download Link */}
+            <button
+              type="button"
+              onClick={handleDownloadPDF}
+              className="text-[#184e2d] hover:bg-[#184e2d]/10 ms-1 flex h-10 items-center gap-1.5 rounded-md px-3 text-sm font-semibold transition-colors cursor-pointer"
+            >
+              <Download size={16} />
+              <span>{isUrdu ? "پی ڈی ایف" : "PDF"}</span>
+            </button>
           </div>
-
-          {/* Scraped-style Meta Strip & Keyboard Shortcut Hint */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#dcd8cd]/70 text-[11px] text-gray-600">
-            <div className="flex items-center gap-2 font-bold text-[#184e2d]">
-              <span>{isUrdu ? "ای پیپر" : "ePaper"}</span>
-              <span>|</span>
-              <span className="font-sans">{selectedDate}</span>
-              <span>|</span>
-              <span>{isUrdu ? currentCityObj.name_ur : currentCityObj.name_en}</span>
-              <span>|</span>
-              <span>{isUrdu ? `${pagesList.length} صفحات` : `${pagesList.length} Pages`}</span>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-[10px] text-gray-500 font-sans">
-              <span>{isUrdu ? "شارٹ کٹس: ← → صفحہ | + - زوم | F فل اسکرین" : "Shortcuts: ← → Page | + - Zoom | F Fullscreen"}</span>
-            </div>
-          </div>
-
         </div>
 
         {/* Viewer Container (Fullscreen Target) */}
@@ -360,74 +434,34 @@ export default function EPaperClient({
           ref={viewerRef}
           className={isFullscreen ? "bg-[#f7f6f3] p-4 sm:p-6 overflow-y-auto h-screen" : ""}
         >
-        {showAllPages ? (
-          /* All Pages Overview Grid (scraped-site style) */
-          <div className="bg-white border border-[#dcd8cd] p-4 sm:p-6 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-[#dcd8cd] pb-3">
-              <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                <LayoutGrid size={18} className="text-[#184e2d]" />
-                <span>{isUrdu ? `تمام صفحات — ${currentCityObj.name_ur} (${selectedDate})` : `All Pages — ${currentCityObj.name_en} (${selectedDate})`}</span>
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowAllPages(false)}
-                className="text-xs font-bold text-[#184e2d] hover:underline cursor-pointer"
-              >
-                {isUrdu ? "واپس صفحہ ویو پر جائیں" : "Back to Page View"}
-              </button>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {pagesList.map((p) => {
-                const ed =
-                  editions.find((e) => e.page_number === p.num && (e.city_slug === selectedCity || !e.city_slug)) ||
-                  editions.find((e) => e.page_number === p.num);
-                const pageLead = ed?.stories?.find((s) => s.position === "lead") || ed?.stories?.[0];
-                const isActive = activePage === p.num;
-                return (
-                  <button
-                    key={p.num}
-                    type="button"
-                    onClick={() => {
-                      setActivePage(p.num);
-                      setShowAllPages(false);
-                    }}
-                    className={`group text-start bg-[#f7f6f3] border transition p-3 flex flex-col justify-between min-h-[210px] cursor-pointer ${
-                      isActive ? "border-[#184e2d] ring-2 ring-[#184e2d]/30" : "border-[#dcd8cd] hover:border-[#184e2d]"
-                    }`}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between border-b border-[#dcd8cd] pb-1.5">
-                        <span className="bg-[#184e2d] text-white text-[11px] font-bold px-2 py-0.5">
-                          {isUrdu ? `صفحہ ${p.num}` : `Page ${p.num}`}
-                        </span>
-                        <span className="text-[10px] text-gray-500 font-semibold">
-                          {ed?.stories?.length ? `${ed.stories.length} ${isUrdu ? "خبریں" : "stories"}` : isUrdu ? "پرنٹ شیٹ" : "Broadsheet"}
-                        </span>
-                      </div>
-                      <h3 className="text-xs font-bold text-gray-800 group-hover:text-[#184e2d]">
-                        {isUrdu ? p.title_ur : p.title_en}
-                      </h3>
-                      <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
-                        {pageLead
-                          ? (isEnglish ? pageLead.headline_en || pageLead.headline_ur : pageLead.headline_ur)
-                          : (isUrdu ? "روزنامہ افادیت مکمل براڈ شیٹ پرنٹ صفحہ دیکھنے کے لیے کلک کریں۔" : "Click to inspect full broadsheet print page.")}
-                      </p>
-                    </div>
-                    <div className="pt-2 mt-2 border-t border-[#dcd8cd]/70 flex items-center justify-between text-[11px] font-bold text-[#184e2d]">
-                      <span>{isUrdu ? "صفحہ کھولیں" : "Open Page"}</span>
-                      {isUrdu ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-                    </div>
-                  </button>
-                );
-              })}
+        {activeEdition?.page_image ? (
+          /* Uploaded High-Res Newspaper Page Image (Click to Zoom, Daily Insaf style) */
+          <div
+            dir="ltr"
+            className="border border-[#dcd8cd] rounded-xl relative bg-white overflow-hidden shadow-xs"
+          >
+            <div className="w-full overflow-auto">
+              <img
+                src={activeEdition.page_image}
+                alt={`${selectedDate} — ${isUrdu ? `صفحہ ${activePage}` : `Page ${activePage}`}`}
+                onClick={() => setZoomLevel((z) => (z === 100 ? 145 : 100))}
+                draggable={false}
+                style={{
+                  transform: `scale(${zoomLevel / 100})`,
+                  transformOrigin: "top center",
+                }}
+                className={`block w-full h-auto select-none transition-transform duration-200 ${
+                  zoomLevel > 100 ? "cursor-zoom-out" : "cursor-zoom-in"
+                }`}
+              />
             </div>
           </div>
         ) : (
-        /* Newspaper Broadsheet Sheet Viewer (Classic sharp non-round edge broadsheet) */
-        <div className="w-full overflow-x-auto pb-4 scrollbar-thin">
+        /* Interactive Broadsheet Fallback Viewer inside crisp rounded-xl card */
+        <div className="w-full overflow-x-auto pb-2 scrollbar-thin border border-[#dcd8cd] rounded-xl bg-white shadow-xs">
           <div
             style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
-            className="transition-transform duration-200 mx-auto min-w-[760px] max-w-[1020px] bg-white border-2 border-gray-400 rounded-none shadow-2xl p-6 sm:p-10 space-y-6 text-gray-900"
+            className="transition-transform duration-200 mx-auto min-w-[760px] max-w-[1020px] bg-white p-6 sm:p-10 space-y-6 text-gray-900"
           >
             {/* Authentic Newspaper Masthead Header */}
             <div className="border-b-4 border-black pb-3 text-center space-y-2">
@@ -669,59 +703,109 @@ export default function EPaperClient({
         )}
         </div>
 
-        {/* Newspaper Page Thumbnails Reel at bottom */}
-        <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-none p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-              <Layers size={14} className="text-emerald-700" />
-              <span>{isUrdu ? "آج کے تمام صفحات کا پیش منظر" : "All Newspaper Pages Preview"}</span>
-            </h3>
-            <span className="text-[11px] text-gray-500 font-sans">
-              {isUrdu ? "صفحہ منتخب کرنے کے لیے کلک کریں" : "Click to view page"}
-            </span>
-          </div>
+        {/* Bottom Hint & Bottom Pager (Matches Daily Insaf reference) */}
+        <p className="text-gray-500 mx-auto mt-3 max-w-md text-center text-[0.8125rem] leading-snug">
+          {isUrdu ? "صفحہ بڑا کرنے کے لیے تصویر پر کلک کریں" : "Click the page to zoom in / out"}
+          <span className="mt-0.5 hidden sm:block">
+            {isUrdu
+              ? "تیر کی کلیدیں: صفحہ بدلیں · + / − : زوم · F: پوری اسکرین"
+              : "Arrow keys: Change page · + / − : Zoom · F: Fullscreen"}
+          </span>
+        </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {pagesList.map((p) => {
-              const pageEdition = editions.find(
-                (e) =>
-                  e.page_number === p.num &&
-                  (e.city_slug === selectedCity || !e.city_slug)
-              ) || editions.find((e) => e.page_number === p.num);
+        {renderPager("mt-4 mb-8")}
 
-              return (
+        {/* All Pages Thumbnail Modal Dialog (Matches Daily Insaf reference) */}
+        {showAllPages && (
+          <div
+            onClick={() => setShowAllPages(false)}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="epaper-index-title"
+              className="bg-white rounded-xl text-gray-900 max-h-[88vh] w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col border border-[#dcd8cd]"
+            >
+              <header className="border-b border-[#dcd8cd] flex items-center justify-between gap-3 px-4 py-3">
+                <h2 id="epaper-index-title" className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <span>{isUrdu ? "تمام صفحات" : "All Pages"}</span>
+                  <span className="text-gray-400 text-sm font-normal tabular-nums">{pagesList.length}</span>
+                </h2>
                 <button
-                  key={p.num}
-                  onClick={() => {
-                    setActivePage(p.num);
-                    window.scrollTo({ top: 180, behavior: "smooth" });
-                  }}
-                  className={`p-2 rounded-none border text-center transition cursor-pointer flex flex-col items-center gap-1.5 ${
-                    activePage === p.num
-                      ? "bg-white border-emerald-700 shadow-md ring-2 ring-emerald-600"
-                      : "bg-white/80 border-[#dcd8cd] hover:bg-white"
-                  }`}
+                  type="button"
+                  onClick={() => setShowAllPages(false)}
+                  aria-label={isUrdu ? "بند کریں" : "Close"}
+                  className="hover:bg-[#efeee9] grid size-10 place-items-center rounded-md transition-colors cursor-pointer"
                 >
-                  <div className="w-full aspect-[3/4] bg-gray-100 border border-gray-300 rounded-none flex items-center justify-center text-xs font-bold text-gray-500 font-mono shadow-inner overflow-hidden relative">
-                    {pageEdition?.page_image ? (
-                      <Image
-                        src={pageEdition.page_image}
-                        alt={`Page ${p.num}`}
-                        fill
-                        className="object-cover opacity-80 group-hover:opacity-100"
-                      />
-                    ) : (
-                      <span>Page {p.num}</span>
-                    )}
-                  </div>
-                  <span className="text-xs font-bold text-gray-800">
-                    {isUrdu ? p.title_ur : p.title_en}
-                  </span>
+                  <X size={18} />
                 </button>
-              );
-            })}
+              </header>
+
+              <ol className="grid grid-cols-3 gap-3 overflow-y-auto p-4 sm:grid-cols-4 md:grid-cols-6">
+                {pagesList.map((p) => {
+                  const pageEdition =
+                    editions.find(
+                      (e) => e.page_number === p.num && (e.city_slug === selectedCity || !e.city_slug)
+                    ) || editions.find((e) => e.page_number === p.num);
+                  const isActive = activePage === p.num;
+
+                  return (
+                    <li key={p.num}>
+                      <button
+                        type="button"
+                        aria-current={isActive ? "page" : undefined}
+                        aria-label={isUrdu ? `صفحہ ${p.num}` : `Page ${p.num}`}
+                        onClick={() => {
+                          setActivePage(p.num);
+                          setShowAllPages(false);
+                          window.scrollTo({ top: 120, behavior: "smooth" });
+                        }}
+                        className={`group block w-full rounded-md border-2 p-1 text-start transition-colors cursor-pointer ${
+                          isActive
+                            ? "border-[#184e2d]"
+                            : "border-transparent hover:border-[#dcd8cd]"
+                        }`}
+                      >
+                        <span
+                          className="bg-[#efeee9] relative block overflow-hidden rounded-sm border border-[#dcd8cd]/70"
+                          style={{ aspectRatio: "1600 / 2654" }}
+                        >
+                          {pageEdition?.page_image ? (
+                            <Image
+                              src={pageEdition.page_image}
+                              alt={`${isUrdu ? "صفحہ" : "Page"} ${p.num}`}
+                              fill
+                              className="object-cover object-top"
+                            />
+                          ) : (
+                            <span className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center bg-white">
+                              <span className="text-[10px] font-black text-[#184e2d] uppercase tracking-wider">
+                                Daily Afadiat
+                              </span>
+                              <span className="text-xs font-bold text-gray-800 mt-1">
+                                {isUrdu ? `صفحہ ${p.num}` : `Page ${p.num}`}
+                              </span>
+                              <span className="text-[10px] text-gray-500 mt-0.5 line-clamp-2">
+                                {isUrdu ? p.title_ur : p.title_en}
+                              </span>
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-1 flex items-center justify-between gap-1 text-xs">
+                          <span className={`tabular-nums ${isActive ? "text-[#184e2d] font-semibold" : "text-gray-600"}`}>
+                            {isUrdu ? `صفحہ ${p.num}` : `Page ${p.num}`}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Active Clipping Detail Modal (Bilingual & Sharp Edges) */}
         {activeClip && (

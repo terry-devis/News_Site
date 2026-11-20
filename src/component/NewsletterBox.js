@@ -64,7 +64,7 @@ export default function NewsletterBox({ variant = "ribbon", className = "" }) {
             <button
               type="submit"
               disabled={status === "loading"}
-              className="bg-[#184e2d] hover:bg-[#123d23] text-white text-xs font-bold px-4 py-2 transition disabled:opacity-50 cursor-pointer shrink-0"
+              className="bg-[#1f6f42] hover:bg-[#26844f] text-white text-xs font-bold px-4 py-2 transition disabled:opacity-50 cursor-pointer shrink-0 border border-white/10"
             >
               {status === "loading" ? t("subscribing") : t("subscribeBtn")}
             </button>

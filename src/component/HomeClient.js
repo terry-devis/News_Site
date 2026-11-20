@@ -969,9 +969,9 @@ export default function HomeClient({
         <section className="my-6 py-4 px-5 bg-[#121614] border border-[#262b28] rounded-none text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm font-sans">
           <div className="text-center sm:text-start">
             <h3 className={`text-sm sm:text-base font-bold text-white ${isUrdu ? "urdu-headline" : "font-sans"}`}>
-              {t("newsletterHeading")}
+              {t("newsletterTitle")}
             </h3>
-            <p className="text-gray-300 text-xs mt-0.5">{t("newsletterSub")}</p>
+            <p className="text-gray-300 text-xs mt-0.5">{t("newsletterSubtitle")}</p>
           </div>
           <div className="w-full sm:w-auto sm:min-w-[340px]">
             <NewsletterBox variant="inline" />

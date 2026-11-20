@@ -21,7 +21,16 @@ export async function GET(req) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return NextResponse.json({ articles: data || [] });
+    const formatted = (data || []).map((art) => {
+      let status = "published";
+      if (art.content_en) {
+        const match = art.content_en.match(/<!--status:([a-z_]+)-->/);
+        if (match) status = match[1];
+      }
+      return { ...art, status };
+    });
+
+    return NextResponse.json({ articles: formatted });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -55,13 +64,19 @@ export async function POST(req) {
       ? slug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-")
       : `news-${Date.now()}`;
 
+    const targetStatus = body.status || "published";
+    let finalContentEn = content_en || "";
+    if (targetStatus !== "published") {
+      finalContentEn = `<!--status:${targetStatus}-->\n${finalContentEn}`.trim();
+    }
+
     const newArticle = {
       title_ur,
       title_en: title_en || null,
       slug: generatedSlug,
       summary_ur: summary_ur || title_ur.substring(0, 150),
       content_ur,
-      content_en: content_en || null,
+      content_en: finalContentEn || null,
       category_id: category_id ? Number(category_id) : null,
       cover_image: cover_image || null,
       is_breaking: Boolean(is_breaking),

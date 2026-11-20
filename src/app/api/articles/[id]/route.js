@@ -12,7 +12,14 @@ export async function GET(req, { params }) {
       .single();
 
     if (error) throw error;
-    return NextResponse.json({ article: data });
+
+    let status = "published";
+    if (data?.content_en) {
+      const match = data.content_en.match(/<!--status:([a-z_]+)-->/);
+      if (match) status = match[1];
+    }
+
+    return NextResponse.json({ article: { ...data, status } });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
@@ -23,6 +30,8 @@ export async function PUT(req, { params }) {
     const { id } = params;
     const body = await req.json();
 
+    let targetStatus = body.status;
+
     const updates = {
       ...body,
       updated_at: new Date().toISOString(),
@@ -30,6 +39,22 @@ export async function PUT(req, { params }) {
 
     if (updates.id) delete updates.id;
     if (updates.categories) delete updates.categories;
+
+    // Handle status persistence safely within schema
+    if (updates.status !== undefined) {
+      targetStatus = updates.status;
+      delete updates.status;
+
+      // Pack status into content_en
+      let baseEn = updates.content_en;
+      if (baseEn === undefined) {
+        // Fetch current content_en
+        const { data: cur } = await supabaseAdmin.from("articles").select("content_en").eq("id", id).single();
+        baseEn = cur?.content_en || "";
+      }
+      const cleanEn = (baseEn || "").replace(/<!--status:[a-z_]+-->\n?/, "").trim();
+      updates.content_en = `<!--status:${targetStatus}-->\n${cleanEn}`.trim();
+    }
 
     const { data, error } = await supabaseAdmin
       .from("articles")
@@ -89,7 +114,10 @@ export async function PUT(req, { params }) {
       // ignore
     }
 
-    return NextResponse.json({ success: true, article: data[0] });
+    return NextResponse.json({
+      success: true,
+      article: data[0] ? { ...data[0], status: targetStatus || "published" } : null,
+    });
   } catch (error) {
     console.error("PUT article error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

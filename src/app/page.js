@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { getVideos, getSiteSetting } from "@/lib/cmsDb";
 import HomeClient from "@/component/HomeClient";
 
 export const dynamic = "force-dynamic";
@@ -654,11 +655,18 @@ export default async function Home() {
     }
   }
 
+  const [videos, socialLinks] = await Promise.all([
+    getVideos().catch(() => []),
+    getSiteSetting("social_links").catch(() => null),
+  ]);
+
   return (
     <HomeClient
       articles={newsList}
       categories={categories}
       breakingNews={allBreaking}
+      videos={videos}
+      socialLinks={socialLinks}
     />
   );
 }

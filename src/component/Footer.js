@@ -73,7 +73,7 @@ export default function Footer({ categories = [] }) {
       <div className="u-shell">
         
         {/* Footer Top Ad Slot (Controllable from CMS) */}
-        <AdSlot slotKey="footer_banner" className="mb-5 max-w-4xl mx-auto" />
+        <AdSlot slotKey="footer-strip" className="mb-5 max-w-4xl mx-auto" />
 
         {/* ========================================================== */}
         {/* TIER 1: BRAND IDENTITY & OFFICIAL SOCIAL MEDIA ICONS      */}

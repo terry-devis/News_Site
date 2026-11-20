@@ -220,9 +220,6 @@ export default function Header({ categories = [], breakingNews = [] }) {
             />
           </div>
         </Link>
-
-        {/* Top Header Ad Slot (728x90) */}
-        <AdSlot slotKey="top_banner_728x90" className="w-full max-w-[728px] mx-auto mt-2" />
       </div>
 
       {/* Express News style Broad Utility Bar (آج کا اخبار | مارکیٹ ریٹس | ویڈیوز | اشتہار دیں) */}

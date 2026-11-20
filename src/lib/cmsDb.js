@@ -343,6 +343,7 @@ const DEFAULT_AD_SLOTS = [
   { id: 2, slot_key: "home-leaderboard", name: "Home leaderboard", sizes: "728x90, 320x50", pages: ["home"], is_active: true },
   { id: 3, slot_key: "home-infeed-1", name: "Home · in-feed #1", sizes: "728x90, 300x250", pages: ["home"], is_active: true },
   { id: 4, slot_key: "home-infeed-2", name: "Home · in-feed #2", sizes: "728x90, 300x250", pages: ["home"], is_active: true },
+  { id: 13, slot_key: "home-infeed-3", name: "Home · in-feed #3", sizes: "728x90, 300x250", pages: ["home"], is_active: true },
   { id: 5, slot_key: "home-mpu", name: "Home MPU", sizes: "300x250", pages: ["home"], is_active: true },
   { id: 6, slot_key: "home-sidebar", name: "Home · sidebar", sizes: "300x600, 300x250", pages: ["home"], is_active: true },
   { id: 7, slot_key: "section-leaderboard", name: "Section · leaderboard (top)", sizes: "728x90, 320x50", pages: ["section"], is_active: true },

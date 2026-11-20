@@ -1261,3 +1261,364 @@ export async function deletePoll(pollId) {
   writeLocalStore(local);
   return { success: true };
 }
+
+// ----------------------------------------------------
+// SECTIONS & CATEGORIES TAXONOMY API
+// ----------------------------------------------------
+
+const DEFAULT_CATEGORIES = [
+  {
+    id: 1,
+    name_en: "Pakistan",
+    name_ur: "پاکستان",
+    slug: "pakistan",
+    url_path: "/pakistan",
+    parent_id: null,
+    articles_count: 65,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: true,
+    is_active: true,
+    sort_order: 1,
+    layout: "Grid",
+  },
+  {
+    id: 2,
+    name_en: "Punjab",
+    name_ur: "پنجاب",
+    slug: "punjab",
+    url_path: "/pakistan/punjab",
+    parent_id: 1,
+    parent_name_en: "Pakistan",
+    articles_count: 172,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: false,
+    is_active: true,
+    sort_order: 2,
+    layout: "Grid",
+  },
+  {
+    id: 3,
+    name_en: "Sindh",
+    name_ur: "سندھ",
+    slug: "sindh",
+    url_path: "/pakistan/sindh",
+    parent_id: 1,
+    parent_name_en: "Pakistan",
+    articles_count: 12,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: false,
+    is_active: true,
+    sort_order: 3,
+    layout: "Grid",
+  },
+  {
+    id: 4,
+    name_en: "Islamabad",
+    name_ur: "اسلام آباد",
+    slug: "islamabad",
+    url_path: "/pakistan/islamabad",
+    parent_id: 1,
+    parent_name_en: "Pakistan",
+    articles_count: 17,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: false,
+    is_active: true,
+    sort_order: 4,
+    layout: "Grid",
+  },
+  {
+    id: 5,
+    name_en: "Khyber Pakhtunkhwa",
+    name_ur: "خیبر پختونخوا",
+    slug: "kpk",
+    url_path: "/pakistan/kpk",
+    parent_id: 1,
+    parent_name_en: "Pakistan",
+    articles_count: 12,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: false,
+    is_active: true,
+    sort_order: 5,
+    layout: "Grid",
+  },
+  {
+    id: 6,
+    name_en: "Balochistan",
+    name_ur: "بلوچستان",
+    slug: "balochistan",
+    url_path: "/pakistan/balochistan",
+    parent_id: 1,
+    parent_name_en: "Pakistan",
+    articles_count: 10,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: false,
+    is_active: true,
+    sort_order: 6,
+    layout: "Grid",
+  },
+  {
+    id: 7,
+    name_en: "Azad Kashmir",
+    name_ur: "آزاد کشمیر",
+    slug: "kashmir",
+    url_path: "/pakistan/kashmir",
+    parent_id: 1,
+    parent_name_en: "Pakistan",
+    articles_count: 6,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: false,
+    is_active: true,
+    sort_order: 7,
+    layout: "Grid",
+  },
+  {
+    id: 8,
+    name_en: "World",
+    name_ur: "انٹرنیشنل",
+    slug: "world",
+    url_path: "/world",
+    parent_id: null,
+    articles_count: 43,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: true,
+    is_active: true,
+    sort_order: 8,
+    layout: "Grid",
+  },
+  {
+    id: 9,
+    name_en: "Sports",
+    name_ur: "کھیل",
+    slug: "sports",
+    url_path: "/sports",
+    parent_id: null,
+    articles_count: 33,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: true,
+    is_active: true,
+    sort_order: 9,
+    layout: "Grid",
+  },
+  {
+    id: 10,
+    name_en: "Business",
+    name_ur: "بزنس",
+    slug: "business",
+    url_path: "/business",
+    parent_id: null,
+    articles_count: 28,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: true,
+    is_active: true,
+    sort_order: 10,
+    layout: "Grid",
+  },
+  {
+    id: 11,
+    name_en: "Entertainment",
+    name_ur: "انٹرٹینمنٹ",
+    slug: "entertainment",
+    url_path: "/entertainment",
+    parent_id: null,
+    articles_count: 24,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: true,
+    is_active: true,
+    sort_order: 11,
+    layout: "Grid",
+  },
+  {
+    id: 12,
+    name_en: "Science & Technology",
+    name_ur: "سائنس و ٹیکنالوجی",
+    slug: "tech",
+    url_path: "/tech",
+    parent_id: null,
+    articles_count: 19,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: true,
+    is_active: true,
+    sort_order: 12,
+    layout: "Grid",
+  },
+  {
+    id: 13,
+    name_en: "Health",
+    name_ur: "صحت",
+    slug: "health",
+    url_path: "/health",
+    parent_id: null,
+    articles_count: 14,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: true,
+    is_active: true,
+    sort_order: 13,
+    layout: "Grid",
+  },
+  {
+    id: 14,
+    name_en: "Opinion",
+    name_ur: "اداریہ و کالم",
+    slug: "opinion",
+    url_path: "/opinion",
+    parent_id: null,
+    articles_count: 21,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: true,
+    is_active: true,
+    sort_order: 14,
+    layout: "Grid",
+  },
+  {
+    id: 15,
+    name_en: "Fact Check",
+    name_ur: "حقائق نامہ (فیکٹ چیک)",
+    slug: "fact-check",
+    url_path: "/fact-check",
+    parent_id: null,
+    articles_count: 7,
+    show_in_header: false,
+    show_in_mobile: true,
+    show_in_footer: true,
+    is_active: true,
+    sort_order: 15,
+    layout: "Grid",
+  },
+  {
+    id: 16,
+    name_en: "Special Reports",
+    name_ur: "خصوصی رپورٹ",
+    slug: "special",
+    url_path: "/special",
+    parent_id: null,
+    articles_count: 8,
+    show_in_header: true,
+    show_in_mobile: true,
+    show_in_footer: true,
+    is_active: true,
+    sort_order: 16,
+    layout: "Grid",
+  },
+];
+
+export async function getCategories() {
+  const local = ensureLocalStore();
+  if (!local.categories_v2 || !Array.isArray(local.categories_v2) || local.categories_v2.length === 0) {
+    local.categories_v2 = DEFAULT_CATEGORIES;
+    writeLocalStore(local);
+  }
+  return local.categories_v2;
+}
+
+export async function createCategory(catData) {
+  const local = ensureLocalStore();
+  const categories = await getCategories();
+
+  const cleanSlug = (catData.slug || catData.name_en || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9_-]/g, "-");
+
+  let parentName = null;
+  let urlPath = `/${cleanSlug}`;
+
+  if (catData.parent_id) {
+    const parent = categories.find((c) => String(c.id) === String(catData.parent_id));
+    if (parent) {
+      parentName = parent.name_en;
+      urlPath = `${parent.url_path || `/${parent.slug}`}/${cleanSlug}`;
+    }
+  }
+
+  const newCat = {
+    id: Date.now(),
+    name_en: catData.name_en || "",
+    name_ur: catData.name_ur || "",
+    slug: cleanSlug,
+    url_path: urlPath,
+    parent_id: catData.parent_id ? Number(catData.parent_id) : null,
+    parent_name_en: parentName,
+    description_ur: catData.description_ur || "",
+    description_en: catData.description_en || "",
+    articles_count: 0,
+    show_in_header: catData.show_in_header !== false,
+    show_in_mobile: catData.show_in_mobile !== false,
+    show_in_footer: Boolean(catData.show_in_footer),
+    is_active: catData.is_active !== false,
+    sort_order: Number(catData.sort_order) || categories.length + 1,
+    layout: catData.layout || "Grid",
+    seo_title: catData.seo_title || "",
+    meta_description: catData.meta_description || "",
+    no_index: Boolean(catData.no_index),
+    created_at: new Date().toISOString(),
+  };
+
+  categories.push(newCat);
+  local.categories_v2 = categories;
+  writeLocalStore(local);
+  return newCat;
+}
+
+export async function updateCategory(id, updates) {
+  const local = ensureLocalStore();
+  const categories = await getCategories();
+  const idx = categories.findIndex((c) => String(c.id) === String(id));
+  if (idx >= 0) {
+    const existing = categories[idx];
+    const cleanSlug = updates.slug
+      ? updates.slug.toLowerCase().trim().replace(/[^a-z0-9_-]/g, "-")
+      : existing.slug;
+
+    let parentName = existing.parent_name_en;
+    let urlPath = updates.url_path || existing.url_path;
+
+    if (updates.parent_id !== undefined) {
+      if (updates.parent_id) {
+        const parent = categories.find((c) => String(c.id) === String(updates.parent_id));
+        if (parent) {
+          parentName = parent.name_en;
+          urlPath = `${parent.url_path || `/${parent.slug}`}/${cleanSlug}`;
+        }
+      } else {
+        parentName = null;
+        urlPath = `/${cleanSlug}`;
+      }
+    }
+
+    categories[idx] = {
+      ...existing,
+      ...updates,
+      slug: cleanSlug,
+      url_path: urlPath,
+      parent_name_en: parentName,
+      updated_at: new Date().toISOString(),
+    };
+    local.categories_v2 = categories;
+    writeLocalStore(local);
+    return categories[idx];
+  }
+  return null;
+}
+
+export async function deleteCategory(id) {
+  const local = ensureLocalStore();
+  let categories = await getCategories();
+  categories = categories.filter((c) => String(c.id) !== String(id));
+  local.categories_v2 = categories;
+  writeLocalStore(local);
+  return { success: true };
+}

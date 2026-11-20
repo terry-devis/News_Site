@@ -2888,3 +2888,120 @@ export async function createNewsroomRole({ nameEn, nameUr = "", description = ""
   writeLocalStore(local);
   return newRole;
 }
+
+// ==========================================
+// 13. EMAIL ALERTS & NOTIFICATION LOG API
+// ==========================================
+const DEFAULT_NOTIFICATION_ACTIVITIES = [
+  {
+    group: "Editorial",
+    activityType: "article.submitted",
+    label: "Story submitted for review",
+    description: "When a reporter or columnist moves a draft to In review",
+    defaultPriority: 20,
+  },
+  {
+    group: "Editorial",
+    activityType: "article.published",
+    label: "Article published",
+    description: "When any story goes live on Daily Afadiat",
+    defaultPriority: 30,
+  },
+  {
+    group: "Editorial",
+    activityType: "breaking.created",
+    label: "Breaking news alert",
+    description: "When a breaking ticker item or flash story is pushed live",
+    defaultPriority: 10,
+  },
+  {
+    group: "Moderation & Audience",
+    activityType: "comment.received",
+    label: "New reader comment",
+    description: "When a reader submits a comment awaiting moderation",
+    defaultPriority: 50,
+  },
+  {
+    group: "Moderation & Audience",
+    activityType: "inquiry.received",
+    label: "New contact / ad inquiry",
+    description: "When someone submits the Contact or Advertise form",
+    defaultPriority: 25,
+  },
+  {
+    group: "System",
+    activityType: "user.password_reset",
+    label: "Staff password reset",
+    description: "When an administrator resets a staff member's password",
+    defaultPriority: 15,
+  },
+  {
+    group: "System",
+    activityType: "epaper.published",
+    label: "Daily e-paper published",
+    description: "When a new daily e-paper edition is uploaded and set live",
+    defaultPriority: 40,
+  },
+];
+
+export async function getNotificationPrefs() {
+  const local = ensureLocalStore();
+  const roles = await getNewsroomRoles();
+  const saved = Array.isArray(local.notification_prefs) ? local.notification_prefs : [];
+
+  const prefMap = new Map();
+  for (const p of saved) {
+    prefMap.set(`${p.activityType}:${p.role}`, p);
+  }
+
+  const activities = DEFAULT_NOTIFICATION_ACTIVITIES.map((act) => ({
+    ...act,
+    cells: roles.map((r) => {
+      const hit = prefMap.get(`${act.activityType}:${r.key}`);
+      if (hit) {
+        return {
+          role: r.key,
+          emailEnabled: Boolean(hit.emailEnabled),
+          priority: Number(hit.priority ?? act.defaultPriority),
+        };
+      }
+      const defaultEnabled = r.key === "super_admin" || r.key === "editor_in_chief";
+      return {
+        role: r.key,
+        emailEnabled: defaultEnabled,
+        priority: act.defaultPriority,
+      };
+    }),
+  }));
+
+  return {
+    roles: roles.map((r) => ({ key: r.key, nameEn: r.nameEn })),
+    activities,
+  };
+}
+
+export async function saveNotificationPrefs(prefs = []) {
+  const local = ensureLocalStore();
+  local.notification_prefs = Array.isArray(prefs) ? prefs : [];
+  writeLocalStore(local);
+  return { success: true };
+}
+
+export async function getNotificationLog(limit = 25) {
+  const local = ensureLocalStore();
+  const log = Array.isArray(local.notification_log) ? local.notification_log : [];
+  return log.slice(0, limit);
+}
+
+export async function appendNotificationLog(entry) {
+  const local = ensureLocalStore();
+  const log = Array.isArray(local.notification_log) ? local.notification_log : [];
+  const item = {
+    id: `nlog_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    createdAt: new Date().toISOString(),
+    ...entry,
+  };
+  local.notification_log = [item, ...log].slice(0, 100);
+  writeLocalStore(local);
+  return item;
+}

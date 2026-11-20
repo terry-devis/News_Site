@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import {
   getLayout,
   saveLayoutBlocks,
@@ -7,6 +8,7 @@ import {
   updateLayoutBlock,
   deleteLayoutBlock,
 } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET(req) {
   try {
@@ -22,21 +24,27 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  const { errorResponse } = await requirePermission("layout.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
 
     if (body.action === "save_blocks") {
       const saved = await saveLayoutBlocks(body.blocks || []);
+      try { revalidatePath("/"); revalidatePath("/en"); } catch {}
       return NextResponse.json({ success: true, blocks: saved });
     }
 
     if (body.action === "save_zones") {
       const saved = await saveLayoutZones(body.zones || []);
+      try { revalidatePath("/"); revalidatePath("/en"); } catch {}
       return NextResponse.json({ success: true, zones: saved });
     }
 
     // Default create single block
     const newBlock = await createLayoutBlock(body);
+    try { revalidatePath("/"); revalidatePath("/en"); } catch {}
     return NextResponse.json({ success: true, block: newBlock });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -44,6 +52,9 @@ export async function POST(req) {
 }
 
 export async function PUT(req) {
+  const { errorResponse } = await requirePermission("layout.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const { id, ...updates } = body;
@@ -62,6 +73,9 @@ export async function PATCH(req) {
 }
 
 export async function DELETE(req) {
+  const { errorResponse } = await requirePermission("layout.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(req.url);
     let id = searchParams.get("id");

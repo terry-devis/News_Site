@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getComments, addComment, updateCommentStatus, deleteComment } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET(req) {
   try {
@@ -44,6 +45,9 @@ export async function POST(req) {
 }
 
 export async function PATCH(req) {
+  const { errorResponse } = await requirePermission("comment.moderate");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const { comment_id, status } = body; // 'approved' or 'rejected'
@@ -60,6 +64,9 @@ export async function PATCH(req) {
 }
 
 export async function DELETE(req) {
+  const { errorResponse } = await requirePermission("comment.moderate");
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");

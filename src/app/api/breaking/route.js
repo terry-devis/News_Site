@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -18,6 +19,9 @@ export async function GET() {
 }
 
 export async function POST(req) {
+  const { errorResponse } = await requirePermission("breaking.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const { id, text_ur, text_en, link_url, is_active, priority } = body;
@@ -74,6 +78,9 @@ export async function POST(req) {
 }
 
 export async function DELETE(req) {
+  const { errorResponse } = await requirePermission("breaking.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");

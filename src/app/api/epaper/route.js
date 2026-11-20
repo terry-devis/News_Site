@@ -8,6 +8,7 @@ import {
   getEpaperEditions,
   saveEpaperEdition,
 } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -37,10 +38,15 @@ export async function POST(req) {
 
     // 1. Save Clickable Regions
     if (body.action === "save_regions") {
+      const { errorResponse } = await requirePermission("epaper.clip");
+      if (errorResponse) return errorResponse;
       const { editionId, pageNumber, regions } = body;
       const res = await saveEpaperPageRegions(editionId, pageNumber, regions || []);
       return NextResponse.json(res);
     }
+
+    const { errorResponse } = await requirePermission("epaper.manage");
+    if (errorResponse) return errorResponse;
 
     // 2. Upload / Create Edition (V2)
     if (body.action === "upload_edition" || body.paper || body.pdf_url) {
@@ -57,6 +63,9 @@ export async function POST(req) {
 }
 
 export async function PUT(req) {
+  const { errorResponse } = await requirePermission("epaper.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const { id, ...updates } = body;
@@ -75,6 +84,9 @@ export async function PATCH(req) {
 }
 
 export async function DELETE(req) {
+  const { errorResponse } = await requirePermission("epaper.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(req.url);
     let id = searchParams.get("id");

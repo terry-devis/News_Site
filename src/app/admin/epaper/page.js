@@ -44,6 +44,8 @@ export default function AdminEpaperPage() {
   const [isUnsaved, setIsUnsaved] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [savingRegions, setSavingRegions] = useState(false);
+  const [deletingEditionId, setDeletingEditionId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Canvas drawing ref and state
   const canvasRef = useRef(null);
@@ -72,6 +74,71 @@ export default function AdminEpaperPage() {
     fetchEditions();
   }, []);
 
+  // Warn before leaving with unsaved clipping changes
+  useEffect(() => {
+    if (!isUnsaved) return;
+    const handleBeforeUnload = (e) => e.preventDefault();
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isUnsaved]);
+
+  // Keyboard nudge / resize / delete for selected clipping region (matching scraped-site)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (selectedRegionIndex === null || !activeEdition) return;
+      const tag = e.target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      const cur = regions[selectedRegionIndex];
+      if (!cur || !cur.coordinates) return;
+
+      const step = e.shiftKey ? 1.5 : 0.2;
+      const c = { ...cur.coordinates };
+
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        if (e.altKey) c.width = Math.max(1, c.width - step);
+        else c.x = Math.max(0, c.x - step);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (e.altKey) c.width = Math.min(100 - c.x, c.width + step);
+        else c.x = Math.min(100 - c.width, c.x + step);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (e.altKey) c.height = Math.max(1, c.height - step);
+        else c.y = Math.max(0, c.y - step);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (e.altKey) c.height = Math.min(100 - c.y, c.height + step);
+        else c.y = Math.min(100 - c.height, c.y + step);
+      } else if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        setRegions((prev) => prev.filter((_, i) => i !== selectedRegionIndex));
+        setSelectedRegionIndex(null);
+        setIsUnsaved(true);
+        return;
+      } else if (e.key === "Escape") {
+        setSelectedRegionIndex(null);
+        return;
+      } else {
+        return;
+      }
+
+      c.x = Math.round(c.x * 100) / 100;
+      c.y = Math.round(c.y * 100) / 100;
+      c.width = Math.round(c.width * 100) / 100;
+      c.height = Math.round(c.height * 100) / 100;
+
+      setRegions((prev) =>
+        prev.map((r, i) => (i === selectedRegionIndex ? { ...r, coordinates: c } : r))
+      );
+      setIsUnsaved(true);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedRegionIndex, activeEdition, regions]);
+
   const showToast = (type, message) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 4000);
@@ -83,14 +150,26 @@ export default function AdminEpaperPage() {
     setUploading(true);
 
     try {
+      let uploadedPdfUrl = "";
+      if (selectedFile) {
+        const fd = new FormData();
+        fd.append("file", selectedFile);
+        const upRes = await fetch("/api/upload", { method: "POST", body: fd });
+        const upData = await upRes.json();
+        if (!upRes.ok || !upData.url) {
+          throw new Error(upData.error || "Failed to upload file to R2");
+        }
+        uploadedPdfUrl = upData.url;
+      }
+
       const payload = {
         action: "upload_edition",
         edition_date: uploadDate,
         paper: uploadPaper,
         title: uploadTitle.trim() || (uploadPaper === "ur" ? "اسلام آباد" : "Islamabad"),
         city: uploadTitle.trim() || "Islamabad",
-        file_size: selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : "34.6 MB",
-        pdf_url: "https://daily-afadiat.sgp1.digitaloceanspaces.com/epaper/sample.pdf",
+        file_size: selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : "—",
+        pdf_url: uploadedPdfUrl || null,
       };
 
       const res = await fetch("/api/epaper", {
@@ -135,23 +214,31 @@ export default function AdminEpaperPage() {
     }
   };
 
-  // Delete Edition
-  const handleDeleteEdition = async (editionId) => {
-    if (!window.confirm("Are you sure you want to permanently delete this e-paper edition and all its page clippings?")) {
-      return;
-    }
+  // Delete Edition (opens styled modal)
+  const handleDeleteEdition = (editionId) => {
+    setDeletingEditionId(editionId);
+  };
+
+  const confirmDeleteEdition = async () => {
+    if (!deletingEditionId) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/epaper?id=${editionId}`, { method: "DELETE" });
+      const res = await fetch(`/api/epaper?id=${deletingEditionId}`, { method: "DELETE" });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         showToast("success", "Edition deleted.");
-        if (activeEdition && activeEdition.id === editionId) {
+        if (activeEdition && activeEdition.id === deletingEditionId) {
           handleCloseClippingWorkspace();
         }
+        setDeletingEditionId(null);
         fetchEditions();
+      } else {
+        showToast("error", data.error || "Failed to delete edition");
       }
-    } catch (err) {
+    } catch {
       showToast("error", "Failed to delete edition");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -823,6 +910,36 @@ export default function AdminEpaperPage() {
           ))
         )}
       </div>
+
+      {/* Delete Edition Confirmation Modal */}
+      {deletingEditionId && (
+        <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#e5e2da] w-full max-w-md shadow-2xl p-5 space-y-4 rounded-xl">
+            <h3 className="text-sm font-bold text-[#18221b]">Delete this e-paper edition?</h3>
+            <p className="text-xs text-[#5c635b] leading-relaxed">
+              This will permanently remove the edition and all of its page clippings. This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeletingEditionId(null)}
+                className="px-3.5 py-2 text-xs font-semibold border border-[#e5e2da] bg-white text-[#5c635b] rounded-lg cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={confirmDeleteEdition}
+                className="px-4 py-2 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-60 cursor-pointer"
+              >
+                {deleting ? "Deleting..." : "Delete edition"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

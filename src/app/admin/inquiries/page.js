@@ -93,6 +93,38 @@ export default function InquiriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeModalItem, setActiveModalItem] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
+
+  const handleSendReply = async (item) => {
+    if (!replyText.trim()) return;
+    setSendingReply(true);
+    try {
+      const res = await fetch(`/api/inquiries/${item.id}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          toEmail: item.email,
+          subject: item.subject,
+          replyText: replyText.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Could not send reply");
+        return;
+      }
+      setReplyText("");
+      setActiveModalItem((prev) => (prev ? { ...prev, is_read: true, replyBody: replyText.trim() } : null));
+      setInquiries((prev) =>
+        prev.map((m) => (m.id === item.id ? { ...m, is_read: true, replyBody: replyText.trim() } : m))
+      );
+    } catch {
+      alert("Network error sending reply");
+    } finally {
+      setSendingReply(false);
+    }
+  };
   const [toastNotice, setToastNotice] = useState(null);
 
   async function loadInquiries() {
@@ -651,6 +683,37 @@ export default function InquiriesPage() {
                 <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Full Message Content</label>
                 <div className="p-4 bg-white border border-[#e5e2da] rounded-xl text-gray-800 font-serif urdu-body text-base leading-relaxed whitespace-pre-wrap">
                   {activeModalItem.message}
+                </div>
+              </div>
+
+              {/* Direct SMTP Reply Box (matching scraped-site) */}
+              <div className="pt-2 border-t border-[#e5e2da] space-y-2">
+                <label className="text-[11px] font-bold text-gray-700 block">
+                  Direct Email Reply to {activeModalItem.email}
+                </label>
+                {activeModalItem.replyBody && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 whitespace-pre-wrap">
+                    <span className="font-bold block mb-1">Sent reply:</span>
+                    {activeModalItem.replyBody}
+                  </div>
+                )}
+                <textarea
+                  rows={3}
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Type your reply — emailed directly via configured SMTP..."
+                  className="w-full p-3 text-xs border border-[#e5e2da] rounded-xl bg-[#fcfbf9] focus:bg-white focus:outline-none focus:border-[#124e2b]"
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={sendingReply || !replyText.trim()}
+                    onClick={() => handleSendReply(activeModalItem)}
+                    className="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#124e2b] hover:bg-[#0e3d22] text-white flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Send size={13} />
+                    <span>{sendingReply ? "Sending..." : "Send SMTP Reply"}</span>
+                  </button>
                 </div>
               </div>
             </div>

@@ -45,6 +45,17 @@ export default function SettingsAdmin() {
     tagline_ur: "سچ کے ساتھ، ہر لمحہ باخبر — TRUST • FACTS • GLOBAL NEWS",
   });
 
+  const [smtpConfig, setSmtpConfig] = useState({
+    host: "",
+    port: 587,
+    user: "",
+    pass: "",
+    from: "Daily Afadiat <no-reply@dailyafadiat.com>",
+    secure: false,
+  });
+  const [testEmailTo, setTestEmailTo] = useState("");
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
+
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,6 +71,7 @@ export default function SettingsAdmin() {
 
       if (setRes.social_links) setSocialLinks(setRes.social_links);
       if (setRes.site_info) setSiteInfo(setRes.site_info);
+      if (setRes.smtp_config) setSmtpConfig((prev) => ({ ...prev, ...setRes.smtp_config }));
       if (contactRes.contactInfo) setContactInfo(contactRes.contactInfo);
       if (contactRes.messages) setMessages(contactRes.messages);
     } catch (e) {
@@ -95,6 +107,11 @@ export default function SettingsAdmin() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ key: "contact_info", value: contactInfo }),
         }),
+        fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: "smtp_config", value: smtpConfig }),
+        }),
       ]);
 
       setNotice(lang === "ur" ? "تمام ترتیبات کامیابی کے ساتھ محفوظ ہو گئیں۔" : "All settings saved successfully!");
@@ -114,6 +131,35 @@ export default function SettingsAdmin() {
       }
     } catch (e) {
       alert("Failed to delete message");
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    const to = testEmailTo.trim();
+    if (!to) {
+      setNotice("Enter an address to send the test email to.");
+      return;
+    }
+    setSendingTestEmail(true);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/settings/email/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setNotice(data.error || "Test email failed");
+      } else if (data.mode === "log") {
+        setNotice("SMTP isn't configured yet — test was logged in Email alerts. Save host/user/password first.");
+      } else {
+        setNotice(`Test email sent to ${to}`);
+      }
+    } catch {
+      setNotice("Test email failed");
+    } finally {
+      setSendingTestEmail(false);
     }
   };
 
@@ -338,6 +384,98 @@ export default function SettingsAdmin() {
                   className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] outline-none"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Email (SMTP) & Test Card (matching scraped-site) */}
+          <div className="bg-[#efeee9] border border-[#dcd8cd] rounded-2xl p-5 shadow-xs space-y-4">
+            <h2 className="text-base font-bold text-gray-900 pb-2 border-b border-[#dcd8cd] flex items-center gap-2">
+              <Mail size={18} className="text-emerald-700" />
+              <span>Email (SMTP)</span>
+            </h2>
+            <p className="text-xs text-gray-600">
+              Used to deliver inquiry replies and newsroom alerts. Save your changes before testing.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">SMTP Host</label>
+                <input
+                  type="text"
+                  value={smtpConfig.host || ""}
+                  onChange={(e) => setSmtpConfig({ ...smtpConfig, host: e.target.value })}
+                  placeholder="smtp.gmail.com"
+                  className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] font-mono outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Port (587 STARTTLS · 465 TLS)</label>
+                <input
+                  type="number"
+                  value={smtpConfig.port || 587}
+                  onChange={(e) => setSmtpConfig({ ...smtpConfig, port: Number(e.target.value) || 587 })}
+                  className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] font-mono outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Username</label>
+                <input
+                  type="text"
+                  value={smtpConfig.user || ""}
+                  onChange={(e) => setSmtpConfig({ ...smtpConfig, user: e.target.value })}
+                  placeholder="editor@dailyafadiat.com"
+                  className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] font-mono outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Password <span className="font-normal text-gray-500">(Leave blank to keep saved)</span>
+                </label>
+                <input
+                  type="password"
+                  value={smtpConfig.pass || ""}
+                  onChange={(e) => setSmtpConfig({ ...smtpConfig, pass: e.target.value })}
+                  className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] font-mono outline-none"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-gray-700 mb-1">From Address</label>
+                <input
+                  type="text"
+                  value={smtpConfig.from || ""}
+                  onChange={(e) => setSmtpConfig({ ...smtpConfig, from: e.target.value })}
+                  placeholder="Daily Afadiat <no-reply@dailyafadiat.com>"
+                  className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] font-mono outline-none"
+                />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={Boolean(smtpConfig.secure)}
+                onChange={(e) => setSmtpConfig({ ...smtpConfig, secure: e.target.checked })}
+                className="size-4 accent-emerald-700"
+              />
+              <span>Use implicit TLS (turn on for port 465; leave off for 587)</span>
+            </label>
+
+            <div className="pt-3 border-t border-[#dcd8cd] flex flex-wrap items-center gap-2">
+              <input
+                type="email"
+                value={testEmailTo}
+                onChange={(e) => setTestEmailTo(e.target.value)}
+                placeholder="you@example.com"
+                className="text-xs p-2 rounded-lg bg-white border border-[#dcd8cd] font-mono w-64 outline-none"
+              />
+              <button
+                type="button"
+                disabled={sendingTestEmail}
+                onClick={handleSendTestEmail}
+                className="px-4 py-2 text-xs font-bold rounded-lg bg-white border border-[#dcd8cd] hover:bg-gray-50 text-gray-800 cursor-pointer disabled:opacity-50"
+              >
+                {sendingTestEmail ? "Sending..." : "Send test"}
+              </button>
             </div>
           </div>
 

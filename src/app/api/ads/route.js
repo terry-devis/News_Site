@@ -10,6 +10,7 @@ import {
   updateAdCreative,
   deleteAdCreative,
 } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET(req) {
   try {
@@ -31,6 +32,9 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  const { errorResponse } = await requirePermission("ads.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
 
@@ -51,6 +55,9 @@ export async function POST(req) {
 }
 
 export async function PATCH(req) {
+  const { errorResponse } = await requirePermission("ads.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
 
@@ -77,6 +84,9 @@ export async function PUT(req) {
 }
 
 export async function DELETE(req) {
+  const { errorResponse } = await requirePermission("ads.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(req.url);
     const slotKey = searchParams.get("slot_key");

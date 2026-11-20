@@ -18,9 +18,13 @@ import {
   ArrowRight,
   Info,
 } from "lucide-react";
+import { hasPermission } from "@/lib/permissions";
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [deletingCategory, setDeletingCategory] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingAction, setSavingAction] = useState(false);
   const [toast, setToast] = useState(null);
@@ -55,10 +59,15 @@ export default function AdminCategoriesPage() {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/categories");
-      const data = await res.json();
-      if (data.categories) {
-        setCategories(data.categories);
+      const [catRes, meRes] = await Promise.all([
+        fetch("/api/categories").then((r) => r.json()),
+        fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      ]);
+      if (catRes?.categories) {
+        setCategories(catRes.categories);
+      }
+      if (meRes?.user) {
+        setCurrentUser(meRes.user);
       }
     } catch (e) {
       console.error("Failed to load categories:", e);
@@ -67,6 +76,8 @@ export default function AdminCategoriesPage() {
       setLoading(false);
     }
   };
+
+  const canManage = !currentUser || hasPermission(currentUser, "category.manage");
 
   useEffect(() => {
     fetchCategories();
@@ -222,23 +233,32 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  // Delete Category
-  const handleDeleteCategory = async (cat) => {
+  // Delete Category (opens styled confirmation modal)
+  const handleDeleteCategory = (cat) => {
     if (cat.articles_count > 0) {
-      alert(`Cannot delete section "${cat.name_en}" because it has ${cat.articles_count} published stories. Please reassign or delete the stories first.`);
+      showToast("error", `Move its ${cat.articles_count} articles to another section first.`);
       return;
     }
-    if (!window.confirm(`Are you sure you want to delete section "${cat.name_en}"?`)) return;
+    setDeletingCategory(cat);
+  };
 
+  const confirmDeleteCategory = async () => {
+    if (!deletingCategory) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/categories?id=${cat.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/categories?id=${deletingCategory.id}`, { method: "DELETE" });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         showToast("success", "Section deleted.");
+        setDeletingCategory(null);
         fetchCategories();
+      } else {
+        showToast("error", data.error || "Failed to delete section");
       }
-    } catch (err) {
+    } catch {
       showToast("error", "Failed to delete section");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -303,14 +323,16 @@ export default function AdminCategoriesPage() {
             <Search size={13} className="absolute left-2.5 top-2.5 text-gray-400" />
           </div>
 
-          <button
-            type="button"
-            onClick={handleOpenAddModal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#124e2b] hover:bg-[#0a2618] rounded-lg shadow-sm transition-all shrink-0"
-          >
-            <Plus size={14} />
-            <span>+ New section</span>
-          </button>
+          {canManage && (
+            <button
+              type="button"
+              onClick={handleOpenAddModal}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#124e2b] hover:bg-[#0a2618] rounded-lg shadow-sm transition-all shrink-0 cursor-pointer"
+            >
+              <Plus size={14} />
+              <span>New section</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -748,6 +770,37 @@ export default function AdminCategoriesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Dialog */}
+      {deletingCategory && (
+        <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#e5e2da] w-full max-w-md shadow-2xl p-5 space-y-4 rounded-xl">
+            <h3 className="text-sm font-bold text-[#18221b]">Delete this section?</h3>
+            <p className="text-xs text-[#5c635b] leading-relaxed">
+              <span className="font-semibold text-[#18221b]">{deletingCategory.name_en}</span>{" "}
+              (<span className="font-mono">/{deletingCategory.slug}</span>) will be removed from the site.
+              Any existing links to this section will start returning 404.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeletingCategory(null)}
+                className="px-3.5 py-2 text-xs font-semibold border border-[#e5e2da] bg-white text-[#5c635b] rounded-lg cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={confirmDeleteCategory}
+                className="px-4 py-2 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-60 cursor-pointer"
+              >
+                {deleting ? "Deleting..." : "Delete section"}
+              </button>
+            </div>
           </div>
         </div>
       )}

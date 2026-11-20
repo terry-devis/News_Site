@@ -9,6 +9,7 @@ import {
   updateWeatherSettings,
   fetchLiveServiceData,
 } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET(req) {
   try {
@@ -23,6 +24,9 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  const { errorResponse } = await requirePermission("widgets.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const { action } = body;

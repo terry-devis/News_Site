@@ -64,6 +64,8 @@ export default function AdminAdsPage() {
   });
 
   const [savingAction, setSavingAction] = useState(false);
+  const [deletingTarget, setDeletingTarget] = useState(null); // { type: 'creative' | 'slot', id, label }
+  const [deleting, setDeleting] = useState(false);
 
   // Fetch all ads data
   const fetchAdsData = async () => {
@@ -260,19 +262,9 @@ export default function AdminAdsPage() {
     }
   };
 
-  // Delete Creative
-  const handleDeleteCreative = async (creativeId) => {
-    if (!window.confirm("Are you sure you want to delete this creative?")) return;
-    try {
-      const res = await fetch(`/api/ads?creative_id=${creativeId}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        showToast("success", "Creative deleted.");
-        fetchAdsData();
-      }
-    } catch (err) {
-      showToast("error", "Failed to delete creative");
-    }
+  // Delete Creative (opens confirmation modal)
+  const handleDeleteCreative = (creativeId) => {
+    setDeletingTarget({ type: "creative", id: creativeId, label: "this ad creative" });
   };
 
   // Open New / Edit Slot Modal
@@ -379,18 +371,32 @@ export default function AdminAdsPage() {
     }
   };
 
-  // Delete Slot
-  const handleDeleteSlot = async (slotKey) => {
-    if (!window.confirm(`Are you sure you want to delete slot "${slotKey}" and all its creatives?`)) return;
+  // Delete Slot (opens confirmation modal)
+  const handleDeleteSlot = (slotKey) => {
+    setDeletingTarget({ type: "slot", id: slotKey, label: `slot "${slotKey}" and all its creatives` });
+  };
+
+  const confirmDeleteTarget = async () => {
+    if (!deletingTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/ads?slot_key=${slotKey}`, { method: "DELETE" });
+      const url =
+        deletingTarget.type === "creative"
+          ? `/api/ads?creative_id=${deletingTarget.id}`
+          : `/api/ads?slot_key=${deletingTarget.id}`;
+      const res = await fetch(url, { method: "DELETE" });
       const data = await res.json();
-      if (data.success) {
-        showToast("success", "Slot deleted.");
+      if (res.ok && data.success) {
+        showToast("success", deletingTarget.type === "creative" ? "Creative deleted." : "Slot deleted.");
+        setDeletingTarget(null);
         fetchAdsData();
+      } else {
+        showToast("error", data.error || "Failed to delete");
       }
-    } catch (err) {
-      showToast("error", "Failed to delete slot");
+    } catch {
+      showToast("error", "Failed to delete");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -1085,6 +1091,37 @@ export default function AdminAdsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Dialog */}
+      {deletingTarget && (
+        <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#e5e2da] w-full max-w-md shadow-2xl p-5 space-y-4 rounded-xl">
+            <h3 className="text-sm font-bold text-[#18221b]">
+              Delete {deletingTarget.type === "creative" ? "ad creative" : "ad slot"}?
+            </h3>
+            <p className="text-xs text-[#5c635b] leading-relaxed">
+              Are you sure you want to delete <span className="font-semibold text-[#18221b]">{deletingTarget.label}</span>? This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeletingTarget(null)}
+                className="px-3.5 py-2 text-xs font-semibold border border-[#e5e2da] bg-white text-[#5c635b] rounded-lg cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={confirmDeleteTarget}
+                className="px-4 py-2 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-60 cursor-pointer"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}

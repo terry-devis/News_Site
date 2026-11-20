@@ -119,17 +119,10 @@ export default function BreakingNewsAdmin() {
     );
 
     try {
-      await fetch("/api/breaking", {
-        method: "POST",
+      await fetch(`/api/breaking/${item.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: item.id,
-          text_ur: item.text_ur,
-          text_en: item.text_en,
-          link_url: item.link_url,
-          priority: item.priority,
-          is_active: updatedStatus,
-        }),
+        body: JSON.stringify({ is_active: updatedStatus }),
       });
       setNotice({
         type: "success",
@@ -150,7 +143,7 @@ export default function BreakingNewsAdmin() {
     setItems((prev) => prev.filter((i) => i.id !== id));
 
     try {
-      await fetch(`/api/breaking?id=${id}`, { method: "DELETE" });
+      await fetch(`/api/breaking/${id}`, { method: "DELETE" });
       setNotice({ type: "success", text: "✓ بریکنگ نیوز کامیابی کے ساتھ حذف کر دی گئی۔" });
       setTimeout(() => setNotice(null), 3000);
     } catch (err) {

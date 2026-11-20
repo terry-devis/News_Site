@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSiteSetting, updateSiteSetting } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET(req) {
   try {
@@ -8,12 +9,16 @@ export async function GET(req) {
 
     if (key) {
       const val = await getSiteSetting(key);
+      if (key === "smtp_config" && val) {
+        return NextResponse.json({ [key]: { ...val, pass: val.pass ? "••••••••" : "" } });
+      }
       return NextResponse.json({ [key]: val });
     }
 
     const social_links = await getSiteSetting("social_links");
     const site_info = await getSiteSetting("site_info");
-    const smtp_config = await getSiteSetting("smtp_config");
+    const rawSmtp = await getSiteSetting("smtp_config");
+    const smtp_config = rawSmtp ? { ...rawSmtp, pass: rawSmtp.pass ? "••••••••" : "" } : null;
 
     return NextResponse.json({ social_links, site_info, smtp_config });
   } catch (error) {
@@ -22,6 +27,9 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  const { errorResponse } = await requirePermission("settings.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const { key, value } = body;
@@ -30,7 +38,16 @@ export async function POST(req) {
       return NextResponse.json({ error: "Missing key or value" }, { status: 400 });
     }
 
-    const updated = await updateSiteSetting(key, value);
+    // Preserve existing SMTP password if blank or masked
+    let finalValue = value;
+    if (key === "smtp_config" && typeof value === "object" && value !== null) {
+      if (!value.pass || value.pass === "••••••••") {
+        const existing = await getSiteSetting("smtp_config");
+        finalValue = { ...value, pass: existing?.pass || "" };
+      }
+    }
+
+    const updated = await updateSiteSetting(key, finalValue);
     return NextResponse.json({ success: true, [key]: updated });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

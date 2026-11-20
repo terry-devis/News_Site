@@ -8,6 +8,7 @@ import {
   resetPollVotes,
   deletePoll,
 } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET(req) {
   try {
@@ -46,15 +47,19 @@ export async function POST(req) {
       return NextResponse.json({ success: true, poll: updated });
     }
 
-    // Reset votes action
+    // Reset votes action (Admin only)
     if (body.action === "reset") {
+      const { errorResponse } = await requirePermission("poll.manage");
+      if (errorResponse) return errorResponse;
       const { pollId } = body;
       const updated = await resetPollVotes(pollId);
       return NextResponse.json({ success: true, poll: updated });
     }
 
-    // Create poll action
+    // Create poll action (Admin only)
     if (body.action === "create" || body.question_ur || body.question_en) {
+      const { errorResponse } = await requirePermission("poll.manage");
+      if (errorResponse) return errorResponse;
       if (!body.question_ur && !body.question_en) {
         return NextResponse.json({ error: "At least one question (Urdu or English) is required" }, { status: 400 });
       }
@@ -69,6 +74,9 @@ export async function POST(req) {
 }
 
 export async function PUT(req) {
+  const { errorResponse } = await requirePermission("poll.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const updated = await updatePoll(body.id || body, body);
@@ -79,6 +87,9 @@ export async function PUT(req) {
 }
 
 export async function DELETE(req) {
+  const { errorResponse } = await requirePermission("poll.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(req.url);
     let id = searchParams.get("id");

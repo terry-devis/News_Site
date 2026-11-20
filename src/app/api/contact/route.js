@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { getContactMessages, addContactMessage, deleteContactMessage, getSiteSetting } from "@/lib/cmsDb";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET() {
+  const { errorResponse } = await requirePermission("inquiry.view");
+  if (errorResponse) return errorResponse;
+
   try {
     const messages = await getContactMessages();
     const contactInfo = await getSiteSetting("contact_info");
@@ -44,6 +48,9 @@ export async function POST(req) {
 }
 
 export async function PATCH(req) {
+  const { errorResponse } = await requirePermission("inquiry.reply");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const { id, is_read, is_starred } = body;
@@ -67,6 +74,9 @@ export async function PATCH(req) {
 }
 
 export async function DELETE(req) {
+  const { errorResponse } = await requirePermission("inquiry.reply");
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");

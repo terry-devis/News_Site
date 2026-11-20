@@ -61,6 +61,8 @@ export default function AdminLayoutBuilderPage() {
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [editableZones, setEditableZones] = useState([]);
   const [savingAction, setSavingAction] = useState(false);
+  const [deletingBlockId, setDeletingBlockId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Block style icons & definitions
   const blockStyleOptions = [
@@ -153,19 +155,29 @@ export default function AdminLayoutBuilderPage() {
     }
   };
 
-  // Delete Block
-  const handleDeleteBlock = async (blockId) => {
-    if (!window.confirm("Are you sure you want to remove this block from the layout?")) return;
+  // Delete Block (opens confirmation modal)
+  const handleDeleteBlock = (blockId) => {
+    setDeletingBlockId(blockId);
+  };
+
+  const confirmDeleteBlock = async () => {
+    if (!deletingBlockId) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/layout?id=${blockId}`, { method: "DELETE" });
+      const res = await fetch(`/api/layout?id=${deletingBlockId}`, { method: "DELETE" });
       const data = await res.json();
-      if (data.success) {
-        setBlocks(blocks.filter((b) => b.id !== blockId));
+      if (res.ok && data.success) {
+        setBlocks(blocks.filter((b) => b.id !== deletingBlockId));
+        setDeletingBlockId(null);
         showToast("success", "Block removed from layout.");
         setPreviewKey(Date.now());
+      } else {
+        showToast("error", data.error || "Failed to delete block");
       }
-    } catch (e) {
+    } catch {
       showToast("error", "Failed to delete block");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -948,6 +960,35 @@ export default function AdminLayoutBuilderPage() {
                   <span>Save rules</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Block Confirmation Dialog */}
+      {deletingBlockId && (
+        <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#e5e2da] w-full max-w-md shadow-2xl p-5 space-y-4 rounded-xl">
+            <h3 className="text-sm font-bold text-[#18221b]">Remove block from layout?</h3>
+            <p className="text-xs text-[#5c635b] leading-relaxed">
+              This will remove the block from the active page layout. You can always add a new block later.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeletingBlockId(null)}
+                className="px-3.5 py-2 text-xs font-semibold border border-[#e5e2da] bg-white text-[#5c635b] rounded-lg cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={confirmDeleteBlock}
+                className="px-4 py-2 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-60 cursor-pointer"
+              >
+                {deleting ? "Removing..." : "Remove block"}
+              </button>
             </div>
           </div>
         </div>

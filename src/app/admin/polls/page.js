@@ -24,6 +24,7 @@ export default function AdminPollsPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null); // { type: 'reset' | 'delete', pollId }
   const [articles, setArticles] = useState([]);
   const [toast, setToast] = useState(null);
 
@@ -199,28 +200,9 @@ export default function AdminPollsPage() {
     }
   };
 
-  // Reset Poll Votes
-  const handleResetVotes = async (pollId) => {
-    if (!window.confirm("Are you sure you want to reset all vote counts for this poll to zero (0)?")) {
-      return;
-    }
-    setActionLoading(`reset_${pollId}`);
-    try {
-      const res = await fetch("/api/poll", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "reset", pollId }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast("success", "Votes reset to 0.");
-        fetchPolls();
-      }
-    } catch (err) {
-      showToast("error", "Failed to reset votes");
-    } finally {
-      setActionLoading(null);
-    }
+  // Reset Poll Votes (opens styled modal)
+  const handleResetVotes = (pollId) => {
+    setConfirmAction({ type: "reset", pollId });
   };
 
   // Simulate Vote (for quick test)
@@ -240,19 +222,35 @@ export default function AdminPollsPage() {
     }
   };
 
-  // Delete Poll
-  const handleDeletePoll = async (pollId) => {
-    if (!window.confirm("Are you sure you want to permanently delete this poll?")) return;
-    setActionLoading(`delete_${pollId}`);
+  // Delete Poll (opens styled modal)
+  const handleDeletePoll = (pollId) => {
+    setConfirmAction({ type: "delete", pollId });
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction) return;
+    const { type, pollId } = confirmAction;
+    setActionLoading(`${type}_${pollId}`);
     try {
-      const res = await fetch(`/api/poll?id=${pollId}`, { method: "DELETE" });
+      const res =
+        type === "reset"
+          ? await fetch("/api/poll", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "reset", pollId }),
+            })
+          : await fetch(`/api/poll?id=${pollId}`, { method: "DELETE" });
+
       const data = await res.json();
-      if (data.success) {
-        showToast("success", "Poll deleted.");
+      if (res.ok && data.success) {
+        showToast("success", type === "reset" ? "Votes reset to 0." : "Poll deleted.");
+        setConfirmAction(null);
         fetchPolls();
+      } else {
+        showToast("error", data.error || "Action failed");
       }
-    } catch (err) {
-      showToast("error", "Failed to delete poll");
+    } catch {
+      showToast("error", "Action failed");
     } finally {
       setActionLoading(null);
     }
@@ -734,6 +732,38 @@ export default function AdminPollsPage() {
           )}
         </div>
       </div>
+      {/* Confirm Reset / Delete Modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#e5e2da] w-full max-w-md shadow-2xl p-5 space-y-4 rounded-xl">
+            <h3 className="text-sm font-bold text-[#18221b]">
+              {confirmAction.type === "reset" ? "Reset poll votes?" : "Delete this poll?"}
+            </h3>
+            <p className="text-xs text-[#5c635b] leading-relaxed">
+              {confirmAction.type === "reset"
+                ? "This will reset all vote counts for this poll to zero (0)."
+                : "This will permanently delete the poll and its vote history. This cannot be undone."}
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmAction(null)}
+                className="px-3.5 py-2 text-xs font-semibold border border-[#e5e2da] bg-white text-[#5c635b] rounded-lg cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(actionLoading)}
+                onClick={executeConfirmAction}
+                className="px-4 py-2 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-60 cursor-pointer"
+              >
+                {actionLoading ? "Processing..." : confirmAction.type === "reset" ? "Reset votes" : "Delete poll"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -327,11 +327,16 @@ export default function AdvertiseClient({ categories = [], breakingNews = [] }) 
                   </label>
                   <input
                     type="email"
+                    dir="ltr"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="marketing@company.com"
-                    className="w-full p-3 rounded-xl bg-white border border-[#dcd8cd] outline-none focus:border-emerald-600"
+                    className="w-full p-3 rounded-xl bg-white border border-[#dcd8cd] outline-none focus:border-emerald-600 text-left font-sans"
                   />
                 </div>
 

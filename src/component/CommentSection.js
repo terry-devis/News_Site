@@ -129,10 +129,15 @@ export default function CommentSection({ articleId }) {
               </label>
               <input
                 type="email"
+                dir="ltr"
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={authorEmail}
                 onChange={(e) => setAuthorEmail(e.target.value)}
-                placeholder={t("emailPlaceholder")}
-                className="w-full text-xs p-2.5 rounded bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none"
+                placeholder="name@example.com"
+                className="w-full text-xs p-2.5 rounded bg-white border border-[#dcd8cd] focus:border-emerald-600 outline-none text-left font-sans"
               />
             </div>
           </div>

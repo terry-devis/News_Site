@@ -50,16 +50,21 @@ export default function NewsletterBox({ variant = "ribbon", className = "" }) {
           <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <input
               type="email"
+              dir="ltr"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               required
-              placeholder={t("newsletterPlaceholder")}
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 min-w-0 text-xs px-3 py-2 bg-white text-gray-900 border border-white/20 focus:border-emerald-400 outline-none"
+              className="flex-1 min-w-0 text-xs px-3 py-2 bg-white text-gray-900 text-left font-sans border border-white/20 focus:border-[#184e2d] outline-none"
             />
             <button
               type="submit"
               disabled={status === "loading"}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 transition disabled:opacity-50 cursor-pointer shrink-0"
+              className="bg-[#184e2d] hover:bg-[#123d23] text-white text-xs font-bold px-4 py-2 transition disabled:opacity-50 cursor-pointer shrink-0"
             >
               {status === "loading" ? t("subscribing") : t("subscribeBtn")}
             </button>
@@ -95,11 +100,16 @@ export default function NewsletterBox({ variant = "ribbon", className = "" }) {
           <form onSubmit={handleSubscribe} className="space-y-2">
             <input
               type="email"
+              dir="ltr"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               required
-              placeholder={t("newsletterPlaceholder")}
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full text-xs p-2.5 rounded-none bg-white border border-[#dcd8cd] focus:border-emerald-700 outline-none font-sans"
+              className="w-full text-xs p-2.5 rounded-none bg-white border border-[#dcd8cd] focus:border-emerald-700 outline-none text-left font-sans"
             />
             <button
               type="submit"
@@ -162,11 +172,16 @@ export default function NewsletterBox({ variant = "ribbon", className = "" }) {
               <div className="flex items-stretch rounded-none border border-[#c8c4b7] focus-within:border-emerald-700 bg-white shadow-2xs">
                 <input
                   type="email"
+                  dir="ltr"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
-                  placeholder={t("newsletterPlaceholder")}
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`flex-1 h-11 px-3.5 sm:px-4 bg-transparent outline-none text-xs sm:text-sm text-gray-900 font-sans ${isUrdu ? "text-right" : "text-left"}`}
+                  className="flex-1 h-11 px-3.5 sm:px-4 bg-transparent outline-none text-xs sm:text-sm text-gray-900 font-sans text-left"
                 />
                 <button
                   type="submit"

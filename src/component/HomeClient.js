@@ -687,9 +687,9 @@ export default function HomeClient({
             {/* IN-FEED AD #3 */}
             <AdSlot slotKey="home-infeed-3" className="my-2" />
 
-            {/* 8. VIDEOS (ویڈیوز) — Dark Broadsheet Showcase + Interactive YouTube Embed */}
+            {/* 8. VIDEOS (ویڈیوز) — Dark Editorial Showcase + Interactive YouTube Embed */}
             <section
-              className="bg-[#0a2618] text-white p-4 sm:p-5 overflow-hidden border border-[#15452b] shadow-sm"
+              className="bg-[#121614] text-white p-4 sm:p-5 overflow-hidden border border-[#262b28] shadow-sm"
               aria-label={isUrdu ? "ویڈیوز" : "Videos"}
             >
               <div className="mb-4 flex items-end gap-3 border-b border-white/15 pb-2">
@@ -966,13 +966,12 @@ export default function HomeClient({
         </section>
 
         {/* COMPACT NEWSLETTER STRIP */}
-        <section className="my-6 py-3.5 px-5 bg-[#0a1f13] rounded-none text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm border-t-2 border-emerald-500 font-sans">
+        <section className="my-6 py-4 px-5 bg-[#121614] border border-[#262b28] rounded-none text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm font-sans">
           <div className="text-center sm:text-start">
-            <h3 className="text-sm sm:text-base font-bold text-white flex items-center justify-center sm:justify-start gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>{t("newsletterHeading")}</span>
+            <h3 className={`text-sm sm:text-base font-bold text-white ${isUrdu ? "urdu-headline" : "font-sans"}`}>
+              {t("newsletterHeading")}
             </h3>
-            <p className="text-gray-300 text-xs">{t("newsletterSub")}</p>
+            <p className="text-gray-300 text-xs mt-0.5">{t("newsletterSub")}</p>
           </div>
           <div className="w-full sm:w-auto sm:min-w-[340px]">
             <NewsletterBox variant="inline" />

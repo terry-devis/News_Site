@@ -155,11 +155,16 @@ export default function LiveClient({ categories = [], breakingNews = [] }) {
                 <form onSubmit={handleNotifySubmit} className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="email"
+                    dir="ltr"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={isUrdu ? "اپنا ای میل درج کریں..." : "Enter your email address..."}
-                    className="flex-1 p-3 bg-zinc-900 border border-gray-700 text-white text-xs rounded-none outline-none focus:border-emerald-500 font-sans"
+                    placeholder="name@example.com"
+                    className="flex-1 p-3 bg-zinc-900 border border-gray-700 text-white text-xs rounded-none outline-none focus:border-emerald-500 text-left font-sans"
                   />
                   <button
                     type="submit"

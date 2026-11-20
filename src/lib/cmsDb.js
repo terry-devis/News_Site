@@ -1923,3 +1923,182 @@ export async function deleteLayoutBlock(blockId) {
   writeLocalStore(local);
   return { success: true };
 }
+
+// ----------------------------------------------------
+// MEDIA LIBRARY & CLOUD ASSET MANAGEMENT API
+// ----------------------------------------------------
+
+const DEFAULT_MEDIA_ASSETS = [
+  {
+    id: 1,
+    filename: "pm_shehbaz_address_un_general_assembly.webp",
+    url: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop",
+    size: "142 KB",
+    size_bytes: 145408,
+    alt_text: "وزیراعظم شہباز شریف کا اقوام متحدہ کی جنرل اسمبلی کے اجلاس سے خصوصی خطاب",
+    caption: "وزیراعظم کا عالمی فورم پر موسمیاتی انصاف اور معاشی خود انحصاری پر زور",
+    credit: "پی آئی ڈی / شفقات راؤ",
+    focal_point: { x: 50, y: 35 },
+    created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+  },
+  {
+    id: 2,
+    filename: "pakistan_stock_exchange_kse100_rally.webp",
+    url: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop",
+    size: "88 KB",
+    size_bytes: 90112,
+    alt_text: "پاکستان اسٹاک ایکسچینج میں ریکارڈ تیزی، 100 انڈیکس میں تاریخی اضافہ",
+    caption: "پی ایس ایکس ٹریڈنگ فلور پر بروکرز اور سرمایہ کاروں کا غیر معمولی جوش و خروش",
+    credit: "رائٹرز بزنس سروس",
+    focal_point: { x: 50, y: 50 },
+    created_at: new Date(Date.now() - 3600000 * 6).toISOString(),
+  },
+  {
+    id: 3,
+    filename: "cpec_western_route_inauguration_highway.jpg",
+    url: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&auto=format&fit=crop",
+    size: "210 KB",
+    size_bytes: 215040,
+    alt_text: "",
+    caption: "",
+    credit: "",
+    focal_point: { x: 50, y: 50 },
+    created_at: new Date(Date.now() - 3600000 * 14).toISOString(),
+  },
+  {
+    id: 4,
+    filename: "gaddafi_stadium_champions_trophy_preparations.webp",
+    url: "https://images.unsplash.com/photo-1531415074868-036b107e775a?w=800&auto=format&fit=crop",
+    size: "165 KB",
+    size_bytes: 168960,
+    alt_text: "قذافی اسٹیڈیم لاہور میں آئی سی سی چیمپئنز ٹرافی 2025 کے لیے فلڈ لائٹس اور پویلین کی اپ گریڈیشن",
+    caption: "لاہور میں جاری بین الاقوامی کرکٹ سہولیات کے تزئین و آرائش کے کام کا فضائی منظر",
+    credit: "پی سی بی میڈیا ونگ",
+    focal_point: { x: 52, y: 40 },
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: 5,
+    filename: "karachi_port_terminal_container_export.webp",
+    url: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=800&auto=format&fit=crop",
+    size: "128 KB",
+    size_bytes: 131072,
+    alt_text: "",
+    caption: "",
+    credit: "",
+    focal_point: { x: 50, y: 50 },
+    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+  },
+  {
+    id: 6,
+    filename: "islamabad_supreme_court_bench_hearing.jpg",
+    url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&auto=format&fit=crop",
+    size: "195 KB",
+    size_bytes: 199680,
+    alt_text: "سپریم کورٹ آف پاکستان، شاہراہ دستور اسلام آباد کا سامنے کا منظر",
+    caption: "آئینی بینچ کے اہم فیصلوں کے موقع پر عدالت عظمیٰ کا مرکزی ہال",
+    credit: "اے پی پی",
+    focal_point: { x: 50, y: 30 },
+    created_at: new Date(Date.now() - 86400000 * 2.5).toISOString(),
+  },
+  {
+    id: 7,
+    filename: "digital_pakistan_software_technology_park.webp",
+    url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop",
+    size: "115 KB",
+    size_bytes: 117760,
+    alt_text: "پاکستانی نوجوان سافٹ ویئر انجینئرز اور آئی ٹی ماہرین جدید اے آئی پروجیکٹ پر کام کرتے ہوئے",
+    caption: "قومی آئی ٹی برآمدات میں 35 فیصد سالانہ اضافے کے اہداف پر پیش رفت",
+    credit: "آئی ٹی منسٹری پاکستان",
+    focal_point: { x: 45, y: 45 },
+    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+  },
+  {
+    id: 8,
+    filename: "lahore_smog_environmental_green_initiative.jpg",
+    url: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&auto=format&fit=crop",
+    size: "240 KB",
+    size_bytes: 245760,
+    alt_text: "",
+    caption: "",
+    credit: "",
+    focal_point: { x: 50, y: 50 },
+    created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
+  },
+  {
+    id: 9,
+    filename: "babur_azam_shaheen_afridi_training_session.webp",
+    url: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&auto=format&fit=crop",
+    size: "178 KB",
+    size_bytes: 182272,
+    alt_text: "بابر اعظم اور شاہین شاہ آفریدی نیٹ پریکٹس کے دوران گیند بازی کی مشق کرتے ہوئے",
+    caption: "آسٹریلیا اور زمبابوے کے خلاف وائٹ بال سیریز کے لیے قومی کیمپ",
+    credit: "گیٹی اسپورٹس",
+    focal_point: { x: 50, y: 40 },
+    created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+  },
+  {
+    id: 10,
+    filename: "gold_bullion_foreign_exchange_reserves.webp",
+    url: "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=800&auto=format&fit=crop",
+    size: "92 KB",
+    size_bytes: 94208,
+    alt_text: "اسٹیٹ بینک آف پاکستان کے غیر ملکی زرمبادلہ اور سونے کے ذخائر",
+    caption: "مرکزی بینک کے زرمبادلہ کے ذخائر میں مسلسل استحکام کی رپورٹ",
+    credit: "بلومبرگ نیوز",
+    focal_point: { x: 50, y: 50 },
+    created_at: new Date(Date.now() - 86400000 * 6).toISOString(),
+  },
+];
+
+export async function getMediaAssets() {
+  const local = ensureLocalStore();
+  if (!local.media_assets || !Array.isArray(local.media_assets) || local.media_assets.length === 0) {
+    local.media_assets = DEFAULT_MEDIA_ASSETS;
+    writeLocalStore(local);
+  }
+  return local.media_assets;
+}
+
+export async function createMediaAsset(assetData) {
+  const local = ensureLocalStore();
+  const assets = await getMediaAssets();
+  const newAsset = {
+    id: Date.now(),
+    filename: assetData.filename || `upload_${Date.now()}.jpg`,
+    url: assetData.url || "",
+    size: assetData.size || "100 KB",
+    size_bytes: assetData.size_bytes || 102400,
+    alt_text: assetData.alt_text || "",
+    caption: assetData.caption || "",
+    credit: assetData.credit || "",
+    focal_point: assetData.focal_point || { x: 50, y: 50 },
+    created_at: new Date().toISOString(),
+  };
+  assets.unshift(newAsset);
+  local.media_assets = assets;
+  writeLocalStore(local);
+  return newAsset;
+}
+
+export async function updateMediaAsset(id, updates) {
+  const local = ensureLocalStore();
+  const assets = await getMediaAssets();
+  const idx = assets.findIndex((a) => String(a.id) === String(id));
+  if (idx >= 0) {
+    assets[idx] = { ...assets[idx], ...updates, updated_at: new Date().toISOString() };
+    local.media_assets = assets;
+    writeLocalStore(local);
+    return assets[idx];
+  }
+  return null;
+}
+
+export async function deleteMediaAsset(id) {
+  const local = ensureLocalStore();
+  let assets = await getMediaAssets();
+  assets = assets.filter((a) => String(a.id) !== String(id));
+  local.media_assets = assets;
+  writeLocalStore(local);
+  return { success: true };
+}

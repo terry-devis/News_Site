@@ -45,6 +45,7 @@ export async function uploadMedia(buffer, originalFilename, contentType = "image
         Key: uniqueKey,
         Body: buffer,
         ContentType: contentType,
+        CacheControl: "public, max-age=31536000, immutable",
       });
 
       await s3Client.send(command);

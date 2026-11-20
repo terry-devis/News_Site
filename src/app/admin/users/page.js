@@ -1,54 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Pencil, X, AlertTriangle, Check } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Pencil, X, AlertTriangle, Check, Search } from "lucide-react";
+import { hasPermission } from "@/lib/permissions";
 
-const SYSTEM_ROLES = [
-  {
-    key: "Super Admin",
-    id: "super_admin",
-    name: "Super Admin",
-    perms: "all permissions",
-    desc: "Full control including roles, users and settings.",
-  },
-  {
-    key: "Editor-in-Chief",
-    id: "editor_in_chief",
-    name: "Editor-in-Chief",
-    perms: "40 permissions",
-    desc: "Full editorial control — publishing, layout, settings, users and reading roles — but cannot edit roles or permissions.",
-  },
-  {
-    key: "Editor",
-    id: "editor",
-    name: "Editor",
-    perms: "25 permissions",
-    desc: "Creates, edits and publishes articles; runs breaking news and live coverage; moderates comments and manages media and sections.",
-  },
-  {
-    key: "Sub-Editor",
-    id: "sub_editor",
-    name: "Sub-Editor",
-    perms: "11 permissions",
-    desc: "Copy-edits any article and moves stories through the workflow (approve to ready), but cannot publish.",
-  },
-  {
-    key: "Reporter",
-    id: "reporter",
-    name: "Reporter",
-    perms: "6 permissions",
-    desc: "Creates and edits their own drafts, submits them for review and uploads media; cannot publish.",
-  },
-  {
-    key: "Columnist",
-    id: "columnist",
-    name: "Columnist",
-    perms: "7 permissions",
-    desc: "Authors opinion and column pieces and submits them for review; cannot publish.",
-  },
-];
-
-const DESK_SECTIONS = [
-  "kheel",
+const FALLBACK_SECTIONS = [
   "Pakistan",
   "World",
   "Sports",
@@ -69,6 +24,10 @@ const DESK_SECTIONS = [
 
 export default function UsersAdminPage() {
   const [users, setUsers] = useState([]);
+  const [rolesList, setRolesList] = useState([]);
+  const [deskSections, setDeskSections] = useState(FALLBACK_SECTIONS);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
@@ -104,10 +63,33 @@ export default function UsersAdminPage() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/users");
-      const data = await res.json();
-      if (data.success) {
-        setUsers(data.users || []);
+      const [usersRes, rolesRes, catsRes, meRes] = await Promise.all([
+        fetch("/api/users"),
+        fetch("/api/roles").catch(() => null),
+        fetch("/api/categories").catch(() => null),
+        fetch("/api/auth/me").catch(() => null),
+      ]);
+
+      const usersData = await usersRes.json();
+      if (usersData.success) {
+        setUsers(usersData.users || []);
+      }
+
+      if (rolesRes && rolesRes.ok) {
+        const rolesData = await rolesRes.json();
+        if (rolesData.roles) setRolesList(rolesData.roles);
+      }
+
+      if (catsRes && catsRes.ok) {
+        const catsData = await catsRes.json();
+        const cats = catsData.categories || catsData.data || (Array.isArray(catsData) ? catsData : []);
+        const names = cats.map((c) => c.name_en || c.name_ur || c.slug).filter(Boolean);
+        if (names.length > 0) setDeskSections(names);
+      }
+
+      if (meRes && meRes.ok) {
+        const meData = await meRes.json();
+        if (meData.user) setCurrentUser(meData.user);
       }
     } catch (e) {
       console.error(e);
@@ -121,9 +103,20 @@ export default function UsersAdminPage() {
     loadUsers();
   }, []);
 
-  const getUserCountForRole = (roleKey) => {
-    return users.filter((u) => u.roles && u.roles.includes(roleKey)).length;
-  };
+  const canManageUsers = !currentUser || hasPermission(currentUser, "user.manage");
+  const canResetPassword = !currentUser || hasPermission(currentUser, "user.reset_password");
+
+  const filteredUsers = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(
+      (u) =>
+        String(u.email || "").toLowerCase().includes(q) ||
+        String(u.full_name_en || "").toLowerCase().includes(q) ||
+        String(u.full_name_ur || "").toLowerCase().includes(q) ||
+        (u.roles || []).some((r) => String(r).toLowerCase().includes(q))
+    );
+  }, [users, searchQuery]);
 
   // Create User Handler
   const handleCreateUser = async (e) => {
@@ -174,11 +167,10 @@ export default function UsersAdminPage() {
     if (!editUserModal) return;
     try {
       setSaving(true);
-      const res = await fetch("/api/users", {
+      const res = await fetch(`/api/users/${editUserModal.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: editUserModal.id,
           updates: {
             full_name_ur: editUserModal.full_name_ur,
             full_name_en: editUserModal.full_name_en,
@@ -219,13 +211,10 @@ export default function UsersAdminPage() {
     }
     try {
       setSaving(true);
-      const res = await fetch("/api/users", {
+      const res = await fetch(`/api/users/${passwordModal.id}/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "reset_password",
-          id: passwordModal.id,
-          email: passwordModal.email,
           newPassword: newPasswordValue,
         }),
       });
@@ -269,33 +258,45 @@ export default function UsersAdminPage() {
             A role is just a set of permissions — adding one needs no code change
           </p>
         </div>
-        <button
-          onClick={() => setNewUserModalOpen(true)}
-          className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition bg-emerald-800 text-white shadow-2xs hover:bg-emerald-900"
-        >
-          + New user
-        </button>
+        {canManageUsers && (
+          <button
+            onClick={() => setNewUserModalOpen(true)}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition bg-[#184e2d] text-white shadow-2xs hover:bg-[#0a2618]"
+          >
+            + New user
+          </button>
+        )}
       </div>
 
       {/* Equal 2-Column Split Layout */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
         {/* Left Column: Newsroom Users */}
         <section className="rounded-lg border border-[#e5e2da] bg-white shadow-2xs overflow-hidden">
-          <header className="flex items-center justify-between gap-4 border-b border-[#e5e2da] px-4 py-2.5 bg-[#faf9f6]">
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e5e2da] px-4 py-2.5 bg-[#faf9f6]">
             <h2 className="text-[0.6875rem] font-bold tracking-wide text-gray-500 uppercase">
-              Newsroom users
+              Newsroom users ({filteredUsers.length})
             </h2>
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search staff..."
+                className="pl-7 pr-2.5 py-1 text-xs border border-[#e5e2da] rounded bg-white text-gray-800 focus:outline-none focus:border-[#184e2d] w-44"
+              />
+            </div>
           </header>
 
           <ul className="divide-y divide-[#e5e2da]">
             {loading ? (
               <li className="p-8 text-center text-xs text-gray-400">Loading users...</li>
-            ) : users.length === 0 ? (
+            ) : filteredUsers.length === 0 ? (
               <li className="p-8 text-center text-xs text-gray-400">No users found.</li>
             ) : (
-              users.map((user) => {
+              filteredUsers.map((user) => {
                 const initial = (user.email || "u").trim().charAt(0).toLowerCase();
-                const primaryRole = user.roles?.[0] || "";
+                const userRoles = Array.isArray(user.roles) ? user.roles : [];
                 const isActive = user.status === "Active";
 
                 return (
@@ -317,11 +318,14 @@ export default function UsersAdminPage() {
                           {user.full_name_ur || user.full_name_en}
                         </p>
                         <div className="mt-1 flex flex-wrap gap-1">
-                          {primaryRole && (
-                            <span className="inline-flex items-center rounded-sm px-1.5 py-0.5 text-[0.6875rem] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                              {primaryRole}
+                          {userRoles.map((r) => (
+                            <span
+                              key={r}
+                              className="inline-flex items-center rounded-sm px-1.5 py-0.5 text-[0.6875rem] font-semibold bg-sky-50 text-sky-700 border border-sky-200"
+                            >
+                              {r}
                             </span>
-                          )}
+                          ))}
                           <span
                             className={`inline-flex items-center rounded-sm px-1.5 py-0.5 text-[0.6875rem] font-semibold border ${
                               isActive
@@ -340,25 +344,29 @@ export default function UsersAdminPage() {
                         {user.last_active || "never signed in"}
                       </p>
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          aria-label="Edit"
-                          title="Edit"
-                          onClick={() => setEditUserModal({ ...user })}
-                          className="text-gray-400 hover:bg-[#f2efe9] hover:text-gray-700 p-1.5 rounded-md transition-colors"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPasswordModal(user);
-                            setNewPasswordValue("");
-                          }}
-                          className="text-xs font-semibold px-2.5 py-1 text-gray-500 hover:bg-[#f2efe9] hover:text-gray-900 rounded-md transition-colors"
-                        >
-                          Password
-                        </button>
+                        {canManageUsers && (
+                          <button
+                            type="button"
+                            aria-label="Edit"
+                            title="Edit"
+                            onClick={() => setEditUserModal({ ...user })}
+                            className="text-gray-400 hover:bg-[#f2efe9] hover:text-gray-700 p-1.5 rounded-md transition-colors cursor-pointer"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                        )}
+                        {canResetPassword && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPasswordModal(user);
+                              setNewPasswordValue("");
+                            }}
+                            className="text-xs font-semibold px-2.5 py-1 text-gray-500 hover:bg-[#f2efe9] hover:text-gray-900 rounded-md transition-colors cursor-pointer"
+                          >
+                            Password
+                          </button>
+                        )}
                       </div>
                     </div>
                   </li>
@@ -378,27 +386,30 @@ export default function UsersAdminPage() {
             </header>
 
             <ul className="divide-y divide-[#e5e2da]">
-              {SYSTEM_ROLES.map((role) => {
-                const count = getUserCountForRole(role.key);
+              {rolesList.map((role) => {
+                const count = role.userCount ?? 0;
+                const isSuper = role.key === "super_admin";
                 return (
                   <li key={role.id} className="p-4 hover:bg-[#f9f8f5] transition-colors">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <span className="text-sm font-semibold text-gray-900 block">
-                          {role.name}
+                          {role.nameEn}
                         </span>
-                        <p className="font-mono text-[11px] text-gray-400 mt-0.5">{role.id}</p>
+                        <p className="font-mono text-[11px] text-gray-400 mt-0.5">{role.key}</p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className="rounded-sm px-1.5 py-0.5 text-[0.6875rem] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-                          {role.perms}
+                          {isSuper ? "all permissions" : `${(role.permissions || []).length} permissions`}
                         </span>
                         <span className="rounded-sm px-1.5 py-0.5 text-[0.6875rem] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
                           {count} {count === 1 ? "user" : "users"}
                         </span>
                       </div>
                     </div>
-                    <p className="mt-1.5 text-xs leading-6 text-gray-500">{role.desc}</p>
+                    {role.description && (
+                      <p className="mt-1.5 text-xs leading-6 text-gray-500">{role.description}</p>
+                    )}
                   </li>
                 );
               })}
@@ -439,7 +450,7 @@ export default function UsersAdminPage() {
                   <input
                     type="email"
                     required
-                    placeholder="reporter@dailyinsaf.pk"
+                    placeholder="reporter@dailyafadiat.com"
                     value={newUserForm.email}
                     onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
                     className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
@@ -576,16 +587,16 @@ export default function UsersAdminPage() {
               <div>
                 <label className="block font-medium text-gray-700 mb-1.5">Roles *</label>
                 <div className="flex flex-wrap gap-2">
-                  {SYSTEM_ROLES.map((r) => {
-                    const selected = newUserForm.roles.includes(r.key);
+                  {rolesList.map((r) => {
+                    const selected = newUserForm.roles.includes(r.nameEn);
                     return (
                       <button
                         key={r.key}
                         type="button"
                         onClick={() => {
                           const updated = selected
-                            ? newUserForm.roles.filter((x) => x !== r.key)
-                            : [...newUserForm.roles, r.key];
+                            ? newUserForm.roles.filter((x) => x !== r.nameEn)
+                            : [...newUserForm.roles, r.nameEn];
                           setNewUserForm({ ...newUserForm, roles: updated });
                         }}
                         className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors ${
@@ -594,7 +605,7 @@ export default function UsersAdminPage() {
                             : "bg-white text-gray-700 border-[#e5e2da] hover:bg-gray-50"
                         }`}
                       >
-                        {r.name}
+                        {r.nameEn}
                       </button>
                     );
                   })}
@@ -606,7 +617,7 @@ export default function UsersAdminPage() {
               <div>
                 <label className="block font-medium text-gray-700 mb-1.5">Desk scope</label>
                 <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 border border-[#e5e2da] rounded-md bg-[#faf9f6]">
-                  {DESK_SECTIONS.map((sec) => {
+                  {deskSections.map((sec) => {
                     const selected = newUserForm.desk_scope.includes(sec);
                     return (
                       <button
@@ -811,16 +822,16 @@ export default function UsersAdminPage() {
               <div>
                 <label className="block font-medium text-gray-700 mb-1.5">Roles *</label>
                 <div className="flex flex-wrap gap-2">
-                  {SYSTEM_ROLES.map((r) => {
-                    const selected = editUserModal.roles?.includes(r.key);
+                  {rolesList.map((r) => {
+                    const selected = editUserModal.roles?.includes(r.nameEn);
                     return (
                       <button
                         key={r.key}
                         type="button"
                         onClick={() => {
                           const updated = selected
-                            ? (editUserModal.roles || []).filter((x) => x !== r.key)
-                            : [...(editUserModal.roles || []), r.key];
+                            ? (editUserModal.roles || []).filter((x) => x !== r.nameEn)
+                            : [...(editUserModal.roles || []), r.nameEn];
                           setEditUserModal({ ...editUserModal, roles: updated });
                         }}
                         className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors ${
@@ -829,7 +840,7 @@ export default function UsersAdminPage() {
                             : "bg-white text-gray-700 border-[#e5e2da] hover:bg-gray-50"
                         }`}
                       >
-                        {r.name}
+                        {r.nameEn}
                       </button>
                     );
                   })}
@@ -840,7 +851,7 @@ export default function UsersAdminPage() {
               <div>
                 <label className="block font-medium text-gray-700 mb-1.5">Desk scope</label>
                 <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 border border-[#e5e2da] rounded-md bg-[#faf9f6]">
-                  {DESK_SECTIONS.map((sec) => {
+                  {deskSections.map((sec) => {
                     const selected = editUserModal.desk_scope?.includes(sec);
                     return (
                       <button

@@ -133,3 +133,30 @@
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
+
+/* TipTap (ProseMirror) Editorial Styling */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+.ProseMirror[dir="rtl"] p.is-editor-empty:first-child::before {
+  float: right;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid #184e2d;
+  padding-left: 1rem;
+  color: #5c635b;
+  font-style: italic;
+}
+
+.ProseMirror[dir="rtl"] blockquote {
+  border-left: none;
+  border-right: 3px solid #184e2d;
+  padding-left: 0;
+  padding-right: 1rem;
+}

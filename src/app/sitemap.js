@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { unpackArticleMeta } from "@/lib/articleMeta";
 
 export const dynamic = "force-dynamic";
 
@@ -70,18 +71,23 @@ export default async function sitemap() {
       priority: 0.8,
     }));
 
-    // 3. Dynamic Published Articles (All historic articles)
+    // 3. Dynamic Published Articles (excluding drafts, trashed & robotsNoindex)
     const { data: articles } = await supabaseAdmin
       .from("articles")
-      .select("id, created_at, updated_at")
+      .select("id, slug, content_en, created_at, updated_at")
       .order("created_at", { ascending: false });
 
-    const articleRoutes = (articles || []).map((art) => ({
-      url: `${baseUrl}/story/${art.id}`,
-      lastModified: new Date(art.updated_at || art.created_at || Date.now()),
-      changeFrequency: "weekly",
-      priority: 0.7,
-    }));
+    const articleRoutes = (articles || [])
+      .filter((art) => {
+        const { status, meta } = unpackArticleMeta(art.content_en);
+        return status === "published" && !meta.robotsNoindex;
+      })
+      .map((art) => ({
+        url: `${baseUrl}/story/${art.slug || art.id}`,
+        lastModified: new Date(art.updated_at || art.created_at || Date.now()),
+        changeFrequency: "weekly",
+        priority: 0.7,
+      }));
 
     return [...staticRoutes, ...categoryRoutes, ...articleRoutes];
   } catch (error) {

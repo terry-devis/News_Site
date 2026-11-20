@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSubscribers, addSubscriber, getSiteSetting } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 import nodemailer from "nodemailer";
 
 export async function GET() {
@@ -15,8 +16,10 @@ export async function POST(req) {
   try {
     const body = await req.json();
 
-    // 1. Send Newsletter Broadcast
+    // 1. Send Newsletter Broadcast (Admin only)
     if (body.action === "broadcast") {
+      const { errorResponse } = await requirePermission("newsletter.manage");
+      if (errorResponse) return errorResponse;
       const { subject, message } = body;
       if (!subject || !message) {
         return NextResponse.json({ error: "موضوع اور پیغام دونوں درج کریں" }, { status: 400 });

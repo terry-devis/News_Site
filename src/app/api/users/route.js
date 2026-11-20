@@ -6,8 +6,11 @@ import {
   resetNewsroomUserPassword,
   deleteNewsroomUser,
 } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET() {
+  const { errorResponse } = await requirePermission("user.view");
+  if (errorResponse) return errorResponse;
   try {
     const users = await getNewsroomUsers();
     return NextResponse.json({ success: true, users });
@@ -22,6 +25,8 @@ export async function POST(req) {
     const body = await req.json();
 
     if (body.action === "reset_password") {
+      const { errorResponse } = await requirePermission("user.reset_password");
+      if (errorResponse) return errorResponse;
       const result = await resetNewsroomUserPassword(body.id || body.email, body.newPassword);
       if (result) {
         return NextResponse.json({ success: true, ...result });
@@ -29,6 +34,8 @@ export async function POST(req) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const { errorResponse } = await requirePermission("user.manage");
+    if (errorResponse) return errorResponse;
     const created = await createNewsroomUser(body);
     return NextResponse.json({ success: true, user: created });
   } catch (error) {
@@ -38,6 +45,8 @@ export async function POST(req) {
 }
 
 export async function PUT(req) {
+  const { errorResponse } = await requirePermission("user.manage");
+  if (errorResponse) return errorResponse;
   try {
     const body = await req.json();
     const id = body.id || body.email;
@@ -54,6 +63,8 @@ export async function PUT(req) {
 }
 
 export async function DELETE(req) {
+  const { errorResponse } = await requirePermission("user.manage");
+  if (errorResponse) return errorResponse;
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id") || searchParams.get("email");

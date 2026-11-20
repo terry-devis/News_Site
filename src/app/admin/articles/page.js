@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Search,
@@ -14,20 +15,35 @@ import {
   AlertCircle,
   X,
   Filter,
+  Send,
+  Archive,
 } from "lucide-react";
 
-export default function ArticlesAdminPage() {
+function ArticlesAdminInner() {
+  const searchParams = useSearchParams();
+  const initialStatus = searchParams.get("status") || "all";
+
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeEdition, setActiveEdition] = useState("ur"); // 'ur', 'en', 'both'
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [showTrash, setShowTrash] = useState(false);
-  const [trashedIds, setTrashedIds] = useState([]);
+  const [showTrash, setShowTrash] = useState(initialStatus === "trashed");
   const [toastMessage, setToastMessage] = useState("");
+
+  useEffect(() => {
+    const param = searchParams.get("status");
+    if (param === "trashed") {
+      setShowTrash(true);
+      setStatusFilter("all");
+    } else if (param) {
+      setShowTrash(false);
+      setStatusFilter(param);
+    }
+  }, [searchParams]);
 
   // Fetch articles from API
   async function loadArticles() {
@@ -54,25 +70,62 @@ export default function ArticlesAdminPage() {
     setTimeout(() => setToastMessage(""), 4000);
   };
 
-  // Move to trash
-  const handleMoveToTrash = (id) => {
-    setTrashedIds((prev) => [...prev, id]);
-    showToast("مضمون کامیابی سے کوڑے دان (Trash) میں منتقل کر دیا گیا");
+  // Move to trash (persisted)
+  const handleMoveToTrash = async (id) => {
+    try {
+      const res = await fetch(`/api/articles/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "trashed", meta: { deletedAt: new Date().toISOString() } }),
+      });
+      if (!res.ok) throw new Error("Trash failed");
+      setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, status: "trashed" } : a)));
+      showToast("مضمون کامیابی سے کوڑے دان (Trash) میں منتقل کر دیا گیا");
+    } catch {
+      showToast("کوڑے دان میں منتقل کرنے میں خرابی");
+    }
   };
 
-  // Restore from trash
-  const handleRestoreFromTrash = (id) => {
-    setTrashedIds((prev) => prev.filter((item) => item !== id));
-    showToast("مضمون کوڑے دان سے بحال کر دیا گیا");
+  // Restore from trash (persisted)
+  const handleRestoreFromTrash = async (id) => {
+    try {
+      const res = await fetch(`/api/articles/${id}/restore`, { method: "POST" });
+      if (!res.ok) throw new Error("Restore failed");
+      setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, status: "draft" } : a)));
+      showToast("مضمون کوڑے دان سے بحال کر دیا گیا");
+    } catch {
+      showToast("بحال کرنے میں خرابی");
+    }
   };
+
+  const handleTogglePublish = async (art) => {
+    const isPublished = (art.status || "published") === "published";
+    const endpoint = isPublished ? `/api/articles/${art.id}/unpublish` : `/api/articles/${art.id}/publish`;
+    try {
+      const res = await fetch(endpoint, { method: "POST" });
+      if (!res.ok) throw new Error("Action failed");
+      setArticles((prev) =>
+        prev.map((a) => (a.id === art.id ? { ...a, status: isPublished ? "draft" : "published" } : a))
+      );
+      showToast(isPublished ? "مضمون ڈرافٹ میں منتقل کر دیا گیا" : "مضمون شائع کر دیا گیا");
+    } catch {
+      showToast("اسٹیٹس تبدیل کرنے میں خرابی");
+    }
+  };
+
+  const trashedCount = useMemo(
+    () => articles.filter((a) => a.status === "trashed").length,
+    [articles]
+  );
 
   // Calculate SEO Completeness score for each story
   const getSeoScore = (art) => {
-    let score = 40;
-    if (art.cover_image || art.lead_image_url) score += 25;
-    if (art.summary_ur || art.summary_en) score += 15;
+    let score = 35;
+    if (art.cover_image || art.lead_image_url) score += 20;
+    if (art.summary_ur || art.summary_en || art.meta?.seoDescription) score += 15;
     if (art.content_ur && art.content_ur.length > 300) score += 10;
     if (art.title_ur && art.title_ur.length >= 30) score += 10;
+    if (art.meta?.focusKeyword || art.meta?.coverImageAlt) score += 10;
     return Math.min(score, 100);
   };
 
@@ -89,7 +142,7 @@ export default function ArticlesAdminPage() {
   // Filtered Articles pipeline
   const filteredArticles = useMemo(() => {
     return articles.filter((art) => {
-      const isTrashed = trashedIds.includes(art.id);
+      const isTrashed = art.status === "trashed";
       if (showTrash && !isTrashed) return false;
       if (!showTrash && isTrashed) return false;
 
@@ -130,7 +183,7 @@ export default function ArticlesAdminPage() {
 
       return true;
     });
-  }, [articles, showTrash, trashedIds, statusFilter, categoryFilter, fromDate, toDate, searchQuery]);
+  }, [articles, showTrash, statusFilter, categoryFilter, fromDate, toDate, searchQuery]);
 
   const getTimeAgo = (index) => {
     const hours = [4, 6, 6, 7, 8, 12, 18, 24];
@@ -169,7 +222,7 @@ export default function ArticlesAdminPage() {
             }`}
           >
             <Trash2 size={13} className={showTrash ? "text-white" : "text-gray-500"} />
-            <span>Trash ({trashedIds.length})</span>
+            <span>Trash ({trashedCount})</span>
           </button>
 
           <Link
@@ -177,7 +230,7 @@ export default function ArticlesAdminPage() {
             className="inline-flex items-center justify-center gap-1.5 bg-[#124e2b] hover:bg-[#0b381e] text-white text-xs font-bold px-4 py-2 rounded shadow-xs transition cursor-pointer"
           >
             <Plus size={15} />
-            <span>+ New article</span>
+            <span>New article</span>
           </Link>
         </div>
       </div>
@@ -360,7 +413,7 @@ export default function ArticlesAdminPage() {
                       ? art.title_en || art.title_ur || "Untitled Story"
                       : art.title_ur || art.title_en || "خبر کا عنوان";
 
-                  const isTrashed = trashedIds.includes(art.id);
+                  const isTrashed = art.status === "trashed";
 
                   return (
                     <tr key={art.id || idx} className="hover:bg-[#fbfaf8] transition group">
@@ -466,7 +519,7 @@ export default function ArticlesAdminPage() {
 
                       {/* 5. VIEWS */}
                       <td className="p-3.5 whitespace-nowrap font-mono text-[11px] font-semibold text-gray-700 newsroom-tabular">
-                        {art.views_count ? art.views_count.toLocaleString() : (12000 - idx * 380).toLocaleString()}
+                        {(art.views_count || 0).toLocaleString()}
                       </td>
 
                       {/* 6. UPDATED */}
@@ -480,13 +533,21 @@ export default function ArticlesAdminPage() {
                           {isTrashed ? (
                             <button
                               onClick={() => handleRestoreFromTrash(art.id)}
-                              className="p-1.5 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded"
+                              className="p-1.5 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded cursor-pointer"
                               title="Restore story"
                             >
                               <RotateCcw size={14} />
                             </button>
                           ) : (
                             <>
+                              <button
+                                onClick={() => handleTogglePublish(art)}
+                                className="p-1.5 text-gray-500 hover:text-emerald-800 hover:bg-gray-100 rounded transition cursor-pointer"
+                                title={(art.status || "published") === "published" ? "Unpublish to draft" : "Publish live"}
+                              >
+                                {(art.status || "published") === "published" ? <Archive size={14} /> : <Send size={14} />}
+                              </button>
+
                               <Link
                                 href={`/admin/articles/${art.id}`}
                                 className="p-1.5 text-gray-500 hover:text-emerald-800 hover:bg-gray-100 rounded transition"
@@ -540,5 +601,13 @@ export default function ArticlesAdminPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ArticlesAdminPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center text-xs text-gray-400">Loading articles...</div>}>
+      <ArticlesAdminInner />
+    </Suspense>
   );
 }

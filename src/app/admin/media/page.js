@@ -1,698 +1,575 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Image as ImageIcon,
   Upload,
   Crop,
-  Edit2,
+  Pencil,
   Trash2,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
+  Copy,
   RefreshCw,
   X,
-  Check,
-  RotateCcw,
-  Maximize2,
-  Eye,
-  Info,
-  Sliders,
-  Copy,
+  Loader2,
+  Search,
+  HardDrive,
 } from "lucide-react";
+import ImageFramingModal from "@/component/admin/article-editor/ImageFramingModal";
+import { hasPermission } from "@/lib/permissions";
+import { optimizeImageToWebP } from "@/lib/imageOptimizer";
+
+function formatBytes(bytes, fallbackStr) {
+  if (typeof bytes === "number" && bytes > 0) {
+    return bytes > 1048576
+      ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+      : `${Math.round(bytes / 1024)} KB`;
+  }
+  return fallbackStr || "—";
+}
+
+function formatDateTime(dt) {
+  if (!dt) return "";
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Karachi",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(dt));
+}
 
 export default function AdminMediaPage() {
   const [assets, setAssets] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [storageStatus, setStorageStatus] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Inspector Modal State
-  const [showInspectorModal, setShowInspectorModal] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState(null);
-  const [inspectorForm, setInspectorForm] = useState({
-    alt_text: "",
-    caption: "",
-    credit: "",
-  });
+  // Image details modal
+  const [editingAsset, setEditingAsset] = useState(null);
+  const [altText, setAltText] = useState("");
+  const [caption, setCaption] = useState("");
+  const [credit, setCredit] = useState("");
+  const [savingDetails, setSavingDetails] = useState(false);
 
-  // Crop & Position Modal State
-  const [showCropModal, setShowCropModal] = useState(false);
-  const [cropAsset, setCropAsset] = useState(null);
-  const [cropPreset, setCropPreset] = useState("Focal point");
-  const [focalPoint, setFocalPoint] = useState({ x: 50, y: 50 });
-  const [savingFraming, setSavingFraming] = useState(false);
+  // Framing / Crop modal (reuses ImageFramingModal from Module 4)
+  const [framingAsset, setFramingAsset] = useState(null);
 
-  // Fetch Media Assets
-  const fetchMedia = async () => {
+  // Delete confirmation dialog
+  const [deletingAsset, setDeletingAsset] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  function showToast(type, message) {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  async function fetchMedia() {
     setLoading(true);
     try {
-      const res = await fetch("/api/media");
-      const data = await res.json();
-      if (data.assets) {
-        setAssets(data.assets);
-      }
-    } catch (e) {
-      console.error("Failed to load media assets:", e);
-      showToast("error", "Failed to fetch media assets");
+      const [mediaRes, statusRes, meRes] = await Promise.all([
+        fetch("/api/media").then((r) => r.json()),
+        fetch("/api/media/storage-status").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      ]);
+
+      if (mediaRes?.assets) setAssets(mediaRes.assets);
+      if (statusRes) setStorageStatus(statusRes);
+      if (meRes?.user) setCurrentUser(meRes.user);
+    } catch {
+      showToast("error", "Failed to load media library");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     fetchMedia();
   }, []);
 
-  const showToast = (type, message) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
+  const canUpload = !currentUser || hasPermission(currentUser, "media.upload");
+  const canFrame = !currentUser || hasPermission(currentUser, "media.framing");
+  const canDelete = !currentUser || hasPermission(currentUser, "media.delete");
 
-  // Upload handler
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const filteredAssets = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return assets;
+    return assets.filter(
+      (a) =>
+        String(a.filename || "").toLowerCase().includes(q) ||
+        String(a.alt_text || "").toLowerCase().includes(q) ||
+        String(a.credit || "").toLowerCase().includes(q)
+    );
+  }, [assets, searchQuery]);
+
+  async function handleFileUpload(e) {
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const file = await optimizeImageToWebP(rawFile);
+      const fd = new FormData();
+      fd.append("file", file);
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (data.url) {
-        const sizeKb = Math.round(file.size / 1024);
-        const sizeFormatted = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
-
-        const newAssetRes = await fetch("/api/media", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: file.name,
-            url: data.url,
-            size: sizeFormatted,
-            size_bytes: file.size,
-            alt_text: "",
-            caption: "",
-            credit: "",
-            focal_point: { x: 50, y: 50 },
-          }),
-        });
-
-        const newAssetData = await newAssetRes.json();
-        if (newAssetData.success) {
-          showToast("success", `Uploaded ${file.name} successfully!`);
-          fetchMedia();
-        }
-      } else {
-        showToast("error", data.error || "Upload failed");
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.url) {
+        throw new Error(uploadData.error || "Upload failed");
       }
+
+      const sizeKb = Math.round(file.size / 1024);
+      const sizeFormatted = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+
+      const createRes = await fetch("/api/media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          url: uploadData.url,
+          size: sizeFormatted,
+          size_bytes: file.size,
+          type: "image",
+        }),
+      });
+      const createData = await createRes.json();
+      if (createData?.asset) {
+        setAssets((prev) => [createData.asset, ...prev]);
+      } else {
+        await fetchMedia();
+      }
+      showToast("success", "Image uploaded to Cloudflare R2");
     } catch (err) {
-      showToast("error", "Network error during upload");
+      showToast("error", err.message || "Upload failed");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  };
+  }
 
-  // Open Inspector Modal
-  const handleOpenInspector = (asset) => {
-    setSelectedAsset(asset);
-    setInspectorForm({
-      alt_text: asset.alt_text || "",
-      caption: asset.caption || "",
-      credit: asset.credit || "",
-    });
-    setShowInspectorModal(true);
-  };
+  function openInspector(asset) {
+    setAltText(asset.alt_text || "");
+    setCaption(asset.caption || "");
+    setCredit(asset.credit || "");
+    setEditingAsset(asset);
+  }
 
-  // Save Inspector Details
-  const handleSaveInspector = async (e) => {
-    e.preventDefault();
-    if (!selectedAsset) return;
-
+  async function handleSaveDetails() {
+    if (!editingAsset) return;
+    setSavingDetails(true);
     try {
       const res = await fetch("/api/media", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: selectedAsset.id,
-          alt_text: inspectorForm.alt_text,
-          caption: inspectorForm.caption,
-          credit: inspectorForm.credit,
+          id: editingAsset.id,
+          alt_text: altText.trim(),
+          caption: caption.trim(),
+          credit: credit.trim(),
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        showToast("success", "Image details updated.");
-        setShowInspectorModal(false);
-        fetchMedia();
-      }
+      if (!res.ok) throw new Error(data.error || "Could not save");
+
+      setAssets((prev) =>
+        prev.map((a) =>
+          a.id === editingAsset.id
+            ? { ...a, alt_text: altText.trim(), caption: caption.trim(), credit: credit.trim() }
+            : a
+        )
+      );
+      setEditingAsset(null);
+      showToast("success", "Image details saved");
     } catch (err) {
-      showToast("error", "Failed to update image details");
-    }
-  };
-
-  // Open Crop & Position Modal
-  const handleOpenCrop = (asset) => {
-    setCropAsset(asset);
-    setCropPreset("Focal point");
-    setFocalPoint(asset.focal_point || { x: 50, y: 50 });
-    setShowCropModal(true);
-  };
-
-  // Viewport Click (Set Focal Point)
-  const handleViewportClick = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
-    const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
-    setFocalPoint({
-      x: Math.max(0, Math.min(100, x)),
-      y: Math.max(0, Math.min(100, y)),
-    });
-  };
-
-  // Save Framing
-  const handleSaveFraming = async () => {
-    if (!cropAsset) return;
-    setSavingFraming(true);
-    try {
-      const res = await fetch("/api/media", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: cropAsset.id,
-          focal_point: focalPoint,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast("success", "Focal framing saved.");
-        setShowCropModal(false);
-        fetchMedia();
-      }
-    } catch (err) {
-      showToast("error", "Failed to save framing");
+      showToast("error", err.message || "Could not save");
     } finally {
-      setSavingFraming(false);
+      setSavingDetails(false);
     }
-  };
+  }
 
-  // Delete Media Asset
-  const handleDeleteAsset = async (assetId) => {
-    if (!window.confirm("Are you sure you want to permanently delete this media asset?")) return;
+  async function handleSaveFraming(framing) {
+    if (!framingAsset) return;
     try {
-      const res = await fetch(`/api/media?id=${assetId}`, { method: "DELETE" });
+      const res = await fetch(`/api/media/${framingAsset.id}/framing`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ framing }),
+      });
       const data = await res.json();
-      if (data.success) {
-        showToast("success", "Asset deleted.");
-        fetchMedia();
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to save framing");
+
+      setAssets((prev) =>
+        prev.map((a) =>
+          a.id === framingAsset.id ? { ...a, framing, focal_point: framing.focal } : a
+        )
+      );
+      showToast("success", "Framing saved. Live pages update in a few seconds.");
     } catch (err) {
-      showToast("error", "Failed to delete asset");
+      showToast("error", err.message || "Could not save framing");
     }
-  };
+  }
 
-  // Copy Image CDN Link
-  const handleCopyLink = (url) => {
+  async function handleConfirmDelete() {
+    if (!deletingAsset) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/media?id=${deletingAsset.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not delete");
+
+      setAssets((prev) => prev.filter((a) => a.id !== deletingAsset.id));
+      setDeletingAsset(null);
+      showToast("success", "Image deleted");
+    } catch (err) {
+      showToast("error", err.message || "Could not delete");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function copyUrl(url) {
     navigator.clipboard.writeText(url);
-    showToast("success", "CDN URL copied to clipboard.");
-  };
-
-  const formatDate = (isoString) => {
-    if (!isoString) return "";
-    const date = new Date(isoString);
-    return date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+    showToast("success", "Image URL copied");
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Toast Alert */}
+    <div className="space-y-5">
+      {/* Toast */}
       {toast && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all ${
-            toast.type === "success"
-              ? "bg-[#124e2b] text-white border border-[#0a2618]"
-              : "bg-red-800 text-white border border-red-900"
+          className={`fixed bottom-5 right-5 z-50 px-4 py-2.5 text-xs font-semibold shadow-lg border flex items-center gap-2 ${
+            toast.type === "error"
+              ? "bg-red-50 text-red-800 border-red-200"
+              : "bg-[#0a2618] text-white border-[#1f5637]"
           }`}
         >
-          {toast.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          {toast.type === "error" ? (
+            <AlertCircle size={14} />
+          ) : (
+            <CheckCircle2 size={14} className="text-emerald-300" />
+          )}
           <span>{toast.message}</span>
         </div>
       )}
 
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#e5e2da]">
+      {/* Header */}
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[#e5e2da] pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Media library</h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Images upload directly to DigitalOcean Spaces from the browser
+          <h1 className="text-xl sm:text-2xl font-bold text-[#18221b] flex items-center gap-2">
+            <ImageIcon className="text-[#184e2d]" size={24} />
+            <span>Media library</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-[#5c635b] mt-0.5">
+            Images upload to Cloudflare R2 and serve globally via CDN.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            accept="image/*"
-            className="hidden"
-          />
-
-          <button
-            type="button"
-            disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#124e2b] hover:bg-[#0a2618] rounded-lg shadow-sm transition-all disabled:opacity-50"
-          >
-            {uploading ? (
-              <>
-                <RefreshCw size={14} className="animate-spin" />
-                <span>Uploading...</span>
-              </>
-            ) : (
-              <>
-                <Upload size={14} />
-                <span>Upload image</span>
-              </>
-            )}
-          </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {storageStatus && (
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded border ${
+                storageStatus.configured
+                  ? "bg-emerald-50 text-[#184e2d] border-emerald-200"
+                  : "bg-amber-50 text-amber-800 border-amber-200"
+              }`}
+            >
+              <HardDrive size={12} />
+              <span>
+                {storageStatus.configured
+                  ? `R2 Connected (${storageStatus.bucketName})`
+                  : "Local Fallback Mode"}
+              </span>
+            </span>
+          )}
 
           <button
             type="button"
             onClick={fetchMedia}
-            disabled={loading}
-            className="p-2 text-gray-500 hover:text-gray-900 bg-white border border-[#e5e2da] rounded-lg hover:bg-gray-50 transition-colors shadow-xs"
-            title="Refresh media"
+            title="Refresh library"
+            className="p-2 border border-[#e5e2da] bg-white text-[#5c635b] hover:text-[#184e2d] rounded-md cursor-pointer"
           >
-            <RefreshCw size={14} className={loading ? "animate-spin text-[#124e2b]" : ""} />
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           </button>
+
+          {canUpload && (
+            <label className="inline-flex items-center gap-1.5 bg-[#184e2d] hover:bg-[#0a2618] text-white text-xs font-semibold px-4 py-2 rounded-md cursor-pointer transition">
+              {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+              <span>{uploading ? "Uploading..." : "Upload image"}</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileUpload}
+                disabled={uploading}
+              />
+            </label>
+          )}
         </div>
       </div>
 
-      {/* 5-Column Responsive Gallery Grid */}
-      {loading ? (
-        <div className="bg-white border border-[#e5e2da] rounded-xl p-16 text-center text-gray-400 text-xs">
-          <RefreshCw size={24} className="animate-spin mx-auto text-[#124e2b] mb-2" />
-          Loading cloud media assets...
-        </div>
-      ) : assets.length === 0 ? (
-        <div className="bg-white border border-dashed border-[#e5e2da] rounded-xl p-16 text-center text-gray-400 text-xs">
-          <ImageIcon size={36} className="mx-auto text-gray-300 mb-2" />
-          <p className="font-semibold text-gray-600 text-sm">No media assets found.</p>
-          <p className="mt-1 text-gray-400">Click &quot;Upload image&quot; above to upload your first cloud asset.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {assets.map((asset) => {
-            const hasAlt = Boolean(asset.alt_text && asset.alt_text.trim());
-            const hasCustomCrop = Boolean(
-              asset.focal_point && (asset.focal_point.x !== 50 || asset.focal_point.y !== 50)
-            );
-
-            return (
-              <div
-                key={asset.id}
-                className="bg-white border border-[#e5e2da] rounded-xl overflow-hidden shadow-2xs hover:shadow-xs hover:border-gray-400 transition-all flex flex-col justify-between group"
-              >
-                {/* Thumbnail Preview with Focal Point Positioning */}
-                <div
-                  className="aspect-4/3 bg-[#f7f5f0] relative overflow-hidden flex items-center justify-center cursor-pointer"
-                  onClick={() => handleOpenInspector(asset)}
-                >
-                  <img
-                    src={asset.url}
-                    alt={asset.alt_text || asset.filename}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-102"
-                    style={{
-                      objectPosition: asset.focal_point
-                        ? `${asset.focal_point.x}% ${asset.focal_point.y}%`
-                        : "center",
-                    }}
-                  />
-
-                  {/* Copy Link Quick Icon */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopyLink(asset.url);
-                    }}
-                    className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-black text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Copy CDN link"
-                  >
-                    <Copy size={11} />
-                  </button>
-                </div>
-
-                {/* Card Body */}
-                <div className="p-3 space-y-1.5 flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Filename */}
-                    <h4
-                      className="text-xs font-semibold text-gray-900 truncate"
-                      title={asset.filename}
-                    >
-                      {asset.filename}
-                    </h4>
-
-                    {/* Metadata Line: Size & Alt Status */}
-                    <div className="flex items-center justify-between gap-1 mt-1 text-[11px]">
-                      <span className="text-gray-500 font-medium">{asset.size || "100 KB"}</span>
-                      {hasAlt ? (
-                        <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold px-1.5 py-0.2 rounded">
-                          Alt OK
-                        </span>
-                      ) : (
-                        <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold px-1.5 py-0.2 rounded">
-                          No alt
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Timestamp */}
-                    <p className="text-[10px] text-gray-400 mt-1">{formatDate(asset.created_at)}</p>
-                  </div>
-                </div>
-
-                {/* Bottom Action Strip (Edit, Crop/Re-crop, Delete) */}
-                <div className="border-t border-[#f0ede6] bg-[#faf9f6] px-3 py-2 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenInspector(asset)}
-                      className="p-1 text-gray-500 hover:text-gray-900 rounded hover:bg-gray-100 transition-colors"
-                      title="Edit image details"
-                    >
-                      <Edit2 size={12} />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleOpenCrop(asset)}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#124e2b] hover:text-[#0a2618] transition-colors"
-                    >
-                      <Crop size={11} />
-                      <span>{hasCustomCrop ? "Re-crop" : "Crop"}</span>
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteAsset(asset.id)}
-                    className="p-1 text-gray-400 hover:text-red-700 rounded hover:bg-red-50 transition-colors"
-                    title="Delete image"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+      {/* Storage warning if R2 not configured */}
+      {storageStatus && storageStatus.configured === false && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+          Cloudflare R2 credentials (<span className="font-mono font-semibold">R2_*</span>) are not configured.
+          New uploads are temporarily saved to <span className="font-mono">public/uploads</span>.
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 1: IMAGE DETAILS INSPECTOR MODAL                  */}
-      {/* ======================================================== */}
-      {showInspectorModal && selectedAsset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white border border-[#e5e2da] rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5e2da] bg-[#faf9f6]">
-              <div>
-                <h3 className="text-base font-bold text-gray-900">Image details</h3>
-                <p className="text-[11px] text-gray-500 truncate max-w-[360px]">
-                  {selectedAsset.filename}
-                </p>
+      {/* Search & Count Bar */}
+      <div className="bg-white border border-[#e5e2da] rounded-lg overflow-hidden shadow-2xs">
+        <div className="px-4 py-3 border-b border-[#e5e2da] bg-[#faf9f6] flex flex-wrap items-center justify-between gap-3">
+          <div className="relative">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search filename, alt text, credit..."
+              className="pl-8 pr-3 py-1.5 text-xs border border-[#e5e2da] rounded bg-white text-[#18221b] focus:outline-none focus:border-[#184e2d] w-64"
+            />
+          </div>
+          <span className="text-xs text-[#5c635b] font-medium">
+            {filteredAssets.length} {filteredAssets.length === 1 ? "asset" : "assets"}
+          </span>
+        </div>
+
+        {/* 5-Column Grid Matching scraped-site */}
+        {loading ? (
+          <div className="flex h-56 items-center justify-center text-xs text-[#5c635b]">
+            <Loader2 size={20} className="animate-spin mr-2" />
+            Loading media library...
+          </div>
+        ) : filteredAssets.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-sm font-semibold text-[#18221b]">Library is empty</p>
+            <p className="text-xs text-[#5c635b] mt-1">
+              Upload an image above to store it in Cloudflare R2.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3 lg:grid-cols-5">
+            {filteredAssets.map((asset) => {
+              const focal = asset.framing?.focal || asset.focal_point || { x: 50, y: 50 };
+              return (
+                <figure
+                  key={asset.id}
+                  className="overflow-hidden rounded-lg border border-[#e5e2da] bg-white flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative flex aspect-4/3 items-center justify-center bg-[#f4f2ec] overflow-hidden group">
+                      {asset.url ? (
+                        <img
+                          src={asset.url}
+                          alt={asset.alt_text || ""}
+                          style={{ objectPosition: `${focal.x}% ${focal.y}%` }}
+                          className="size-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span className="text-xs text-[#5c635b]">No preview</span>
+                      )}
+                      {asset.url && (
+                        <button
+                          type="button"
+                          onClick={() => copyUrl(asset.url)}
+                          title="Copy URL"
+                          className="opacity-0 group-hover:opacity-100 absolute top-1.5 right-1.5 bg-black/70 text-white p-1.5 rounded transition cursor-pointer"
+                        >
+                          <Copy size={12} />
+                        </button>
+                      )}
+                    </div>
+
+                    <figcaption className="space-y-1 p-2.5">
+                      <p className="font-mono truncate text-[11px] text-[#18221b]" title={asset.filename}>
+                        {asset.filename || "image"}
+                      </p>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[11px] text-[#5c635b] tabular-nums">
+                          {formatBytes(asset.size_bytes, asset.size)}
+                        </span>
+                        {!asset.alt_text && (
+                          <span className="rounded bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                            No alt
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-gray-400">
+                        {formatDateTime(asset.created_at)}
+                      </p>
+                    </figcaption>
+                  </div>
+
+                  {(canFrame || canDelete) && (
+                    <div className="flex items-center justify-between gap-1 border-t border-[#e5e2da] px-2 py-1.5 bg-[#fbfaf8]">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openInspector(asset)}
+                          title="Edit details"
+                          className="p-1.5 text-[#5c635b] hover:text-[#184e2d] hover:bg-white rounded transition cursor-pointer"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        {canFrame && asset.url && (
+                          <button
+                            type="button"
+                            onClick={() => setFramingAsset(asset)}
+                            className="px-2 py-1 text-[11px] font-semibold text-[#184e2d] hover:bg-white rounded flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <Crop size={12} />
+                            <span>{asset.framing ? "Re-crop" : "Crop"}</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => setDeletingAsset(asset)}
+                          title="Delete image"
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </figure>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Image Details Modal */}
+      {editingAsset && (
+        <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#e5e2da] w-full max-w-lg shadow-2xl">
+            <header className="px-5 py-3.5 border-b border-[#e5e2da] bg-[#fbfaf8] flex items-center justify-between">
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-[#18221b]">Image details</h3>
+                <p className="text-[11px] font-mono text-[#5c635b] truncate">{editingAsset.filename}</p>
               </div>
               <button
                 type="button"
-                onClick={() => setShowInspectorModal(false)}
-                className="text-gray-400 hover:text-gray-700 p-1 rounded-md"
+                onClick={() => setEditingAsset(null)}
+                className="text-gray-400 hover:text-gray-700 cursor-pointer"
               >
                 <X size={18} />
               </button>
-            </div>
+            </header>
 
-            {/* Modal Body */}
-            <form onSubmit={handleSaveInspector} className="overflow-y-auto p-6 space-y-4">
-              {/* Centered Image Preview */}
-              <div className="w-full h-48 bg-[#f4f2ec] rounded-lg border border-[#e5e2da] overflow-hidden flex items-center justify-center">
+            <div className="p-5 space-y-4">
+              {editingAsset.url && (
                 <img
-                  src={selectedAsset.url}
-                  alt={selectedAsset.filename}
-                  className="max-h-full max-w-full object-contain"
+                  src={editingAsset.url}
+                  alt={altText}
+                  className="max-h-52 w-full border border-[#e5e2da] bg-[#f4f2ec] object-contain"
                 />
-              </div>
+              )}
 
-              {/* Alt Text */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
-                  <span>Alt text</span>
-                  <span className="text-[10px] font-nastaliq text-emerald-800">متبادل متن</span>
-                </label>
+              <div>
+                <label className="block text-xs font-semibold text-[#18221b] mb-1">Alt text</label>
                 <input
                   type="text"
-                  value={inspectorForm.alt_text}
-                  onChange={(e) => setInspectorForm({ ...inspectorForm, alt_text: e.target.value })}
-                  placeholder="Describe what is in the picture — this is read aloud and indexed by Google Images"
-                  className="w-full text-xs border border-[#e5e2da] rounded-lg p-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
+                  dir="auto"
+                  value={altText}
+                  onChange={(e) => setAltText(e.target.value)}
+                  placeholder="Describe what is in the picture (indexed by Google Images)"
+                  className="w-full px-3 py-2 text-xs border border-[#e5e2da] focus:outline-none focus:border-[#184e2d]"
                 />
-                <p className="text-[10px] text-gray-400">
-                  Describe what is in the picture — this is read aloud and indexed by Google Images
-                </p>
               </div>
 
-              {/* Caption */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-700">Caption</label>
+              <div>
+                <label className="block text-xs font-semibold text-[#18221b] mb-1">Caption</label>
                 <textarea
                   rows={2}
-                  value={inspectorForm.caption}
-                  onChange={(e) => setInspectorForm({ ...inspectorForm, caption: e.target.value })}
+                  dir="auto"
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
                   placeholder="Printed under the image on the story page"
-                  className="w-full text-xs border border-[#e5e2da] rounded-lg p-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b] resize-none"
+                  className="w-full px-3 py-2 text-xs border border-[#e5e2da] focus:outline-none focus:border-[#184e2d]"
                 />
-                <p className="text-[10px] text-gray-400">Printed under the image on the story page</p>
               </div>
 
-              {/* Credit */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-700">Credit</label>
+              <div>
+                <label className="block text-xs font-semibold text-[#18221b] mb-1">Credit</label>
                 <input
                   type="text"
-                  value={inspectorForm.credit}
-                  onChange={(e) => setInspectorForm({ ...inspectorForm, credit: e.target.value })}
-                  placeholder="Photographer or agency"
-                  className="w-full text-xs border border-[#e5e2da] rounded-lg p-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
+                  value={credit}
+                  onChange={(e) => setCredit(e.target.value)}
+                  placeholder="Photographer or news agency"
+                  className="w-full px-3 py-2 text-xs border border-[#e5e2da] focus:outline-none focus:border-[#184e2d]"
                 />
-                <p className="text-[10px] text-gray-400">Photographer or agency</p>
               </div>
+            </div>
 
-              {/* Footer Actions */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#f0ede6]">
-                <button
-                  type="button"
-                  onClick={() => setShowInspectorModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 text-xs font-semibold text-white bg-[#124e2b] hover:bg-[#0a2618] rounded-lg shadow-sm transition-all"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
+            <footer className="px-5 py-3 border-t border-[#e5e2da] bg-[#fbfaf8] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditingAsset(null)}
+                className="px-3.5 py-2 text-xs font-semibold border border-[#e5e2da] bg-white text-[#5c635b] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={savingDetails}
+                onClick={handleSaveDetails}
+                className="px-4 py-2 text-xs font-semibold bg-[#184e2d] hover:bg-[#0a2618] text-white disabled:opacity-60 cursor-pointer"
+              >
+                {savingDetails ? "Saving..." : "Save"}
+              </button>
+            </footer>
           </div>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 2: CROP & POSITION MODAL                          */}
-      {/* ======================================================== */}
-      {showCropModal && cropAsset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-          <div className="bg-white border border-[#e5e2da] rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5e2da] bg-[#faf9f6]">
-              <div>
-                <h3 className="text-base font-bold text-gray-900">Crop &amp; position</h3>
-                <p className="text-[11px] text-gray-500">
-                  The original file is kept. You can change this again at any time.
-                </p>
-              </div>
+      {/* Shared 5-Ratio Image Framing & Cropping Modal */}
+      <ImageFramingModal
+        open={Boolean(framingAsset)}
+        imageUrl={framingAsset?.url}
+        initialFraming={framingAsset?.framing}
+        onClose={() => setFramingAsset(null)}
+        onSave={handleSaveFraming}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      {deletingAsset && (
+        <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#e5e2da] w-full max-w-md shadow-2xl p-5 space-y-4">
+            <h3 className="text-sm font-bold text-[#18221b]">Delete this image?</h3>
+            <p className="text-xs text-[#5c635b] leading-relaxed">
+              <span className="font-mono font-semibold text-[#18221b]">
+                {deletingAsset.filename}
+              </span>{" "}
+              will be removed from the media library.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setShowCropModal(false)}
-                className="text-gray-400 hover:text-gray-700 p-1 rounded-md"
+                disabled={deleting}
+                onClick={() => setDeletingAsset(null)}
+                className="px-3.5 py-2 text-xs font-semibold border border-[#e5e2da] bg-white text-[#5c635b] cursor-pointer"
               >
-                <X size={18} />
+                Cancel
               </button>
-            </div>
-
-            {/* Aspect Ratio Presets Tablist */}
-            <div className="flex items-center gap-1.5 px-6 py-2.5 bg-[#f4f2ec] border-b border-[#e5e2da] overflow-x-auto">
-              {[
-                "Focal point",
-                "Hero 16:9",
-                "Card 4:3",
-                "Square",
-                "Portrait 3:4",
-                "Social share",
-              ].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setCropPreset(preset)}
-                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
-                    cropPreset === preset
-                      ? "bg-[#124e2b] text-white shadow-xs"
-                      : "bg-white text-gray-700 hover:bg-gray-100 border border-[#e5e2da]"
-                  }`}
-                >
-                  {preset}
-                </button>
-              ))}
-            </div>
-
-            {/* Modal Body */}
-            <div className="overflow-y-auto p-6 space-y-4">
-              {/* Interactive Viewport */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-[11px] text-gray-500 font-medium">
-                  <span>Click the subject. Every shape keeps it in frame.</span>
-                  <span className="font-mono text-gray-700">
-                    Focal: ({focalPoint.x}%, {focalPoint.y}%)
-                  </span>
-                </div>
-
-                <div
-                  onClick={handleViewportClick}
-                  className="w-full h-64 bg-slate-900 rounded-xl overflow-hidden relative flex items-center justify-center cursor-crosshair group shadow-inner"
-                >
-                  <img
-                    src={cropAsset.url}
-                    alt={cropAsset.filename}
-                    className="max-h-full max-w-full object-contain pointer-events-none select-none"
-                  />
-
-                  {/* Interactive Target Crosshair Pin Marker */}
-                  <div
-                    className="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 border-2 border-white rounded-full bg-emerald-600/60 shadow-lg flex items-center justify-center text-white text-xs font-bold pointer-events-none transition-all duration-150 ring-2 ring-black/40"
-                    style={{ left: `${focalPoint.x}%`, top: `${focalPoint.y}%` }}
-                  >
-                    +
-                  </div>
-                </div>
-              </div>
-
-              {/* "How it will look" Live Multi-Preview Strip */}
-              <div className="space-y-2 pt-2 border-t border-[#f0ede6]">
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">
-                  How it will look
-                </span>
-
-                <div className="grid grid-cols-4 gap-3">
-                  {/* Hero (16:9) */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-semibold text-gray-500 uppercase">Hero 16:9</span>
-                    <div className="w-full aspect-video rounded-lg overflow-hidden bg-gray-100 border border-[#e5e2da]">
-                      <img
-                        src={cropAsset.url}
-                        alt="Hero preview"
-                        className="w-full h-full object-cover"
-                        style={{ objectPosition: `${focalPoint.x}% ${focalPoint.y}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Card (4:3) */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-semibold text-gray-500 uppercase">Card 4:3</span>
-                    <div className="w-full aspect-4/3 rounded-lg overflow-hidden bg-gray-100 border border-[#e5e2da]">
-                      <img
-                        src={cropAsset.url}
-                        alt="Card preview"
-                        className="w-full h-full object-cover"
-                        style={{ objectPosition: `${focalPoint.x}% ${focalPoint.y}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Square (1:1) */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-semibold text-gray-500 uppercase">Square 1:1</span>
-                    <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 border border-[#e5e2da]">
-                      <img
-                        src={cropAsset.url}
-                        alt="Square preview"
-                        className="w-full h-full object-cover"
-                        style={{ objectPosition: `${focalPoint.x}% ${focalPoint.y}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Portrait (3:4) */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-semibold text-gray-500 uppercase">Portrait 3:4</span>
-                    <div className="w-full aspect-3/4 rounded-lg overflow-hidden bg-gray-100 border border-[#e5e2da]">
-                      <img
-                        src={cropAsset.url}
-                        alt="Portrait preview"
-                        className="w-full h-full object-cover"
-                        style={{ objectPosition: `${focalPoint.x}% ${focalPoint.y}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Actions */}
-            <div className="px-6 py-4 bg-[#faf9f6] border-t border-[#e5e2da] flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setFocalPoint({ x: 50, y: 50 })}
-                className="text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1"
+                disabled={deleting}
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 cursor-pointer"
               >
-                <RotateCcw size={12} />
-                <span>Reset all</span>
+                {deleting ? "Deleting..." : "Delete image"}
               </button>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowCropModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={savingFraming}
-                  onClick={handleSaveFraming}
-                  className="px-5 py-2 text-xs font-semibold text-white bg-[#124e2b] hover:bg-[#0a2618] rounded-lg shadow-sm transition-all flex items-center gap-1.5"
-                >
-                  {savingFraming ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
-                  <span>Save framing</span>
-                </button>
-              </div>
             </div>
           </div>
         </div>

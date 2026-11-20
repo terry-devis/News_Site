@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { unpackArticleMeta, packArticleMeta } from "@/lib/articleMeta";
+import { requirePermission } from "@/lib/auth";
+import { generateSeoSlug } from "@/lib/slugify";
 
 export async function GET(req) {
   try {
@@ -22,12 +25,14 @@ export async function GET(req) {
     if (error) throw error;
 
     const formatted = (data || []).map((art) => {
-      let status = "published";
-      if (art.content_en) {
-        const match = art.content_en.match(/<!--status:([a-z_]+)-->/);
-        if (match) status = match[1];
-      }
-      return { ...art, status };
+      const { status, excerptEn, meta, cleanContentEn } = unpackArticleMeta(art.content_en);
+      return {
+        ...art,
+        status,
+        excerpt_en: excerptEn,
+        meta,
+        content_en: cleanContentEn,
+      };
     });
 
     return NextResponse.json({ articles: formatted });
@@ -37,6 +42,9 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  const { errorResponse } = await requirePermission("article.create");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const {
@@ -44,6 +52,7 @@ export async function POST(req) {
       title_en,
       slug,
       summary_ur,
+      excerpt_en,
       content_ur,
       content_en,
       category_id,
@@ -51,6 +60,7 @@ export async function POST(req) {
       is_breaking,
       is_featured,
       author_name,
+      meta,
     } = body;
 
     if (!title_ur || !content_ur) {
@@ -62,13 +72,15 @@ export async function POST(req) {
 
     const generatedSlug = slug
       ? slug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-")
-      : `news-${Date.now()}`;
+      : `${generateSeoSlug({ titleEn: title_en, titleUr: title_ur, focusKeyword: meta?.focusKeyword })}-${Date.now().toString(36)}`;
 
     const targetStatus = body.status || "published";
-    let finalContentEn = content_en || "";
-    if (targetStatus !== "published") {
-      finalContentEn = `<!--status:${targetStatus}-->\n${finalContentEn}`.trim();
-    }
+    const finalContentEn = packArticleMeta({
+      status: targetStatus,
+      excerptEn: excerpt_en || "",
+      meta: meta || null,
+      contentEn: content_en || "",
+    });
 
     const newArticle = {
       title_ur,

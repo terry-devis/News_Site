@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { unpackArticleMeta } from "@/lib/articleMeta";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -48,27 +49,33 @@ export async function GET(req) {
       throw error;
     }
 
-    const items = articles || [];
+    const items = (articles || []).filter((art) => {
+      const { status, meta } = unpackArticleMeta(art.content_en);
+      return status === "published" && !meta.excludeFromNewsSitemap && !meta.robotsNoindex;
+    });
     const latestDate = items.length > 0
       ? new Date(items[0].created_at).toUTCString()
       : new Date().toUTCString();
 
     const itemsXml = items
       .map((article) => {
+        const { cleanContentEn, excerptEn } = unpackArticleMeta(article.content_en);
         const isEn = lang === "en";
         const title = isEn && article.title_en ? article.title_en : article.title_ur;
-        const description = (isEn && article.content_en)
-          ? (article.content_en.slice(0, 300) + "...")
-          : (article.summary_ur || article.content_ur?.slice(0, 300) + "...");
-        const articleUrl = `${siteUrl}/story/${article.id}`;
+        const cleanEnText = cleanContentEn.replace(/<[^>]+>/g, " ").trim();
+        const description = isEn && (excerptEn || cleanEnText)
+          ? (excerptEn || cleanEnText.slice(0, 300) + "...")
+          : (article.summary_ur || article.content_ur?.replace(/<[^>]+>/g, " ").trim().slice(0, 300) + "...");
+        const articleUrl = `${siteUrl}/story/${article.slug || article.id}`;
         const pubDate = new Date(article.created_at || Date.now()).toUTCString();
         const categoryName = isEn
           ? (article.categories?.name_en || article.categories?.name_ur || "General")
           : (article.categories?.name_ur || "پاکستان");
-        const author = article.author_name || "ایڈمن ڈیلی افادیت";
+        const author = article.author_name || "ایڈیٹوریل ڈیسک";
+        const imgType = article.cover_image?.endsWith(".webp") ? "image/webp" : "image/jpeg";
 
         const enclosureTag = article.cover_image
-          ? `\n      <enclosure url="${escapeXml(article.cover_image)}" type="image/jpeg" length="0" />`
+          ? `\n      <enclosure url="${escapeXml(article.cover_image)}" type="${imgType}" length="0" />`
           : "";
 
         return `    <item>

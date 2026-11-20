@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { unpackArticleMeta, packArticleMeta } from "@/lib/articleMeta";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET(req, { params }) {
   try {
@@ -13,48 +15,60 @@ export async function GET(req, { params }) {
 
     if (error) throw error;
 
-    let status = "published";
-    if (data?.content_en) {
-      const match = data.content_en.match(/<!--status:([a-z_]+)-->/);
-      if (match) status = match[1];
-    }
+    const { status, excerptEn, meta, cleanContentEn } = unpackArticleMeta(data?.content_en);
 
-    return NextResponse.json({ article: { ...data, status } });
+    return NextResponse.json({
+      article: {
+        ...data,
+        status,
+        excerpt_en: excerptEn,
+        meta,
+        content_en: cleanContentEn,
+      },
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
 }
 
 export async function PUT(req, { params }) {
+  const { errorResponse } = await requirePermission("article.edit.own");
+  if (errorResponse) return errorResponse;
+
   try {
     const { id } = params;
     const body = await req.json();
 
-    let targetStatus = body.status;
+    const { data: cur } = await supabaseAdmin
+      .from("articles")
+      .select("content_en")
+      .eq("id", id)
+      .single();
+
+    const existing = unpackArticleMeta(cur?.content_en);
+    const targetStatus = body.status !== undefined ? body.status : existing.status;
+    const nextExcerpt = body.excerpt_en !== undefined ? body.excerpt_en : existing.excerptEn;
+    const nextMeta = body.meta !== undefined ? { ...existing.meta, ...body.meta } : existing.meta;
+    const nextContentEn =
+      body.content_en !== undefined ? body.content_en : existing.cleanContentEn;
 
     const updates = {
       ...body,
       updated_at: new Date().toISOString(),
     };
 
-    if (updates.id) delete updates.id;
-    if (updates.categories) delete updates.categories;
+    delete updates.id;
+    delete updates.categories;
+    delete updates.status;
+    delete updates.excerpt_en;
+    delete updates.meta;
 
-    // Handle status persistence safely within schema
-    if (updates.status !== undefined) {
-      targetStatus = updates.status;
-      delete updates.status;
-
-      // Pack status into content_en
-      let baseEn = updates.content_en;
-      if (baseEn === undefined) {
-        // Fetch current content_en
-        const { data: cur } = await supabaseAdmin.from("articles").select("content_en").eq("id", id).single();
-        baseEn = cur?.content_en || "";
-      }
-      const cleanEn = (baseEn || "").replace(/<!--status:[a-z_]+-->\n?/, "").trim();
-      updates.content_en = `<!--status:${targetStatus}-->\n${cleanEn}`.trim();
-    }
+    updates.content_en = packArticleMeta({
+      status: targetStatus,
+      excerptEn: nextExcerpt,
+      meta: nextMeta,
+      contentEn: nextContentEn,
+    });
 
     const { data, error } = await supabaseAdmin
       .from("articles")

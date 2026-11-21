@@ -75,6 +75,7 @@ import PollWidget from "@/component/widgets/PollWidget";
 import MostReadWidget from "@/component/widgets/MostReadWidget";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 import { getFallbackImageForStory } from "@/lib/mockImages";
+import { ARTICLE_TYPE_BADGES } from "@/lib/articleMeta";
 
 export default function HomeClient({
   articles = [],
@@ -82,8 +83,20 @@ export default function HomeClient({
   breakingNews = [],
   videos = [],
   socialLinks = null,
+  initialLang = null,
 }) {
-  const { isUrdu, isEnglish, dir, t } = useSiteLanguage();
+  const { lang, isUrdu: ctxIsUrdu, isEnglish: ctxIsEnglish, dir: ctxDir, t, setLanguage } = useSiteLanguage();
+
+  useEffect(() => {
+    if (initialLang && (initialLang === "en" || initialLang === "ur")) {
+      setLanguage(initialLang);
+    }
+  }, [initialLang, setLanguage]);
+
+  const effectiveLang = initialLang || lang;
+  const isEnglish = effectiveLang === "en" || (!initialLang && ctxIsEnglish);
+  const isUrdu = !isEnglish;
+  const dir = isUrdu ? "rtl" : "ltr";
 
   const getTitle = (story) => {
     if (!story) return "";
@@ -122,15 +135,21 @@ export default function HomeClient({
 
   const storyHref = (story) => `/story/${story?.slug || story?.id}`;
 
+  // In English edition, only show articles that have an English version (title_en)
+  // In Urdu edition, only show articles that have an Urdu version (title_ur)
+  const visibleArticles = isEnglish
+    ? articles.filter((a) => Boolean(a.title_en && a.title_en.trim()))
+    : articles.filter((a) => Boolean(a.title_ur && a.title_ur.trim()));
+
   // 1. Hero + Live Stories (Prioritize Red Alert breaking first, then featured stories, rotating every 12s)
-  const redAlertArticles = articles.filter(
+  const redAlertArticles = visibleArticles.filter(
     (a) => a.is_breaking && Number(a.meta?.breakingPriority || 1) === 1
   );
-  const otherFeatured = articles.filter(
+  const otherFeatured = visibleArticles.filter(
     (a) => a.is_featured && !redAlertArticles.some((r) => r.id === a.id)
   );
   const heroPool = [...redAlertArticles, ...otherFeatured];
-  const heroCandidates = heroPool.length > 0 ? heroPool : articles[0] ? [articles[0]] : [];
+  const heroCandidates = heroPool.length > 0 ? heroPool : visibleArticles[0] ? [visibleArticles[0]] : [];
 
   const [heroIndex, setHeroIndex] = useState(0);
   const [heroPaused, setHeroPaused] = useState(false);
@@ -144,24 +163,24 @@ export default function HomeClient({
   }, [heroCandidates.length, heroPaused]);
 
   const safeHeroIndex = heroCandidates.length > 0 ? heroIndex % heroCandidates.length : 0;
-  const leadStory = heroCandidates[safeHeroIndex] || articles[0] || null;
-  const nonLeadArticles = articles.filter((a) => a.id !== leadStory?.id);
+  const leadStory = heroCandidates[safeHeroIndex] || visibleArticles[0] || null;
+  const nonLeadArticles = visibleArticles.filter((a) => a.id !== leadStory?.id);
   const remainingHeroPool = heroCandidates.filter((a) => a.id !== leadStory?.id);
   const nonFeatured = nonLeadArticles.filter((a) => !remainingHeroPool.some((h) => h.id === a.id));
   const secondaryStories = [...remainingHeroPool, ...nonFeatured].slice(0, 4);
   const usedIds = new Set([leadStory?.id, ...secondaryStories.map((s) => s.id)].filter(Boolean));
-  const remainingLive = articles.filter((a) => !usedIds.has(a.id));
-  const liveFeatured = remainingLive[0] || articles[0] || null;
+  const remainingLive = visibleArticles.filter((a) => !usedIds.has(a.id));
+  const liveFeatured = remainingLive[0] || visibleArticles[0] || null;
   const liveTimeline = remainingLive.slice(1, 7);
 
   // 2. Category Story Selector with safe fallback
   const getCategoryStories = (slugs, count = 5) => {
     const slugList = Array.isArray(slugs) ? slugs : [slugs];
-    const matched = articles.filter((a) =>
+    const matched = visibleArticles.filter((a) =>
       slugList.includes((a.category?.slug || a.category_slug || "").toLowerCase())
     );
     if (matched.length >= count) return matched.slice(0, count);
-    const others = articles.filter(
+    const others = visibleArticles.filter(
       (a) => !matched.some((m) => m.id === a.id) && a.id !== leadStory?.id
     );
     return [...matched, ...others].slice(0, count);
@@ -177,8 +196,26 @@ export default function HomeClient({
   const crimeStories = getCategoryStories(["crime"], 4);
   const lifestyleStories = getCategoryStories(["lifestyle"], 4);
   const weirdStories = getCategoryStories(["weird", "odd-news"], 5);
-  const opinionStories = getCategoryStories(["opinion", "blogs"], 6);
-  const latestSidebar = articles.slice(0, 7);
+  const opinionMatched = visibleArticles.filter(
+    (a) =>
+      ["opinion", "blogs"].includes((a.category?.slug || a.category_slug || "").toLowerCase()) ||
+      ["column", "blog"].includes(a.meta?.articleType)
+  );
+  const opinionStories =
+    opinionMatched.length >= 6
+      ? opinionMatched.slice(0, 6)
+      : [
+          ...opinionMatched,
+          ...visibleArticles.filter((a) => !opinionMatched.some((m) => m.id === a.id) && a.id !== leadStory?.id),
+        ].slice(0, 6);
+  const factCheckStories = visibleArticles
+    .filter(
+      (a) =>
+        a.meta?.articleType === "fact_check" ||
+        ["factcheck", "fact-check"].includes((a.category?.slug || a.category_slug || "").toLowerCase())
+    )
+    .slice(0, 5);
+  const latestSidebar = visibleArticles.slice(0, 7);
 
   // Reusable Section Header
   const SectionHeader = ({ titleUr, titleEn, href }) => (
@@ -807,6 +844,17 @@ export default function HomeClient({
               href="/category/weird"
               stories={weirdStories}
             />
+
+            {/* 7B. FACT CHECK (فیکٹ چیک) — shown when Fact Check articles exist */}
+            {factCheckStories.length > 0 && (
+              <SplitSection
+                titleUr="فیکٹ چیک"
+                titleEn="Fact Check"
+                href="/category/factcheck"
+                stories={factCheckStories}
+                reversed
+              />
+            )}
 
             {/* IN-FEED AD #3 */}
             <AdSlot slotKey="home-infeed-3" className="my-2" />

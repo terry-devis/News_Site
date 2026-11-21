@@ -43,51 +43,117 @@ export default function EPaperClient({
   const [showAllPages, setShowAllPages] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarViewMonth, setCalendarViewMonth] = useState(() => {
+    const seed = initialEditions?.[0]?.edition_date || new Date().toISOString().split("T")[0];
+    const [y, m] = seed.split("-").map(Number);
+    return { year: y || 2026, month: (m || 11) - 1 };
+  });
   const viewerRef = useRef(null);
+  const calendarPopoverRef = useRef(null);
 
   const cities = [
     { key: "islamabad", name_ur: "اسلام آباد / راولپنڈی", name_en: "Islamabad" },
     { key: "lahore", name_ur: "لاہور ایڈیشن", name_en: "Lahore" },
     { key: "karachi", name_ur: "کراچی ایڈیشن", name_en: "Karachi" },
+    { key: "peshawar", name_ur: "پشاور ایڈیشن", name_en: "Peshawar" },
     { key: "quetta", name_ur: "کوئٹہ ایڈیشن", name_en: "Quetta" },
+    { key: "multan", name_ur: "ملتان ایڈیشن", name_en: "Multan" },
     { key: "international", name_ur: "انٹرنیشنل ایڈیشن", name_en: "International" },
   ];
 
-  // Available pages 1..8 matching broadsheet print edition
-  const pagesList = [
-    { num: 1, title_ur: "صفحۂ اول (اہم سرخیاں)", title_en: "Front Page" },
-    { num: 2, title_ur: "قومی و علاقائی خبریں", title_en: "National News" },
-    { num: 3, title_ur: "اداریہ، کالم و تجارت", title_en: "Editorial & Business" },
-    { num: 4, title_ur: "بین الاقوامی و کھیل", title_en: "World & Sports" },
-    { num: 5, title_ur: "صوبائی و شہری خبریں", title_en: "Regional News" },
-    { num: 6, title_ur: "معیشت و کاروبار", title_en: "Economy & Markets" },
-    { num: 7, title_ur: "سائنس، ٹیکنالوجی و صحت", title_en: "Tech & Health" },
-    { num: 8, title_ur: "آخری صفحہ (تازہ ترین)", title_en: "Back Page" },
-  ];
-
-  // Find edition matching date, language, page and city, or fallback gracefully
   const targetPaper = isUrdu ? "ur" : "en";
-  const activeEdition =
-    editions.find(
+
+  // Set of available dates in DB strictly for the selected city & language
+  const availableDatesForCity = React.useMemo(() => {
+    const s = new Set();
+    for (const e of editions) {
+      const cityKey = e.city_slug || "islamabad";
+      if (
+        e.edition_date &&
+        (!e.paper || e.paper === targetPaper) &&
+        cityKey === selectedCity
+      ) {
+        s.add(e.edition_date);
+      }
+    }
+    return s;
+  }, [editions, targetPaper, selectedCity]);
+
+  // All cities that have at least one published edition in DB for the active language
+  const citiesWithEditions = React.useMemo(() => {
+    const s = new Set();
+    for (const e of editions) {
+      if (!e.paper || e.paper === targetPaper) {
+        s.add(e.city_slug || "islamabad");
+      }
+    }
+    return s;
+  }, [editions, targetPaper]);
+
+  const sortedAvailableDates = React.useMemo(
+    () => Array.from(availableDatesForCity).sort((a, b) => b.localeCompare(a)),
+    [availableDatesForCity]
+  );
+
+  // When available dates or city changes, auto-snap selectedDate to the latest available date for that city
+  useEffect(() => {
+    if (
+      sortedAvailableDates.length > 0 &&
+      !availableDatesForCity.has(selectedDate)
+    ) {
+      setSelectedDate(sortedAvailableDates[0]);
+    }
+  }, [sortedAvailableDates, availableDatesForCity, selectedDate]);
+
+  // Close custom calendar popover on outside click
+  useEffect(() => {
+    if (!calendarOpen) return;
+    const handleClickOutside = (ev) => {
+      if (
+        calendarPopoverRef.current &&
+        !calendarPopoverRef.current.contains(ev.target)
+      ) {
+        setCalendarOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [calendarOpen]);
+
+  // Strictly match pages belonging to the currently selected date + city + paper
+  const currentIssuePages = React.useMemo(() => {
+    const matches = editions.filter(
       (e) =>
-        e.page_number === activePage &&
         e.edition_date === selectedDate &&
         (!e.paper || e.paper === targetPaper) &&
-        (e.city_slug === selectedCity || !e.city_slug)
-    ) ||
-    editions.find(
-      (e) =>
-        e.page_number === activePage &&
-        (!e.paper || e.paper === targetPaper) &&
-        (e.city_slug === selectedCity || !e.city_slug)
-    ) ||
-    editions.find(
-      (e) =>
-        e.page_number === activePage &&
-        (e.city_slug === selectedCity || !e.city_slug)
-    ) ||
-    editions.find((e) => e.page_number === activePage) ||
-    editions[0] ||
+        (e.city_slug || "islamabad") === selectedCity
+    );
+    const byPage = new Map();
+    for (const m of matches) {
+      const pNum = Number(m.page_number) || 1;
+      if (!byPage.has(pNum)) byPage.set(pNum, m);
+    }
+    return Array.from(byPage.values()).sort(
+      (a, b) => (Number(a.page_number) || 1) - (Number(b.page_number) || 1)
+    );
+  }, [editions, selectedDate, targetPaper, selectedCity]);
+
+  // Dynamic pagesList matching the exact uploaded PDF page count for this issue
+  const pagesList = React.useMemo(() => {
+    return currentIssuePages.map((p, idx) => {
+      const num = Number(p.page_number) || idx + 1;
+      return {
+        num,
+        title_ur: p.page_title_ur || `صفحہ ${num}`,
+        title_en: p.page_title_en || `Page ${num}`,
+      };
+    });
+  }, [currentIssuePages]);
+
+  const activeEdition =
+    currentIssuePages.find((e) => Number(e.page_number) === Number(activePage)) ||
+    currentIssuePages[0] ||
     null;
 
   useEffect(() => {
@@ -329,7 +395,10 @@ export default function EPaperClient({
               <MapPin size={15} className="text-[#184e2d] shrink-0" />
               <select
                 value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
+                onChange={(e) => {
+                  setSelectedCity(e.target.value);
+                  setActivePage(1);
+                }}
                 aria-label={isUrdu ? "شہر منتخب کریں" : "Select City Edition"}
                 className="bg-transparent outline-none cursor-pointer text-xs sm:text-sm font-semibold text-gray-800"
               >
@@ -341,16 +410,137 @@ export default function EPaperClient({
               </select>
             </div>
 
-            {/* Date Picker Button */}
-            <label className="border border-[#dcd8cd] bg-white hover:border-[#184e2d] hover:text-[#184e2d] flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-800 transition-colors cursor-pointer">
-              <Calendar size={16} className="text-[#184e2d] shrink-0" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="outline-none bg-transparent font-sans text-xs sm:text-sm text-gray-800 cursor-pointer"
-              />
-            </label>
+            {/* Custom Calendar Date Picker (Only allows dates available in DB; unavailable dates show cursor-not-allowed) */}
+            <div ref={calendarPopoverRef} className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!calendarOpen && selectedDate) {
+                    const [y, m] = selectedDate.split("-").map(Number);
+                    if (y && m) {
+                      setCalendarViewMonth({ year: y, month: m - 1 });
+                    }
+                  }
+                  setCalendarOpen((prev) => !prev);
+                }}
+                className="border border-[#dcd8cd] bg-white hover:border-[#184e2d] hover:text-[#184e2d] flex min-h-11 items-center gap-2 rounded-lg px-3.5 py-2 text-xs sm:text-sm font-semibold text-gray-800 transition-colors cursor-pointer"
+              >
+                <Calendar size={16} className="text-[#184e2d] shrink-0" />
+                <span className="font-sans">{formatDisplayDate(selectedDate)}</span>
+              </button>
+
+              {calendarOpen && (() => {
+                const { year, month } = calendarViewMonth;
+                const firstDayOfWeek = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const monthLabel = new Date(year, month, 1).toLocaleDateString("en-GB", {
+                  month: "long",
+                  year: "numeric",
+                });
+                const dayHeaders = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+                const cells = [];
+                for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
+                for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+                const pad2 = (n) => String(n).padStart(2, "0");
+
+                return (
+                  <div
+                    dir="ltr"
+                    className={`absolute top-full mt-2 z-50 w-72 bg-white border border-[#dcd8cd] rounded-xl shadow-2xl p-3.5 font-sans ${
+                      isUrdu ? "left-0" : "right-0"
+                    }`}
+                  >
+                    {/* Month Switcher Header */}
+                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#efeee9]">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCalendarViewMonth((prev) =>
+                            prev.month === 0
+                              ? { year: prev.year - 1, month: 11 }
+                              : { year: prev.year, month: prev.month - 1 }
+                          )
+                        }
+                        className="p-1.5 rounded-md hover:bg-[#efeee9] text-gray-700 cursor-pointer"
+                        aria-label="Previous Month"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span className="text-xs font-bold text-gray-900">{monthLabel}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCalendarViewMonth((prev) =>
+                            prev.month === 11
+                              ? { year: prev.year + 1, month: 0 }
+                              : { year: prev.year, month: prev.month + 1 }
+                          )
+                        }
+                        className="p-1.5 rounded-md hover:bg-[#efeee9] text-gray-700 cursor-pointer"
+                        aria-label="Next Month"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+
+                    {/* Weekday Header */}
+                    <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-gray-400 mb-1">
+                      {dayHeaders.map((dh) => (
+                        <span key={dh}>{dh}</span>
+                      ))}
+                    </div>
+
+                    {/* Days Grid */}
+                    <div className="grid grid-cols-7 gap-1">
+                      {cells.map((day, idx) => {
+                        if (!day) {
+                          return <span key={`empty-${idx}`} className="h-8" />;
+                        }
+                        const iso = `${year}-${pad2(month + 1)}-${pad2(day)}`;
+                        const isAvailable = availableDatesForCity.has(iso);
+                        const isSelected = selectedDate === iso;
+
+                        return (
+                          <button
+                            key={iso}
+                            type="button"
+                            disabled={!isAvailable}
+                            onClick={() => {
+                              if (!isAvailable) return;
+                              setSelectedDate(iso);
+                              setActivePage(1);
+                              setCalendarOpen(false);
+                            }}
+                            title={
+                              isAvailable
+                                ? `View ePaper for ${iso}`
+                                : "No ePaper published for this date"
+                            }
+                            className={`h-8 rounded-md text-xs font-semibold tabular-nums transition-colors flex items-center justify-center ${
+                              isSelected
+                                ? "bg-[#184e2d] text-white font-bold shadow-2xs cursor-pointer"
+                                : isAvailable
+                                ? "bg-emerald-50 text-[#184e2d] hover:bg-[#184e2d] hover:text-white border border-emerald-200 cursor-pointer"
+                                : "text-gray-300 bg-gray-50/60 cursor-not-allowed opacity-60"
+                            }`}
+                          >
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Available Editions Count Footer */}
+                    <div className="mt-3 pt-2.5 border-t border-[#efeee9]">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                        Available Editions ({sortedAvailableDates.length})
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </header>
 
@@ -517,249 +707,54 @@ export default function EPaperClient({
             </div>
           </div>
         ) : (
-        /* Interactive Broadsheet Fallback Viewer inside crisp rounded-xl card */
-        <div className="w-full overflow-x-auto pb-2 scrollbar-thin border border-[#dcd8cd] rounded-xl bg-white shadow-xs">
-          <div
-            style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
-            className="transition-transform duration-200 mx-auto min-w-[760px] max-w-[1020px] bg-white p-6 sm:p-10 space-y-6 text-gray-900"
-          >
-            {/* Authentic Newspaper Masthead Header */}
-            <div className="border-b-4 border-black pb-3 text-center space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-gray-700 font-sans border-b border-gray-300 pb-1">
-                <span>{isUrdu ? "جلد نمبر: ۰۱ • شمارہ نمبر: ۲۴۵" : "Volume: 01 • Issue: 245"}</span>
-                <span>
-                  {isUrdu
-                    ? `${selectedDate} • باقاعدہ رجسٹرڈ پرنٹ ایڈیشن`
-                    : `${selectedDate} • Registered Broadsheet Print Edition`}
-                </span>
-                <span>{isUrdu ? "قیمت: ۲۰ روپے • صفحات: ۰۸" : "Price: Rs 20 • Pages: 08"}</span>
-              </div>
-
-              {/* Masthead Title */}
-              <div className="py-2">
-                {isEnglish ? (
-                  <h1 className="text-4xl sm:text-6xl font-black font-serif text-black tracking-tight uppercase">
-                    Daily Afadiat
-                  </h1>
-                ) : (
-                  <h1 className="text-4xl sm:text-6xl font-black urdu-headline text-black tracking-tight">
-                    روزنامہ افادیت
-                  </h1>
-                )}
-                <p className="text-[11px] font-sans font-bold tracking-widest uppercase text-gray-700 mt-1">
-                  DAILY AFADIAT — PAKISTAN'S PREMIER TRUSTED BROADSHEET NEWSPAPER
-                </p>
-              </div>
-
-              {/* Tagline stripe */}
-              <div className="bg-black text-white text-[11px] py-1 font-bold flex items-center justify-around font-sans">
-                <span>{isUrdu ? "سچ کے ساتھ، ہر لمحہ باخبر" : "TRUTH • INTEGRITY • GLOBAL JOURNALISM"}</span>
-                <span>•</span>
-                <span>{isUrdu ? "اسلام آباد • لاہور • کراچی • کوئٹہ" : "ISLAMABAD • LAHORE • KARACHI • QUETTA"}</span>
-                <span>•</span>
-                <span>www.dailyafadiat.com</span>
-              </div>
+          /* Clean Empty State when the selected City or Date has no uploaded ePaper edition */
+          <div className="border border-dashed border-[#dcd8cd] rounded-xl bg-white p-10 sm:p-16 text-center shadow-xs space-y-4">
+            <div className="w-14 h-14 rounded-full bg-[#efeee9] text-[#184e2d] flex items-center justify-center mx-auto">
+              <FileText size={26} />
             </div>
 
-            {/* Broadsheet Columns Layout (Mirrors real print page 1) */}
-            <div className="grid grid-cols-12 gap-4">
-              
-              {/* Column 1: Lead Super Headline (8 Cols) */}
-              <div
-                onClick={() =>
-                  setActiveClip({
-                    title: isEnglish ? leadStory.headline_en : leadStory.headline_ur,
-                    excerpt: isEnglish ? leadStory.excerpt_en : leadStory.excerpt_ur,
-                    content: isEnglish ? leadStory.content_en : leadStory.content_ur,
-                    byline: isEnglish ? leadStory.byline_en : leadStory.byline_ur,
-                    image_url: leadStory.image_url,
-                  })
-                }
-                className="col-span-12 md:col-span-8 p-3.5 border-r border-gray-300 cursor-pointer hover:bg-emerald-50/40 transition group"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-bold bg-black text-white px-2 py-0.5 rounded-none font-sans uppercase">
-                    {isUrdu ? "لیڈ اسٹوری" : "LEAD STORY"}
-                  </span>
-                  <span className="text-[11px] text-gray-500 font-bold">
-                    {isEnglish ? leadStory.byline_en : leadStory.byline_ur}
-                  </span>
-                </div>
-
-                <h2 className="text-2xl sm:text-3xl font-bold leading-tight mt-1 group-hover:text-emerald-900 urdu-headline">
-                  {isEnglish ? leadStory.headline_en || leadStory.headline_ur : leadStory.headline_ur}
-                </h2>
-
-                {leadStory.image_url && (
-                  <div className="relative aspect-[16/9] w-full my-3 border border-gray-300 bg-gray-100 overflow-hidden">
-                    <Image
-                      src={leadStory.image_url}
-                      alt={leadStory.headline_en || "Lead story image"}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                )}
-
-                <p className="text-sm leading-relaxed text-gray-800 text-justify font-sans">
-                  {isEnglish ? leadStory.content_en || leadStory.content_ur : leadStory.content_ur}
-                </p>
-
-                <div className="mt-3 pt-2 border-t border-gray-200 flex items-center justify-between text-[11px] text-emerald-700 font-bold">
-                  <span>{isUrdu ? "[مکمل خبر کا کلپ پڑھنے کے لیے کلک کریں]" : "[Click to read full story clipping]"}</span>
-                  <span className="flex items-center gap-1 font-sans">
-                    <ExternalLink size={12} />
-                    <span>{isUrdu ? "کلپنگ ویو" : "Clipping View"}</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Column 2: Side Secondary Headlines (4 Cols) */}
-              <div className="col-span-12 md:col-span-4 space-y-4">
-                
-                {/* Secondary Story 1 */}
-                <div
-                  onClick={() =>
-                    setActiveClip({
-                      title: isEnglish ? secTop.headline_en : secTop.headline_ur,
-                      excerpt: isEnglish ? secTop.excerpt_en : secTop.excerpt_ur,
-                      content: isEnglish ? secTop.content_en : secTop.content_ur,
-                      byline: isEnglish ? secTop.byline_en : secTop.byline_ur,
-                      image_url: secTop.image_url,
-                    })
-                  }
-                  className="p-3 border-b border-gray-300 cursor-pointer hover:bg-emerald-50/40 transition group"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] font-bold bg-emerald-800 text-white px-1.5 py-0.2 rounded-none font-sans uppercase">
-                      {isUrdu ? "اہم خبر" : "HIGHLIGHT"}
-                    </span>
-                    <span className="text-[10px] text-gray-500 font-bold">
-                      {isEnglish ? secTop.byline_en : secTop.byline_ur}
-                    </span>
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold leading-snug group-hover:text-emerald-900 urdu-headline">
-                    {isEnglish ? secTop.headline_en || secTop.headline_ur : secTop.headline_ur}
-                  </h3>
-                  <p className="text-xs text-gray-700 mt-1 line-clamp-3 leading-relaxed font-sans">
-                    {isEnglish ? secTop.excerpt_en || secTop.excerpt_ur : secTop.excerpt_ur}
-                  </p>
-                </div>
-
-                {/* Secondary Story 2 */}
-                <div
-                  onClick={() =>
-                    setActiveClip({
-                      title: isEnglish ? secBottom.headline_en : secBottom.headline_ur,
-                      excerpt: isEnglish ? secBottom.excerpt_en : secBottom.excerpt_ur,
-                      content: isEnglish ? secBottom.content_en : secBottom.content_ur,
-                      byline: isEnglish ? secBottom.byline_en : secBottom.byline_ur,
-                      image_url: secBottom.image_url,
-                    })
-                  }
-                  className="p-3 border-b border-gray-300 cursor-pointer hover:bg-emerald-50/40 transition group"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] font-bold bg-zinc-800 text-white px-1.5 py-0.2 rounded-none font-sans uppercase">
-                      {isUrdu ? "موسمی رپورٹ" : "WEATHER & METRO"}
-                    </span>
-                    <span className="text-[10px] text-gray-500 font-bold">
-                      {isEnglish ? secBottom.byline_en : secBottom.byline_ur}
-                    </span>
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold leading-snug group-hover:text-emerald-900 urdu-headline">
-                    {isEnglish ? secBottom.headline_en || secBottom.headline_ur : secBottom.headline_ur}
-                  </h3>
-                  {secBottom.image_url && (
-                    <div className="relative aspect-[16/10] w-full my-2 border border-gray-200">
-                      <Image
-                        src={secBottom.image_url}
-                        alt={secBottom.headline_en || "Report image"}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-700 line-clamp-2 leading-relaxed font-sans">
-                    {isEnglish ? secBottom.excerpt_en || secBottom.excerpt_ur : secBottom.excerpt_ur}
-                  </p>
-                </div>
-
-                {/* Daily Rates Box (Sharp Non-round Edge Broadsheet Box) */}
-                <div className="p-3 bg-[#f7f6f3] border border-gray-300 rounded-none text-xs space-y-1">
-                  <h4 className="font-bold text-black border-b border-gray-300 pb-1">
-                    {isUrdu ? "آج کے صرافہ و کرنسی ریٹس" : "Daily Bullion & Currency Rates"}
-                  </h4>
-                  <div className="flex justify-between text-[11px]">
-                    <span>{isUrdu ? "سونا فی تولہ ۲۴K:" : "Gold 24K (Tola):"}</span>
-                    <strong className="font-mono">₨ 422,095</strong>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span>{isUrdu ? "امریکی ڈالر (USD):" : "US Dollar (USD):"}</span>
-                    <strong className="font-mono">₨ 277.50</strong>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span>{isUrdu ? "سعودی ریال (SAR):" : "Saudi Riyal (SAR):"}</span>
-                    <strong className="font-mono">₨ 73.95</strong>
-                  </div>
-                </div>
-
-              </div>
-
+            <div className="space-y-1.5 max-w-md mx-auto">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 urdu-headline">
+                {isUrdu
+                  ? `${currentCityObj.name_ur} اس تاریخ کے لیے دستیاب نہیں ہے`
+                  : `${currentCityObj.name_en} Edition Not Available`}
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
+                {sortedAvailableDates.length === 0
+                  ? isUrdu
+                    ? `ابھی تک ${currentCityObj.name_ur} کا کوئی ای پیپر اپ لوڈ نہیں کیا گیا۔ براہِ کرم دستیاب ایڈیشن منتخب کریں۔`
+                    : `No ePaper PDF has been uploaded for the ${currentCityObj.name_en} edition yet. Please switch to an available city edition below.`
+                  : isUrdu
+                  ? `${formatDisplayDate(selectedDate)} کو ${currentCityObj.name_ur} شائع نہیں ہوا۔ کیلنڈر سے دستیاب تاریخ منتخب کریں۔`
+                  : `No edition was published on ${formatDisplayDate(selectedDate)} for ${currentCityObj.name_en}. Please pick an available date from the calendar.`}
+              </p>
             </div>
 
-            {/* Lower Deck: Additional Stories / Columns (If 4 or more stories exist on this page) */}
-            {stories.length > 3 && (
-              <div className="pt-4 border-t-2 border-gray-300 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {stories.slice(3).map((extraStory, extraIdx) => (
-                  <div
-                    key={extraStory.id || extraIdx}
-                    onClick={() =>
-                      setActiveClip({
-                        title: isEnglish ? extraStory.headline_en || extraStory.headline_ur : extraStory.headline_ur,
-                        excerpt: isEnglish ? extraStory.excerpt_en || extraStory.excerpt_ur : extraStory.excerpt_ur,
-                        content: isEnglish ? extraStory.content_en || extraStory.content_ur : extraStory.content_ur,
-                        byline: isEnglish ? extraStory.byline_en || extraStory.byline_ur : extraStory.byline_ur,
-                        image_url: extraStory.image_url,
-                      })
-                    }
-                    className="p-3 border border-gray-300 bg-[#fcfbf9] hover:bg-emerald-50/50 cursor-pointer transition group"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] font-bold text-emerald-800 uppercase block font-sans">
-                        {isUrdu ? "کالم و خصوصی تجزیہ" : "COLUMN & ANALYSIS"}
+            {citiesWithEditions.size > 0 && (
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
+                {cities
+                  .filter((c) => citiesWithEditions.has(c.key))
+                  .map((c) => (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCity(c.key);
+                        setActivePage(1);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#184e2d] hover:bg-[#0d542f] text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer shadow-2xs"
+                    >
+                      <MapPin size={14} />
+                      <span>
+                        {isUrdu
+                          ? `${c.name_ur} دیکھیں`
+                          : `Switch to ${c.name_en} Edition`}
                       </span>
-                      <span className="text-[10px] text-gray-500 font-bold">
-                        {isEnglish ? extraStory.byline_en : extraStory.byline_ur}
-                      </span>
-                    </div>
-                    <h4 className="font-bold text-xs sm:text-sm urdu-headline group-hover:text-emerald-900 leading-snug">
-                      {isEnglish ? extraStory.headline_en || extraStory.headline_ur : extraStory.headline_ur}
-                    </h4>
-                    <p className="text-[11px] text-gray-600 line-clamp-2 mt-1 font-sans">
-                      {isEnglish ? extraStory.excerpt_en || extraStory.excerpt_ur : extraStory.excerpt_ur}
-                    </p>
-                  </div>
-                ))}
+                    </button>
+                  ))}
               </div>
             )}
-
-            {/* Bottom Footer Stripe */}
-            <div className="border-t-2 border-black pt-2 flex items-center justify-between text-[11px] text-gray-600 font-sans">
-              <span>
-                {isUrdu
-                  ? `صفحہ نمبر: ${activePage} • روزنامہ افادیت ڈیجیٹل ای پیپر`
-                  : `Page Number: ${activePage} • Daily Afadiat Digital ePaper Broadsheet`}
-              </span>
-              <span>
-                {isUrdu
-                  ? "تمام حقوق بحق ادارہ روزنامہ افادیت محفوظ ہیں © 2026"
-                  : "All Rights Reserved © 2026 Daily Afadiat Group"}
-              </span>
-            </div>
-
           </div>
-        </div>
         )}
         </div>
 
@@ -806,9 +801,8 @@ export default function EPaperClient({
               <ol className="grid grid-cols-3 gap-3 overflow-y-auto p-4 sm:grid-cols-4 md:grid-cols-6">
                 {pagesList.map((p) => {
                   const pageEdition =
-                    editions.find(
-                      (e) => e.page_number === p.num && (e.city_slug === selectedCity || !e.city_slug)
-                    ) || editions.find((e) => e.page_number === p.num);
+                    currentIssuePages.find((e) => Number(e.page_number) === Number(p.num)) ||
+                    editions.find((e) => Number(e.page_number) === Number(p.num));
                   const isActive = activePage === p.num;
 
                   return (

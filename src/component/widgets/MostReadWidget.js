@@ -9,8 +9,12 @@ import { getFallbackImageForStory } from "@/lib/mockImages";
 export default function MostReadWidget({ stories = [] }) {
   const { isUrdu, isEnglish } = useSiteLanguage();
 
+  const filteredStories = isEnglish
+    ? stories.filter((s) => Boolean(s.title_en && s.title_en.trim()))
+    : stories.filter((s) => Boolean(s.title_ur && s.title_ur.trim()));
+
   // Sort by views_count descending
-  const sorted = [...stories].sort((a, b) => (b.views_count || 0) - (a.views_count || 0)).slice(0, 5);
+  const sorted = [...filteredStories].sort((a, b) => (b.views_count || 0) - (a.views_count || 0)).slice(0, 5);
 
   if (!sorted || sorted.length === 0) return null;
 

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { unpackArticleMeta } from "@/lib/articleMeta";
+import { resolvePublicSiteUrl } from "@/lib/seoUrl";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -29,9 +30,7 @@ export async function GET(req) {
     const limit = Math.min(Number(searchParams.get("limit")) || 50, 100);
 
     // Determine base site URL dynamically
-    const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:3000";
-    const protocol = req.headers.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`;
+    const siteUrl = resolvePublicSiteUrl(req);
 
     let query = supabaseAdmin
       .from("articles")
@@ -51,7 +50,11 @@ export async function GET(req) {
 
     const items = (articles || []).filter((art) => {
       const { status, meta } = unpackArticleMeta(art.content_en);
-      return status === "published" && !meta.excludeFromNewsSitemap && !meta.robotsNoindex;
+      if (status !== "published" || meta.excludeFromNewsSitemap || meta.robotsNoindex) {
+        return false;
+      }
+      if (lang === "en") return Boolean(art.title_en && art.title_en.trim());
+      return Boolean(art.title_ur && art.title_ur.trim());
     });
     const latestDate = items.length > 0
       ? new Date(items[0].created_at).toUTCString()
@@ -66,7 +69,9 @@ export async function GET(req) {
         const description = isEn && (excerptEn || cleanEnText)
           ? (excerptEn || cleanEnText.slice(0, 300) + "...")
           : (article.summary_ur || article.content_ur?.replace(/<[^>]+>/g, " ").trim().slice(0, 300) + "...");
-        const articleUrl = `${siteUrl}/story/${article.slug || article.id}`;
+        const articleUrl = isEn
+          ? `${siteUrl}/en/story/${article.slug || article.id}`
+          : `${siteUrl}/story/${article.slug || article.id}`;
         const pubDate = new Date(article.created_at || Date.now()).toUTCString();
         const categoryName = isEn
           ? (article.categories?.name_en || article.categories?.name_ur || "General")

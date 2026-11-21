@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Header from "@/component/Header";
@@ -37,13 +37,74 @@ export default function VideoClient({
   mostReadStories = [],
 }) {
   const { isUrdu, isEnglish, dir } = useSiteLanguage();
+  const [videosData, setVideosData] = useState(initialVideos || []);
   const [selectedCat, setSelectedCat] = useState("all");
   const [search, setSearch] = useState("");
   const [activeVideoModal, setActiveVideoModal] = useState(null);
   const [isHeroPlaying, setIsHeroPlaying] = useState(false);
+  const viewedIdsRef = useRef(new Set());
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/videos", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (active && Array.isArray(data?.videos) && data.videos.length > 0) {
+          setVideosData(data.videos);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const formatViews = (raw) => {
+    if (typeof raw === "number" && Number.isFinite(raw)) {
+      return raw.toLocaleString();
+    }
+    if (/^\d+$/.test(String(raw || "").trim())) {
+      return Number(raw).toLocaleString();
+    }
+    return raw || "0";
+  };
+
+  const trackVideoView = async (videoId) => {
+    const key = String(videoId);
+    if (!key || viewedIdsRef.current.has(key)) return;
+    viewedIdsRef.current.add(key);
+
+    try {
+      const res = await fetch(`/api/videos/${encodeURIComponent(key)}/view`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.views_count !== undefined) {
+        const formatted = formatViews(data.views_count);
+        setVideosData((prev) =>
+          prev.map((item) =>
+            String(item.id) === key ? { ...item, views_count: data.views_count } : item
+          )
+        );
+        setActiveVideoModal((prev) =>
+          prev && String(prev.id) === key ? { ...prev, views: formatted } : prev
+        );
+      }
+    } catch {}
+  };
+
+  const handleOpenVideo = (v) => {
+    setActiveVideoModal(v);
+    trackVideoView(v.id);
+  };
+
+  const handlePlayHero = (hero) => {
+    setIsHeroPlaying(true);
+    if (hero?.id) trackVideoView(hero.id);
+  };
 
   // Dynamic Video catalog from CMS / Database
-  const videoList = (initialVideos && initialVideos.length > 0 ? initialVideos : []).map((v) => ({
+  const videoList = (videosData && videosData.length > 0 ? videosData : []).map((v) => ({
     id: v.id,
     category: v.category || "special",
     title_ur: v.title_ur || "",
@@ -53,9 +114,9 @@ export default function VideoClient({
     content_ur: v.content_ur || v.summary_ur || "",
     content_en: v.content_en || v.summary_en || v.content_ur || "",
     duration: v.duration || "15:00",
-    views: v.views_count || v.views || "10K",
+    views: formatViews(v.views_count !== undefined ? v.views_count : v.views || 0),
     date: v.created_at ? new Date(v.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "Today",
-    thumb: v.cover_image || v.thumb || "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&auto=format&fit=crop",
+    thumb: v.cover_image || v.thumb || "/logo-light.webp",
     author_ur: v.author_name || v.author || "ڈیلی افادیت نیوز روم",
     author_en: v.author_en || "Daily Afadiat Newsroom",
     featured: Boolean(v.is_featured !== undefined ? v.is_featured : v.featured),
@@ -150,7 +211,7 @@ export default function VideoClient({
                   />
                 ) : (
                   <div
-                    onClick={() => setIsHeroPlaying(true)}
+                    onClick={() => handlePlayHero(heroVideo)}
                     className="w-full h-full relative cursor-pointer group"
                   >
                     <Image
@@ -188,7 +249,7 @@ export default function VideoClient({
                     </span>
                   </div>
                   <h2
-                    onClick={() => setActiveVideoModal(heroVideo)}
+                    onClick={() => handleOpenVideo(heroVideo)}
                     className="text-xl sm:text-2xl font-bold urdu-headline text-gray-900 leading-snug hover:text-[#184e2d] transition cursor-pointer"
                   >
                     {isUrdu ? heroVideo.title_ur : heroVideo.title_en}
@@ -206,7 +267,7 @@ export default function VideoClient({
                     {!isHeroPlaying && (
                       <button
                         type="button"
-                        onClick={() => setIsHeroPlaying(true)}
+                        onClick={() => handlePlayHero(heroVideo)}
                         className="bg-[#184e2d] hover:bg-[#113820] text-white text-xs font-bold px-3.5 py-1.5 flex items-center gap-1.5 transition cursor-pointer"
                       >
                         <Play size={12} />
@@ -215,7 +276,7 @@ export default function VideoClient({
                     )}
                     <button
                       type="button"
-                      onClick={() => setActiveVideoModal(heroVideo)}
+                      onClick={() => handleOpenVideo(heroVideo)}
                       className="bg-white border border-[#dcd8cd] hover:border-[#184e2d] text-gray-800 text-xs font-bold px-3 py-1.5 transition cursor-pointer"
                     >
                       {isUrdu ? "تفصیل" : "Details"}
@@ -230,7 +291,7 @@ export default function VideoClient({
               {videoList.slice(1, 5).map((sv) => (
                 <div
                   key={sv.id}
-                  onClick={() => setActiveVideoModal(sv)}
+                  onClick={() => handleOpenVideo(sv)}
                   className="bg-[#efeee9] border border-[#dcd8cd] hover:border-[#184e2d] p-2.5 flex gap-3 items-center cursor-pointer group transition flex-1"
                 >
                   <div className="relative w-32 sm:w-36 aspect-video shrink-0 bg-black overflow-hidden">
@@ -290,7 +351,7 @@ export default function VideoClient({
                 {filtered.map((v) => (
                   <div
                     key={v.id}
-                    onClick={() => setActiveVideoModal(v)}
+                    onClick={() => handleOpenVideo(v)}
                     className="bg-[#efeee9] border border-[#dcd8cd] overflow-hidden shadow-xs hover:border-[#184e2d] transition group cursor-pointer flex flex-col justify-between"
                   >
                     <div>

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Search, Menu, X, Globe, Tv, Newspaper, Flame, Home, Video, PhoneCall, Megaphone, ArrowUp, Lock, ChevronLeft, ChevronRight, ChevronDown, Briefcase, Info, ShieldCheck, TrendingUp } from "lucide-react";
+import { Search, Menu, X, Globe, Tv, Newspaper, Flame, Home, Video, PhoneCall, Megaphone, ArrowUp, Lock, ChevronLeft, ChevronRight, ChevronDown, Briefcase, Info, ShieldCheck, TrendingUp, Users } from "lucide-react";
 import AdSlot from "@/component/AdSlot";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
@@ -244,6 +244,10 @@ export default function Header({ categories = [], breakingNews = [] }) {
               <Link href="/services" className="hover:text-emerald-700 transition flex items-center gap-1 whitespace-nowrap">
                 <Briefcase size={13} className="text-emerald-800" />
                 <span>{t("services")}</span>
+              </Link>
+              <Link href="/staff" className="hover:text-emerald-700 transition flex items-center gap-1 whitespace-nowrap">
+                <Users size={13} className="text-emerald-800" />
+                <span>{isUrdu ? "اسٹاف" : "Staff"}</span>
               </Link>
               <Link href="/p/about-us" className="hover:text-emerald-700 transition flex items-center gap-1 whitespace-nowrap">
                 <Info size={13} className="text-emerald-800" />
@@ -777,6 +781,10 @@ export default function Header({ categories = [], breakingNews = [] }) {
               <Link href="/services" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
                 <Briefcase size={13} className="text-emerald-800" />
                 <span>{t("services")}</span>
+              </Link>
+              <Link href="/staff" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
+                <Users size={13} className="text-emerald-800" />
+                <span>{isUrdu ? "اسٹاف" : "Staff"}</span>
               </Link>
               <Link href="/advertise" onClick={() => setMobileDrawerOpen(false)} className="flex items-center gap-1.5 p-1 hover:text-emerald-700 hover:bg-white rounded-lg transition">
                 <Megaphone size={13} className="text-emerald-800" />

@@ -106,6 +106,7 @@ function AdminLayoutInner({ children }) {
     { label: "Videos", href: "/admin/videos", icon: Video, perm: "video.manage" },
     { label: "Live TV", href: "/admin/live", icon: Tv, perm: "settings.manage" },
     { label: "Services data", href: "/admin/widgets", icon: Activity, perm: "widgets.manage" },
+    { label: "Staff directory", href: "/admin/staff", icon: Users, perm: "user.view" },
     { label: "Users", href: "/admin/users", icon: Users, perm: "user.view" },
     { label: "Roles & access", href: "/admin/roles", icon: ShieldCheck, perm: "role.view" },
     { label: "Email alerts", href: "/admin/notifications", icon: Bell, perm: "notification.view" },
@@ -159,7 +160,11 @@ function AdminLayoutInner({ children }) {
   const userInitial = (currentUser?.full_name_en || currentUser?.email || "A").charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#f9f8f5] text-[#18221b] flex font-sans antialiased" dir="ltr">
+    <div
+      className="min-h-screen bg-[#f9f8f5] text-[#18221b] flex font-sans antialiased text-sm leading-normal"
+      style={{ fontFamily: '"Inter", ui-sans-serif, system-ui, -apple-system, sans-serif' }}
+      dir="ltr"
+    >
       {/* 1. Mobile Backdrop */}
       {sidebarOpen && (
         <div

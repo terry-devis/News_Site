@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { unpackArticleMeta } from "@/lib/articleMeta";
+import { resolvePublicSiteUrl } from "@/lib/seoUrl";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,8 +14,8 @@ function escapeXml(str) {
     .replace(/'/g, "&apos;");
 }
 
-export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://dailyafadiat.com";
+export async function GET(req) {
+  const baseUrl = resolvePublicSiteUrl(req);
   const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
   try {
@@ -32,47 +33,77 @@ export async function GET() {
       return status === "published" && !meta.robotsNoindex && !meta.excludeFromNewsSitemap;
     });
 
-    const urlsXml = validItems
-      .map((art) => {
-        const title = art.title_ur || art.title_en || "";
-        const lang = art.title_ur ? "ur" : "en";
-        const pubDate = new Date(art.created_at || Date.now()).toISOString();
-        const loc = `${baseUrl}/story/${art.slug || art.id}`;
-        const keywords = art.categories?.name_en || art.categories?.name_ur || "News";
+    const urlEntries = [];
+    for (const art of validItems) {
+      const { meta } = unpackArticleMeta(art.content_en);
+      const slugOrId = art.slug || art.id;
+      const pubDate = new Date(art.created_at || Date.now()).toISOString();
 
-        return `  <url>
-    <loc>${escapeXml(loc)}</loc>
+      if (art.title_ur && art.title_ur.trim()) {
+        const kwUr = [
+          meta.focusKeywordUr || meta.focusKeyword,
+          ...(Array.isArray(meta.tagsUr) ? meta.tagsUr : []),
+          art.categories?.name_ur || art.categories?.name_en || "News",
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        urlEntries.push(`  <url>
+    <loc>${escapeXml(`${baseUrl}/story/${slugOrId}`)}</loc>
     <news:news>
       <news:publication>
         <news:name>Daily Afadiat</news:name>
-        <news:language>${lang}</news:language>
+        <news:language>ur</news:language>
       </news:publication>
       <news:publication_date>${pubDate}</news:publication_date>
-      <news:title>${escapeXml(title)}</news:title>
-      <news:keywords>${escapeXml(keywords)}</news:keywords>
+      <news:title>${escapeXml(art.title_ur)}</news:title>
+      <news:keywords>${escapeXml(kwUr)}</news:keywords>
     </news:news>
-  </url>`;
-      })
-      .join("\n");
+  </url>`);
+      }
+
+      if (art.title_en && art.title_en.trim()) {
+        const kwEn = [
+          meta.focusKeywordEn,
+          ...(Array.isArray(meta.tagsEn) ? meta.tagsEn : []),
+          art.categories?.name_en || "News",
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        urlEntries.push(`  <url>
+    <loc>${escapeXml(`${baseUrl}/en/story/${slugOrId}`)}</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Daily Afadiat</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>${pubDate}</news:publication_date>
+      <news:title>${escapeXml(art.title_en)}</news:title>
+      <news:keywords>${escapeXml(kwEn)}</news:keywords>
+    </news:news>
+  </url>`);
+      }
+    }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
-${urlsXml}
+${urlEntries.join("\n")}
 </urlset>`;
 
     return new Response(xml, {
       status: 200,
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
       },
     });
   } catch (err) {
-    console.error("News sitemap error:", err);
+    console.error("News sitemap generation error:", err);
     return new Response(
       `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`,
-      { status: 500, headers: { "Content-Type": "application/xml; charset=utf-8" } }
+      { status: 500, headers: { "Content-Type": "application/xml" } }
     );
   }
 }

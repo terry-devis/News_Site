@@ -27,7 +27,7 @@ import MediaPickerModal from "@/component/admin/article-editor/MediaPickerModal"
 import ImageFramingModal from "@/component/admin/article-editor/ImageFramingModal";
 import SeoSocialPanel from "@/component/admin/article-editor/SeoSocialPanel";
 import PreviewArrangeDrawer from "@/component/admin/article-editor/PreviewArrangeDrawer";
-import { DEFAULT_ARTICLE_META } from "@/lib/articleMeta";
+import { DEFAULT_ARTICLE_META, ARTICLE_TYPES } from "@/lib/articleMeta";
 import { generateSeoSlug } from "@/lib/slugify";
 import { optimizeImageToWebP } from "@/lib/imageOptimizer";
 
@@ -60,6 +60,7 @@ export default function ArticleEditorClient({ initialId = null }) {
   const [isBreaking, setIsBreaking] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [meta, setMeta] = useState({ ...DEFAULT_ARTICLE_META });
+  const [tagInput, setTagInput] = useState("");
 
   // UI state
   const [loading, setLoading] = useState(isEdit);
@@ -516,6 +517,7 @@ export default function ArticleEditorClient({ initialId = null }) {
 
           {/* SEO & Social Preview Suite */}
           <SeoSocialPanel
+            activeTab={activeTab}
             title={activeTab === "ur" ? titleUr : titleEn}
             summary={activeTab === "ur" ? summaryUr : summaryEn}
             slug={slug}
@@ -603,6 +605,77 @@ export default function ArticleEditorClient({ initialId = null }) {
               </select>
             </div>
 
+            <div>
+              <label className="block text-xs font-semibold text-[#18221b] mb-1">Type</label>
+              <select
+                value={meta.articleType || "news"}
+                onChange={(e) => updateMeta("articleType", e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-[#e5e2da] bg-[#fbfaf8] focus:outline-none focus:border-[#184e2d]"
+              >
+                {Object.entries(ARTICLE_TYPES).map(([val, label]) => (
+                  <option key={val} value={val}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-[#18221b]">
+                  Tags ({activeTab === "ur" ? "Urdu" : "English"})
+                </label>
+                <span className="text-[10px] text-[#5c635b]">Press Enter to add</span>
+              </div>
+              <input
+                type="text"
+                dir={activeTab === "ur" ? "rtl" : "ltr"}
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const t = tagInput.trim();
+                    const tagsKey = activeTab === "ur" ? "tagsUr" : "tagsEn";
+                    const cur = Array.isArray(meta[tagsKey]) ? meta[tagsKey] : [];
+                    if (t && !cur.includes(t)) {
+                      updateMeta(tagsKey, [...cur, t]);
+                    }
+                    setTagInput("");
+                  }
+                }}
+                placeholder={activeTab === "ur" ? "ٹیگ لکھ کر Enter دبائیں..." : "Type tag and press Enter..."}
+                className={`w-full px-3 py-1.5 text-xs border border-[#e5e2da] bg-[#fbfaf8] focus:outline-none focus:border-[#184e2d] ${
+                  activeTab === "ur" ? "text-right font-nastaliq leading-loose" : "text-left font-sans"
+                }`}
+              />
+              {(() => {
+                const tagsKey = activeTab === "ur" ? "tagsUr" : "tagsEn";
+                const list = Array.isArray(meta[tagsKey]) ? meta[tagsKey] : [];
+                if (list.length === 0) return null;
+                return (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {list.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() =>
+                          updateMeta(
+                            tagsKey,
+                            list.filter((item) => item !== tag)
+                          )
+                        }
+                        className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-medium text-[#184e2d] hover:bg-emerald-100 cursor-pointer"
+                      >
+                        <span>{tag}</span>
+                        <span className="opacity-60">×</span>
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
             {authors.length > 0 && (
               <div>
                 <label className="block text-[11px] font-semibold text-[#5c635b] mb-1">
@@ -644,7 +717,7 @@ export default function ArticleEditorClient({ initialId = null }) {
                   updateMeta("bylineUr", val);
                 }}
                 placeholder="ایڈیٹوریل ڈیسک / نامہ نگار"
-                className="w-full px-3 py-2 text-xs text-right font-nastaliq border border-[#e5e2da] bg-[#fbfaf8] focus:outline-none focus:border-[#184e2d]"
+                className="w-full px-3.5 py-2.5 text-sm leading-loose text-right font-nastaliq border border-[#e5e2da] bg-[#fbfaf8] focus:bg-white focus:outline-none focus:border-[#184e2d]"
               />
             </div>
 

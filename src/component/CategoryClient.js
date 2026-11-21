@@ -8,6 +8,7 @@ import Footer from "@/component/Footer";
 import AdSlot from "@/component/AdSlot";
 import NewsletterBox from "@/component/NewsletterBox";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
+import { ARTICLE_TYPE_BADGES } from "@/lib/articleMeta";
 
 export default function CategoryClient({ slug, category, articles = [], categories = [] }) {
   const { lang, isUrdu, isEnglish, dir, t } = useSiteLanguage();
@@ -15,6 +16,10 @@ export default function CategoryClient({ slug, category, articles = [], categori
   const catName = isEnglish
     ? (category?.name_en || category?.name_ur || slug.toUpperCase())
     : (category?.name_ur || category?.name_en || slug);
+
+  const visibleArticles = isEnglish
+    ? articles.filter((a) => Boolean(a.title_en && a.title_en.trim()))
+    : articles.filter((a) => Boolean(a.title_ur && a.title_ur.trim()));
 
   return (
     <div className="min-h-screen text-gray-900" dir={dir}>
@@ -36,12 +41,12 @@ export default function CategoryClient({ slug, category, articles = [], categori
             {catName}
           </h1>
           <span className="text-xs text-gray-500 font-sans">
-            {articles.length} {isEnglish ? "stories" : "خبریں"}
+            {visibleArticles.length} {isEnglish ? "stories" : "خبریں"}
           </span>
         </div>
 
         {/* Stories Grid */}
-        {articles.length === 0 ? (
+        {visibleArticles.length === 0 ? (
           <div className="text-center py-16 bg-[#efeee9] border border-[#dcd8cd] rounded-xl font-sans">
             <p className="text-gray-500 text-sm">
               {isEnglish
@@ -51,7 +56,7 @@ export default function CategoryClient({ slug, category, articles = [], categori
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {articles.map((story) => {
+            {visibleArticles.map((story) => {
               const title = isEnglish
                 ? (story.title_en || story.title_ur)
                 : (story.title_ur || story.title_en);
@@ -59,7 +64,11 @@ export default function CategoryClient({ slug, category, articles = [], categori
                 ? (story.summary_en || story.summary_ur)
                 : (story.summary_ur || story.summary_en);
 
-              return (
+              const visibleArticles = isEnglish
+    ? articles.filter((a) => Boolean(a.title_en && a.title_en.trim()))
+    : articles.filter((a) => Boolean(a.title_ur && a.title_ur.trim()));
+
+  return (
                 <article
                   key={story.id}
                   className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl overflow-hidden hover:border-emerald-600 transition duration-300 group shadow-2xs flex flex-col justify-between"
@@ -72,6 +81,17 @@ export default function CategoryClient({ slug, category, articles = [], categori
                         fill
                         className="object-cover group-hover:scale-105 transition duration-500"
                       />
+                      {story.meta?.articleType && ARTICLE_TYPE_BADGES[story.meta.articleType] && (
+                        <span
+                          className={`absolute top-2 start-2 px-2 py-0.5 text-[10px] font-bold rounded border shadow-2xs ${
+                            ARTICLE_TYPE_BADGES[story.meta.articleType].cls
+                          }`}
+                        >
+                          {isUrdu
+                            ? ARTICLE_TYPE_BADGES[story.meta.articleType].ur
+                            : ARTICLE_TYPE_BADGES[story.meta.articleType].en}
+                        </span>
+                      )}
                     </div>
                     <div className="p-4">
                       <Link href={`/story/${story.id || story.slug}`}>

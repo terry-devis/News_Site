@@ -78,7 +78,7 @@ export default function Footer({ categories = [] }) {
 
   // Extra footer-only nav items (matching Daily Insaaf style)
   const extraNavItems = [
-    { name_ur: "استافل", name_en: "Staff", slug: "staff" },
+    { name_ur: "اسٹاف", name_en: "Staff", slug: "staff", href: "/staff" },
     { name_ur: "جرائم", name_en: "Crime", slug: "crime" },
     { name_ur: "دین و دنیا", name_en: "Religion & World", slug: "religion" },
     { name_ur: "رائے", name_en: "Opinion", slug: "opinion" },
@@ -119,7 +119,7 @@ export default function Footer({ categories = [] }) {
                 />
               </div>
             </Link>
-            <p className={`text-white/85 max-w-xs text-xs sm:text-[13px] font-medium leading-relaxed ${isUrdu ? "font-nastaliq" : "font-sans"}`}>
+            <p className={`text-white/85 max-w-sm text-sm sm:text-[15px] font-medium leading-relaxed ${isUrdu ? "font-nastaliq" : "font-sans"}`}>
               {isEnglish ? "TRUST • FACTS • GLOBAL NEWS — Dedicated to Truthful & Independent Journalism" : tagline}
             </p>
           </div>
@@ -127,7 +127,7 @@ export default function Footer({ categories = [] }) {
           {/* Social Icons & Contact Link */}
           <div className={`flex flex-col gap-3 ${isUrdu ? "sm:items-end" : "sm:items-start"}`}>
             <div className={`flex flex-col gap-2 ${isUrdu ? "sm:items-end" : "sm:items-start"}`}>
-              <p className="text-white/75 text-[11px] font-bold tracking-widest uppercase">
+              <p className="text-white/75 text-xs font-bold tracking-widest uppercase">
                 {t("followUs")}
               </p>
               
@@ -250,7 +250,7 @@ export default function Footer({ categories = [] }) {
             {/* Contact Link — Full visible text like Daily Insaaf "ہم سے رابطہ کریں" */}
             <Link
               href="/contact"
-              className="text-white/90 hover:text-white inline-flex items-center gap-2 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap"
+              className="text-white/90 hover:text-white inline-flex items-center gap-2 text-sm sm:text-base font-semibold transition-colors whitespace-nowrap"
             >
               <Mail size={14} className="text-white/80" />
               <span>{t("contactTitle")}</span>
@@ -263,7 +263,7 @@ export default function Footer({ categories = [] }) {
         {/* TIER 2: CATEGORIES & SERVICES HORIZONTAL STRIP            */}
         {/* ========================================================== */}
         <nav aria-label="Sections" className="border-t border-white/15 pt-4 pb-4">
-          <ul className="text-white/85 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium">
+          <ul className="text-white/85 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-sm sm:text-[15px] font-medium">
             <li>
               <Link href="/" className="hover:text-white font-bold transition-colors">
                 {t("home")}
@@ -287,7 +287,7 @@ export default function Footer({ categories = [] }) {
             {/* Extra nav items matching Daily Insaaf */}
             {extraNavItems.map((item) => (
               <li key={item.slug}>
-                <Link href={`/category/${item.slug}`} className="hover:text-white transition-colors">
+                <Link href={item.href || `/category/${item.slug}`} className="hover:text-white transition-colors">
                   {isEnglish ? item.name_en : item.name_ur}
                 </Link>
               </li>
@@ -334,7 +334,7 @@ export default function Footer({ categories = [] }) {
         {/* ========================================================== */}
         {/* TIER 3: COPYRIGHT NOTICE & BACK TO TOP BUTTON              */}
         {/* ========================================================== */}
-        <div className="border-t border-white/15 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-white/75">
+        <div className="border-t border-white/15 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-white/75">
           <div className="flex items-center gap-2">
             <span>© {new Date().getFullYear()} Daily Afadiat (ڈیلی افادیت)</span>
             <span aria-hidden="true" className="text-white/35">|</span>
@@ -346,7 +346,7 @@ export default function Footer({ categories = [] }) {
           <div>
             <button
               onClick={scrollToTop}
-              className="hover:text-white inline-flex items-center gap-1 text-xs text-white/85 transition-colors cursor-pointer"
+              className="hover:text-white inline-flex items-center gap-1 text-sm text-white/85 transition-colors cursor-pointer"
             >
               <ArrowUp size={12} />
               <span>{t("backToTop")}</span>

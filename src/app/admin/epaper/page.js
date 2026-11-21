@@ -29,14 +29,27 @@ export default function AdminEpaperPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgressText, setUploadProgressText] = useState("");
   const [activeTab, setActiveTab] = useState("both"); // 'both', 'ur', 'en'
+  const [filterCity, setFilterCity] = useState("all");
+  const [filterDate, setFilterDate] = useState("");
   const [toast, setToast] = useState(null);
 
   // Upload Form State
   const [uploadPaper, setUploadPaper] = useState("ur");
+  const [uploadCity, setUploadCity] = useState("islamabad");
   const [uploadDate, setUploadDate] = useState(today);
   const [uploadTitle, setUploadTitle] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
+
+  const CITY_EDITIONS = [
+    { slug: "islamabad", label_en: "Islamabad / Rawalpindi", label_ur: "اسلام آباد / راولپنڈی" },
+    { slug: "lahore", label_en: "Lahore Edition", label_ur: "لاہور ایڈیشن" },
+    { slug: "karachi", label_en: "Karachi Edition", label_ur: "کراچی ایڈیشن" },
+    { slug: "peshawar", label_en: "Peshawar Edition", label_ur: "پشاور ایڈیشن" },
+    { slug: "quetta", label_en: "Quetta Edition", label_ur: "کوئٹہ ایڈیشن" },
+    { slug: "multan", label_en: "Multan Edition", label_ur: "ملتان ایڈیشن" },
+    { slug: "international", label_en: "International Edition", label_ur: "انٹرنیشنل ایڈیشن" },
+  ];
 
   // Clickable Regions (Hot-Zones) Workspace State
   const [activeEdition, setActiveEdition] = useState(null);
@@ -303,13 +316,22 @@ export default function AdminEpaperPage() {
       }
 
       setUploadProgressText("Publishing edition...");
+      const cityMeta =
+        CITY_EDITIONS.find((c) => c.slug === uploadCity) || CITY_EDITIONS[0];
       const payload = {
         action: "upload_edition",
         edition_date: uploadDate,
         paper: uploadPaper,
-        title: uploadTitle.trim() || (uploadPaper === "ur" ? "اسلام آباد" : "Islamabad"),
-        city: uploadTitle.trim() || "Islamabad",
-        file_size: selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : "—",
+        city_slug: cityMeta.slug,
+        city: cityMeta.label_en,
+        title:
+          uploadTitle.trim() ||
+          (uploadPaper === "ur" ? cityMeta.label_ur : cityMeta.label_en),
+        title_ur: uploadTitle.trim() || cityMeta.label_ur,
+        title_en: uploadTitle.trim() || cityMeta.label_en,
+        file_size: selectedFile
+          ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`
+          : "—",
         pdf_url: uploadedPdfUrl || null,
         pages: extractedPages.length > 0 ? extractedPages : undefined,
       };
@@ -503,10 +525,21 @@ export default function AdminEpaperPage() {
     setIsUnsaved(true);
   };
 
-  // Filter editions by tab
+  // Filter editions by language tab, city edition, and date
+  const resolveEditionCitySlug = (ed) => {
+    if (ed.city_slug) return ed.city_slug;
+    const raw = String(ed.city || ed.title || "islamabad").toLowerCase();
+    for (const c of CITY_EDITIONS) {
+      if (raw.includes(c.slug) || raw.includes(c.label_ur)) return c.slug;
+    }
+    return "islamabad";
+  };
+
   const filteredEditions = editions.filter((e) => {
-    if (activeTab === "both") return true;
-    return e.paper === activeTab;
+    if (activeTab !== "both" && e.paper !== activeTab) return false;
+    if (filterCity !== "all" && resolveEditionCitySlug(e) !== filterCity) return false;
+    if (filterDate && e.edition_date !== filterDate) return false;
+    return true;
   });
 
   const activePageObj = activeEdition?.pages?.find((p) => p.page_number === activePageNum);
@@ -568,10 +601,10 @@ export default function AdminEpaperPage() {
         </span>
 
         <form onSubmit={handleUploadEdition} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Paper / Edition */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Paper / Language */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-700">Paper / Edition</label>
+              <label className="text-xs font-semibold text-gray-700">Language / Paper</label>
               <select
                 value={uploadPaper}
                 onChange={(e) => setUploadPaper(e.target.value)}
@@ -582,9 +615,25 @@ export default function AdminEpaperPage() {
               </select>
             </div>
 
+            {/* Specific City / Regional Edition */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-700">City / Regional Edition</label>
+              <select
+                value={uploadCity}
+                onChange={(e) => setUploadCity(e.target.value)}
+                className="w-full text-xs font-semibold text-gray-800 border border-[#e5e2da] rounded-lg p-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
+              >
+                {CITY_EDITIONS.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.label_en} — {c.label_ur}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Date */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-700">Date</label>
+              <label className="text-xs font-semibold text-gray-700">Edition Date</label>
               <input
                 type="date"
                 required
@@ -594,15 +643,15 @@ export default function AdminEpaperPage() {
               />
             </div>
 
-            {/* Title / City */}
+            {/* Optional Custom Label */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-700">Title</label>
+              <label className="text-xs font-semibold text-gray-700">Custom Display Title (Optional)</label>
               <input
                 type="text"
                 dir="rtl"
                 value={uploadTitle}
                 onChange={(e) => setUploadTitle(e.target.value)}
-                placeholder="اختیاری — مثلاً کراچی ایڈیشن"
+                placeholder="اختیاری — مثلاً خصوصی اشاعت"
                 className="w-full text-right font-nastaliq text-xs border border-[#e5e2da] rounded-lg p-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
               />
             </div>
@@ -649,34 +698,75 @@ export default function AdminEpaperPage() {
       {/* SECTION 2: EDITIONS LIST                                 */}
       {/* ======================================================== */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-xs font-bold text-gray-500 tracking-wider uppercase">
-            EDITIONS
+            EDITIONS ({filteredEditions.length})
           </span>
 
-          {/* Filter Tabs: Both, Urdu, English */}
-          <div className="flex items-center gap-1 bg-[#f4f2ec] p-1 rounded-lg border border-[#e5e2da]">
-            {[
-              { key: "both", label: "Both" },
-              { key: "ur", label: "اردو (Urdu)" },
-              { key: "en", label: "English" },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => {
-                  setActiveTab(tab.key);
+          <div className="flex flex-wrap items-center gap-2">
+            {/* City Filter */}
+            <select
+              value={filterCity}
+              onChange={(e) => {
+                setFilterCity(e.target.value);
+                handleCloseClippingWorkspace();
+              }}
+              className="text-xs font-semibold text-gray-800 border border-[#e5e2da] rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:border-[#124e2b]"
+            >
+              <option value="all">All City Editions</option>
+              {CITY_EDITIONS.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.label_en}
+                </option>
+              ))}
+            </select>
+
+            {/* Date Filter */}
+            <div className="flex items-center gap-1">
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => {
+                  setFilterDate(e.target.value);
                   handleCloseClippingWorkspace();
                 }}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                  activeTab === tab.key
-                    ? "bg-white text-gray-900 shadow-2xs border border-[#e5e2da]"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+                className="text-xs font-semibold text-gray-800 border border-[#e5e2da] rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:border-[#124e2b]"
+              />
+              {filterDate && (
+                <button
+                  type="button"
+                  onClick={() => setFilterDate("")}
+                  className="text-[11px] font-semibold text-gray-500 hover:text-gray-900 px-2 py-1"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Filter Tabs: Both, Urdu, English */}
+            <div className="flex items-center gap-1 bg-[#f4f2ec] p-1 rounded-lg border border-[#e5e2da]">
+              {[
+                { key: "both", label: "Both" },
+                { key: "ur", label: "اردو (Urdu)" },
+                { key: "en", label: "English" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tab.key);
+                    handleCloseClippingWorkspace();
+                  }}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                    activeTab === tab.key
+                      ? "bg-white text-gray-900 shadow-2xs border border-[#e5e2da]"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

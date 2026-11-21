@@ -1,3 +1,5 @@
+import { resolvePublicSiteUrl } from "@/lib/seoUrl";
+
 export default function robots() {
   if (process.env.NEXT_PUBLIC_APP_ROLE === "admin") {
     return {
@@ -8,13 +10,13 @@ export default function robots() {
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://dailyafadiat.com";
+  const baseUrl = resolvePublicSiteUrl();
   return {
     rules: {
       userAgent: "*",
       allow: "/",
       disallow: ["/admin", "/admin/", "/api/"],
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: [`${baseUrl}/sitemap.xml`, `${baseUrl}/news-sitemap.xml`],
   };
 }

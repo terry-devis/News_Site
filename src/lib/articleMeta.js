@@ -5,10 +5,42 @@ const STATUS_RE = /<!--status:([a-z_]+)-->\n?/g;
 const EXCERPT_RE = /<!--excerpt:([\s\S]*?)-->\n?/g;
 const META_RE = /<!--meta:([\s\S]*?)-->\n?/g;
 
+export const ARTICLE_TYPES = {
+  news: "News",
+  column: "Column",
+  blog: "Blog",
+  video: "Video",
+  gallery: "Photo gallery",
+  live_blog: "Live blog",
+  web_story: "Web story",
+  infographic: "Infographic",
+  fact_check: "Fact check",
+};
+
+export const ARTICLE_TYPE_BADGES = {
+  column: { ur: "کالم", en: "Column", cls: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+  blog: { ur: "بلاگ", en: "Blog", cls: "bg-teal-50 text-teal-800 border-teal-200" },
+  video: { ur: "ویڈیو", en: "Video", cls: "bg-red-50 text-red-800 border-red-200" },
+  gallery: { ur: "فوٹو گیلری", en: "Photo Gallery", cls: "bg-purple-50 text-purple-800 border-purple-200" },
+  live_blog: { ur: "لائیو بلاگ", en: "Live Blog", cls: "bg-rose-50 text-rose-800 border-rose-200" },
+  web_story: { ur: "ویب اسٹوری", en: "Web Story", cls: "bg-amber-50 text-amber-800 border-amber-200" },
+  infographic: { ur: "انفوگرافک", en: "Infographic", cls: "bg-sky-50 text-sky-800 border-sky-200" },
+  fact_check: { ur: "فیکٹ چیک", en: "Fact Check", cls: "bg-indigo-50 text-indigo-800 border-indigo-200" },
+};
+
 export const DEFAULT_ARTICLE_META = {
+  articleType: "news",
+  tagsUr: [],
+  tagsEn: [],
   seoTitle: "",
+  seoTitleUr: "",
+  seoTitleEn: "",
   seoDescription: "",
+  seoDescriptionUr: "",
+  seoDescriptionEn: "",
   focusKeyword: "",
+  focusKeywordUr: "",
+  focusKeywordEn: "",
   robotsNoindex: false,
   excludeFromNewsSitemap: false,
   scheduledAt: "",

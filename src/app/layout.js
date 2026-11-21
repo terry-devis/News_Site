@@ -1,6 +1,7 @@
 import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
 import { SiteLanguageProvider } from "@/context/SiteLanguageContext";
+import GlobalAdOverlay from "@/component/GlobalAdOverlay";
 
 const isAdminApp = process.env.NEXT_PUBLIC_APP_ROLE === "admin";
 
@@ -54,6 +55,7 @@ export default function RootLayout({ children }) {
           <div className="min-h-screen flex flex-col">
             {children}
           </div>
+          <GlobalAdOverlay />
         </SiteLanguageProvider>
       </body>
     </html>

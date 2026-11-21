@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Megaphone, ExternalLink } from "lucide-react";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
@@ -33,12 +33,94 @@ function pickWeightedCreative(creatives = [], isMobile = false) {
   return eligible[0];
 }
 
+function AdHtmlRenderer({ html, onClick }) {
+  const hostRef = useRef(null);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    host.innerHTML = "";
+    if (!html) return;
+
+    try {
+      const range = document.createRange();
+      range.selectNode(host);
+      const fragment = range.createContextualFragment(html);
+      host.appendChild(fragment);
+    } catch {
+      host.innerHTML = html;
+    }
+  }, [html]);
+
+  return (
+    <div
+      ref={hostRef}
+      onClick={onClick}
+      className="inline-block max-w-full overflow-hidden"
+    />
+  );
+}
+
 export default function AdSlot({ slotKey, title, className = "" }) {
   const { isUrdu } = useSiteLanguage();
   const resolvedTitle = title || (isUrdu ? "اشتہار" : "Advertisement");
   const [slot, setSlot] = useState(null);
   const [creative, setCreative] = useState(null);
+  const [networkConfig, setNetworkConfig] = useState(null);
   const [loading, setLoading] = useState(true);
+  const containerRef = useRef(null);
+  const impressionSentRef = useRef(false);
+
+  const sendAdTrack = (type) => {
+    try {
+      const payload = JSON.stringify({
+        creativeId: creative?.id || null,
+        slotKey,
+        type,
+      });
+      if (type === "click" && typeof navigator !== "undefined" && navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: "application/json" });
+        navigator.sendBeacon("/api/ads/track", blob);
+        return;
+      }
+      fetch("/api/ads/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    } catch {}
+  };
+
+  // Track real impression once when the ad becomes visible in the viewport
+  useEffect(() => {
+    if (loading || impressionSentRef.current) return;
+    if (slot && !slot.is_active) return;
+    if (!creative && !slot) return;
+
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      impressionSentRef.current = true;
+      sendAdTrack("impression");
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !impressionSentRef.current) {
+            impressionSentRef.current = true;
+            sendAdTrack("impression");
+            observer.disconnect();
+          }
+        }
+      },
+      { threshold: 0.25 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loading, slot, creative, slotKey]);
 
   useEffect(() => {
     let isMounted = true;
@@ -65,6 +147,7 @@ export default function AdSlot({ slotKey, title, className = "" }) {
           adSlotCache.set(slotKey, { data: { slot: slotObj, creatives: slotCreatives }, ts: now });
           if (isMounted) {
             if (slotObj) setSlot(slotObj);
+            if (allAdsCache.data.networkConfig) setNetworkConfig(allAdsCache.data.networkConfig);
             setCreative(pickWeightedCreative(slotCreatives, isMobile));
             setLoading(false);
           }
@@ -92,6 +175,7 @@ export default function AdSlot({ slotKey, title, className = "" }) {
 
         if (!isMounted) return;
         if (slotObj) setSlot(slotObj);
+        if (allData.networkConfig) setNetworkConfig(allData.networkConfig);
         setCreative(pickWeightedCreative(slotCreatives, isMobile));
       } catch (err) {
         console.error("Ad fetch error:", err);
@@ -116,13 +200,14 @@ export default function AdSlot({ slotKey, title, className = "" }) {
   if (imgUrl) {
     const isTallSidebar = slotKey.includes("sidebar");
     return (
-      <div className={`relative text-center ${className}`}>
+      <div ref={containerRef} className={`relative text-center ${className}`}>
         <div className="relative inline-block w-full overflow-hidden border border-[#dcd8cd] bg-[#efeee9] shadow-2xs">
           <span className="absolute top-1 start-1 z-10 bg-black/65 text-white text-[9px] font-bold px-1.5 py-0.5 font-sans uppercase tracking-wider">
             {isUrdu ? "اشتہار" : "AD"}
           </span>
           <a
             href={clickUrl}
+            onClick={() => sendAdTrack("click")}
             target={clickUrl.startsWith("http") ? "_blank" : undefined}
             rel={clickUrl.startsWith("http") ? "noopener noreferrer sponsored" : undefined}
             className="block hover:opacity-95 transition"
@@ -140,18 +225,18 @@ export default function AdSlot({ slotKey, title, className = "" }) {
     );
   }
 
-  // 2. HTML / AdSense Snippet
-  const htmlCode = creative?.html_code || (slot?.ad_type === "code" ? slot.code_snippet : "");
+  // 2. HTML / AdSense / Adsterra / Monetag Snippet (slot creative OR universal network fallback)
+  const htmlCode =
+    creative?.html_code ||
+    (slot?.ad_type === "code" ? slot.code_snippet : "") ||
+    (slot?.is_active !== false ? networkConfig?.universal_banner_html : "");
   if (htmlCode) {
     return (
-      <div className={`relative text-center ${className}`}>
+      <div ref={containerRef} className={`relative text-center ${className}`}>
         <span className="block text-[10px] text-gray-600 font-sans tracking-widest uppercase mb-1">
           {isUrdu ? "— اسپانسر شدہ —" : "— SPONSORED —"}
         </span>
-        <div
-          className="inline-block max-w-full overflow-hidden"
-          dangerouslySetInnerHTML={{ __html: htmlCode }}
-        />
+        <AdHtmlRenderer html={htmlCode} onClick={() => sendAdTrack("click")} />
       </div>
     );
   }
@@ -166,6 +251,7 @@ export default function AdSlot({ slotKey, title, className = "" }) {
   if (isTallSidebar || isMpu) {
     return (
       <div
+        ref={containerRef}
         className={`relative border border-[#dcd8cd] bg-[#efeee9] p-4 text-center shadow-xs ${
           isTallSidebar ? "mx-auto w-full max-w-[300px]" : ""
         } ${className}`}
@@ -194,6 +280,7 @@ export default function AdSlot({ slotKey, title, className = "" }) {
           </p>
           <Link
             href="/advertise"
+            onClick={() => sendAdTrack("click")}
             className="inline-flex items-center gap-1.5 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold px-3 py-1.5 transition font-sans"
           >
             <span>{isUrdu ? "اشتہار بُک کریں" : "Book Ad Space"}</span>
@@ -208,6 +295,7 @@ export default function AdSlot({ slotKey, title, className = "" }) {
   const isBillboard = slotKey === "footer-strip" || slotKey.includes("billboard");
   return (
     <div
+      ref={containerRef}
       className={`relative border border-[#dcd8cd] bg-[#efeee9] px-5 py-4 shadow-xs overflow-hidden flex items-center ${
         isBillboard ? "min-h-[110px] sm:min-h-[150px]" : "min-h-[82px] sm:min-h-[100px]"
       } ${className}`}
@@ -231,6 +319,7 @@ export default function AdSlot({ slotKey, title, className = "" }) {
         </div>
         <Link
           href="/advertise"
+          onClick={() => sendAdTrack("click")}
           className="inline-flex items-center gap-1.5 bg-[#184e2d] hover:bg-[#113820] text-white text-xs sm:text-sm font-bold px-4 py-2 transition shrink-0 font-sans"
         >
           <span>{isUrdu ? "بُک کریں" : "Book Now"}</span>

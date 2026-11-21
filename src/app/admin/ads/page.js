@@ -36,6 +36,23 @@ export default function AdminAdsPage() {
   const [showCreativeModal, setShowCreativeModal] = useState(false);
   const [editingCreative, setEditingCreative] = useState(null);
   const [uploadingArtwork, setUploadingArtwork] = useState(false);
+
+  // Universal Ad Networks & Non-Aggressive Overlay Modal
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  const [savingNetwork, setSavingNetwork] = useState(false);
+  const [networkForm, setNetworkForm] = useState({
+    adsense_client_id: "",
+    global_head_scripts: "",
+    universal_banner_html: "",
+    overlay_enabled: false,
+    overlay_position: "bottom-anchor",
+    overlay_delay_seconds: 3,
+    overlay_cooldown_seconds: 0,
+    overlay_once_per_session: false,
+    overlay_image_url: "",
+    overlay_click_url: "",
+    overlay_html_code: "",
+  });
   const [creativeForm, setCreativeForm] = useState({
     page_type: "home",
     slot_key: "",
@@ -76,6 +93,7 @@ export default function AdminAdsPage() {
       const data = await res.json();
       if (data.slots) setSlots(data.slots);
       if (data.creatives) setCreatives(data.creatives);
+      if (data.networkConfig) setNetworkForm((prev) => ({ ...prev, ...data.networkConfig }));
     } catch (e) {
       console.error("Failed to load ads:", e);
       showToast("error", "Failed to fetch ad slots and creatives");
@@ -112,11 +130,39 @@ export default function AdminAdsPage() {
     return slots;
   };
 
+  const handleSaveNetworkConfig = async (e) => {
+    e.preventDefault();
+    setSavingNetwork(true);
+    try {
+      const res = await fetch("/api/ads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save_network_config", config: networkForm }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.networkConfig) setNetworkForm(data.networkConfig);
+        setShowNetworkModal(false);
+        showToast("success", "Universal Ad Network & Overlay settings saved!");
+      } else {
+        showToast("error", data.error || "Failed to save network settings");
+      }
+    } catch {
+      showToast("error", "Network error saving settings");
+    } finally {
+      setSavingNetwork(false);
+    }
+  };
+
   // KPI Metrics Calculation
   const totalSlotsCount = slots.length;
   const totalCreativesCount = creatives.length;
-  const totalImpressions = creatives.reduce((acc, c) => acc + (c.impressions || 0), 0);
-  const totalClicks = creatives.reduce((acc, c) => acc + (c.clicks || 0), 0);
+  const totalImpressions =
+    creatives.reduce((acc, c) => acc + (Number(c.impressions) || 0), 0) +
+    slots.reduce((acc, s) => acc + (Number(s.impressions) || 0), 0);
+  const totalClicks =
+    creatives.reduce((acc, c) => acc + (Number(c.clicks) || 0), 0) +
+    slots.reduce((acc, s) => acc + (Number(s.clicks) || 0), 0);
 
   // Open Add Creative Modal
   const handleOpenAddCreative = (preselectedSlotKey = null) => {
@@ -382,13 +428,22 @@ export default function AdminAdsPage() {
     setDeleting(true);
     try {
       const url =
-        deletingTarget.type === "creative"
+        deletingTarget.type === "clear_creatives"
+          ? `/api/ads?clear_creatives=1`
+          : deletingTarget.type === "creative"
           ? `/api/ads?creative_id=${deletingTarget.id}`
           : `/api/ads?slot_key=${deletingTarget.id}`;
       const res = await fetch(url, { method: "DELETE" });
       const data = await res.json();
       if (res.ok && data.success) {
-        showToast("success", deletingTarget.type === "creative" ? "Creative deleted." : "Slot deleted.");
+        showToast(
+          "success",
+          deletingTarget.type === "clear_creatives"
+            ? "All creatives cleared."
+            : deletingTarget.type === "creative"
+            ? "Creative deleted."
+            : "Slot deleted."
+        );
         setDeletingTarget(null);
         fetchAdsData();
       } else {
@@ -441,12 +496,38 @@ export default function AdminAdsPage() {
 
           <button
             type="button"
+            onClick={() => setShowNetworkModal(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#124e2b] bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-lg shadow-xs transition-colors cursor-pointer"
+          >
+            <Globe size={14} />
+            <span>Global Networks & Overlay</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleOpenAddSlot}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white border border-[#e5e2da] hover:bg-gray-50 rounded-lg shadow-xs transition-colors"
           >
             <Plus size={14} />
             <span>New slot</span>
           </button>
+
+          {creatives.length > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                setDeletingTarget({
+                  type: "clear_creatives",
+                  id: "all",
+                  label: `all ${creatives.length} creatives (default fallback slots will remain intact)`,
+                })
+              }
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-700 bg-white border border-red-200 hover:bg-red-50 rounded-lg shadow-xs transition-colors"
+            >
+              <Trash2 size={13} />
+              <span>Clear creatives</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -615,14 +696,23 @@ export default function AdminAdsPage() {
                       <Edit2 size={13} />
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSlot(slot.slot_key)}
-                      className="p-1.5 text-gray-400 hover:text-red-700 rounded-md hover:bg-red-50 transition-colors"
-                      title="Delete slot"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    {slot.is_system ? (
+                      <span
+                        title="Default fallback placeholder slot cannot be deleted (you can disable it)"
+                        className="text-[10px] font-semibold text-gray-400 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded"
+                      >
+                        Default
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSlot(slot.slot_key)}
+                        className="p-1.5 text-gray-400 hover:text-red-700 rounded-md hover:bg-red-50 transition-colors"
+                        title="Delete custom slot"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -852,6 +942,7 @@ export default function AdminAdsPage() {
                     className="w-full text-xs border border-[#e5e2da] rounded-lg p-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
                   >
                     <option value="direct">direct (Paid sponsor)</option>
+                    <option value="network">network (AdSense / Adsterra / Monetag)</option>
                     <option value="house">house (Internal promo)</option>
                   </select>
                 </div>
@@ -969,16 +1060,18 @@ export default function AdminAdsPage() {
 
               {/* Custom HTML Code Snippet */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-700">Creative HTML (Optional Tag)</label>
+                <label className="text-xs font-semibold text-gray-700">
+                  Ad Network Script / HTML (AdSense, Adsterra, Monetag, etc.)
+                </label>
                 <textarea
-                  rows={2}
+                  rows={4}
                   value={creativeForm.html_code}
                   onChange={(e) => setCreativeForm({ ...creativeForm, html_code: e.target.value })}
-                  placeholder='<ins className="adsbygoogle" ...></ins>'
-                  className="w-full font-mono text-[11px] border border-[#e5e2da] rounded-lg p-2 bg-[#faf9f6] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
+                  placeholder='<script async src="https://pagead2.googlesyndication.com/..."></script>&#10;<ins class="adsbygoogle" ...></ins>'
+                  className="w-full font-mono text-[11px] border border-[#e5e2da] rounded-lg p-2.5 bg-[#faf9f6] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
                 />
                 <p className="text-[10px] text-gray-400">
-                  For Google AdSense or ad-network code. If both image and HTML are provided, the HTML wins.
+                  Supports Google AdSense, Adsterra, Monetag, and custom &lt;script&gt; / &lt;ins&gt; tags. Scripts execute automatically when rendered. If both image and HTML are provided, HTML takes priority.
                 </p>
               </div>
 
@@ -1149,6 +1242,261 @@ export default function AdminAdsPage() {
           </div>
         </div>
       )}
+      {/* Universal Ad Networks & Non-Aggressive Overlay Modal */}
+      {showNetworkModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/55 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setShowNetworkModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white border border-[#e5e2da] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col"
+          >
+            <div className="px-6 py-4 border-b border-[#f0ede6] flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">
+                  Universal Ad Networks & Non-Aggressive Overlay
+                </h3>
+                <p className="text-[11px] text-gray-500">
+                  Configure Google AdSense, Adsterra, Monetag, universal banner fallbacks, and a dismissible overlay ad.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNetworkModal(false)}
+                className="text-gray-400 hover:text-gray-700 p-1 rounded-md cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNetworkConfig} className="overflow-y-auto p-6 space-y-5">
+              {/* 1. Google AdSense */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-700">
+                  Google AdSense Publisher ID (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={networkForm.adsense_client_id}
+                  onChange={(e) =>
+                    setNetworkForm({ ...networkForm, adsense_client_id: e.target.value })
+                  }
+                  placeholder="ca-pub-xxxxxxxxxxxxxxxx"
+                  className="w-full text-xs font-mono border border-[#e5e2da] rounded-lg p-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
+                />
+                <p className="text-[10px] text-gray-400">
+                  Automatically loads AdSense across public pages (never on /admin).
+                </p>
+              </div>
+
+              {/* 2. Global Head / Verification Scripts (Monetag, Adsterra, etc.) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-700">
+                  Global Verification & Network Scripts (Adsterra / Monetag / AdSense Meta)
+                </label>
+                <textarea
+                  rows={3}
+                  value={networkForm.global_head_scripts}
+                  onChange={(e) =>
+                    setNetworkForm({ ...networkForm, global_head_scripts: e.target.value })
+                  }
+                  placeholder='<meta name="monetag" content="..."> or <script ...></script>'
+                  className="w-full font-mono text-[11px] border border-[#e5e2da] rounded-lg p-2.5 bg-[#faf9f6] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
+                />
+                <p className="text-[10px] text-gray-400">
+                  Injected once into public page &lt;head&gt; for site verification or global network tags.
+                </p>
+              </div>
+
+              {/* 3. Universal Banner Fallback */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-700">
+                  Universal Banner Script (Fills Empty Site Ad Slots Automatically)
+                </label>
+                <textarea
+                  rows={3}
+                  value={networkForm.universal_banner_html}
+                  onChange={(e) =>
+                    setNetworkForm({ ...networkForm, universal_banner_html: e.target.value })
+                  }
+                  placeholder='<ins class="adsbygoogle" ...></ins> or Adsterra banner script'
+                  className="w-full font-mono text-[11px] border border-[#e5e2da] rounded-lg p-2.5 bg-[#faf9f6] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#124e2b]"
+                />
+                <p className="text-[10px] text-gray-400">
+                  Whenever a site banner slot has no direct paid ad, it will automatically display this universal ad unit.
+                </p>
+              </div>
+
+              {/* 4. Non-Aggressive Crossable Overlay Ad */}
+              <div className="p-4 rounded-xl border border-[#e5e2da] bg-[#f9f8f5] space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-900">
+                      Non-Aggressive Crossable Overlay Ad
+                    </h4>
+                    <p className="text-[11px] text-gray-500">
+                      Polite sticky banner with a × close button, delay, and dismissal cooldown.
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={networkForm.overlay_enabled}
+                      onChange={(e) =>
+                        setNetworkForm({ ...networkForm, overlay_enabled: e.target.checked })
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#124e2b]"></div>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-700">
+                      Overlay Style & Position
+                    </label>
+                    <select
+                      value={networkForm.overlay_position}
+                      onChange={(e) =>
+                        setNetworkForm({ ...networkForm, overlay_position: e.target.value })
+                      }
+                      className="w-full text-xs border border-[#e5e2da] rounded-lg p-2 bg-white"
+                    >
+                      <option value="bottom-anchor">Bottom Collapsible Anchor (AdSense Style)</option>
+                      <option value="top-anchor">Top Collapsible Anchor (AdSense Style)</option>
+                      <option value="vignette">Centered Vignette Modal (Mobile Style)</option>
+                      <option value="bottom-corner">Bottom Corner Card</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-700">
+                      Show Delay (seconds)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={60}
+                      value={networkForm.overlay_delay_seconds}
+                      onChange={(e) =>
+                        setNetworkForm({
+                          ...networkForm,
+                          overlay_delay_seconds: Number(e.target.value),
+                        })
+                      }
+                      className="w-full text-xs border border-[#e5e2da] rounded-lg p-2 bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-700">
+                      Close Cooldown (secs, optional)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={86400}
+                      value={networkForm.overlay_cooldown_seconds}
+                      onChange={(e) =>
+                        setNetworkForm({
+                          ...networkForm,
+                          overlay_cooldown_seconds: Number(e.target.value),
+                        })
+                      }
+                      placeholder="0 = no cooldown"
+                      className="w-full text-xs border border-[#e5e2da] rounded-lg p-2 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <label className="inline-flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(networkForm.overlay_once_per_session)}
+                    onChange={(e) =>
+                      setNetworkForm({
+                        ...networkForm,
+                        overlay_once_per_session: e.target.checked,
+                      })
+                    }
+                    className="rounded border-gray-300 text-[#124e2b] focus:ring-[#124e2b]"
+                  />
+                  <span>Once per browser session (if closed, don&apos;t show again until tab/browser restarts)</span>
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-700">
+                      Overlay Banner Image URL (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={networkForm.overlay_image_url}
+                      onChange={(e) =>
+                        setNetworkForm({ ...networkForm, overlay_image_url: e.target.value })
+                      }
+                      placeholder="https://..."
+                      className="w-full text-xs border border-[#e5e2da] rounded-lg p-2 bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-700">
+                      Overlay Click URL
+                    </label>
+                    <input
+                      type="text"
+                      value={networkForm.overlay_click_url}
+                      onChange={(e) =>
+                        setNetworkForm({ ...networkForm, overlay_click_url: e.target.value })
+                      }
+                      placeholder="https://..."
+                      className="w-full text-xs border border-[#e5e2da] rounded-lg p-2 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-gray-700">
+                    Overlay Ad Network Script / HTML (Overrides Image if set)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={networkForm.overlay_html_code}
+                    onChange={(e) =>
+                      setNetworkForm({ ...networkForm, overlay_html_code: e.target.value })
+                    }
+                    placeholder="<script ...></script> or Adsterra / Monetag / AdSense tag"
+                    className="w-full font-mono text-[11px] border border-[#e5e2da] rounded-lg p-2 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#f0ede6]">
+                <button
+                  type="button"
+                  onClick={() => setShowNetworkModal(false)}
+                  className="px-4 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingNetwork}
+                  className="px-5 py-2 text-xs font-semibold text-white bg-[#124e2b] hover:bg-[#0a2618] rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                  {savingNetwork ? (
+                    <RefreshCw size={13} className="animate-spin" />
+                  ) : (
+                    <Check size={13} />
+                  )}
+                  <span>Save Network Settings</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Dialog */}
       {deletingTarget && (
         <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-4">

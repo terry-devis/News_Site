@@ -1,18 +1,37 @@
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { unpackArticleMeta } from "@/lib/articleMeta";
+import { resolvePublicSiteUrl } from "@/lib/seoUrl";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://dailyafadiat.com";
+  const baseUrl = resolvePublicSiteUrl();
 
-  // 1. Static Core Pages
+  // 1. Static Core Pages (Urdu + English Homepage)
   const staticRoutes = [
     {
       url: baseUrl,
       lastModified: new Date(),
       changeFrequency: "always",
       priority: 1.0,
+      alternates: {
+        languages: {
+          ur: baseUrl,
+          en: `${baseUrl}/en`,
+        },
+      },
+    },
+    {
+      url: `${baseUrl}/en`,
+      lastModified: new Date(),
+      changeFrequency: "always",
+      priority: 0.95,
+      alternates: {
+        languages: {
+          ur: baseUrl,
+          en: `${baseUrl}/en`,
+        },
+      },
     },
     {
       url: `${baseUrl}/latest`,
@@ -45,6 +64,12 @@ export default async function sitemap() {
       priority: 0.7,
     },
     {
+      url: `${baseUrl}/staff`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.6,
+    },
+    {
       url: `${baseUrl}/advertise`,
       lastModified: new Date(),
       changeFrequency: "monthly",
@@ -71,23 +96,48 @@ export default async function sitemap() {
       priority: 0.8,
     }));
 
-    // 3. Dynamic Published Articles (excluding drafts, trashed & robotsNoindex)
+    // 3. Dynamic Published Articles (both Urdu & English URLs with hreflang alternates)
     const { data: articles } = await supabaseAdmin
       .from("articles")
-      .select("id, slug, content_en, created_at, updated_at")
+      .select("id, slug, title_ur, title_en, content_en, created_at, updated_at")
       .order("created_at", { ascending: false });
 
-    const articleRoutes = (articles || [])
-      .filter((art) => {
-        const { status, meta } = unpackArticleMeta(art.content_en);
-        return status === "published" && !meta.robotsNoindex;
-      })
-      .map((art) => ({
-        url: `${baseUrl}/story/${art.slug || art.id}`,
-        lastModified: new Date(art.updated_at || art.created_at || Date.now()),
-        changeFrequency: "weekly",
-        priority: 0.7,
-      }));
+    const articleRoutes = [];
+    for (const art of articles || []) {
+      const { status, meta } = unpackArticleMeta(art.content_en);
+      if (status !== "published" || meta.robotsNoindex) continue;
+
+      const slugOrId = art.slug || art.id;
+      const urUrl = `${baseUrl}/story/${slugOrId}`;
+      const enUrl = `${baseUrl}/en/story/${slugOrId}`;
+      const hasUr = Boolean(art.title_ur && art.title_ur.trim());
+      const hasEn = Boolean(art.title_en && art.title_en.trim());
+      const lastModified = new Date(art.updated_at || art.created_at || Date.now());
+
+      const languages = {};
+      if (hasUr) languages.ur = urUrl;
+      if (hasEn) languages.en = enUrl;
+
+      if (hasUr || !hasEn) {
+        articleRoutes.push({
+          url: urUrl,
+          lastModified,
+          changeFrequency: "weekly",
+          priority: 0.75,
+          alternates: Object.keys(languages).length > 1 ? { languages } : undefined,
+        });
+      }
+
+      if (hasEn) {
+        articleRoutes.push({
+          url: enUrl,
+          lastModified,
+          changeFrequency: "weekly",
+          priority: 0.75,
+          alternates: Object.keys(languages).length > 1 ? { languages } : undefined,
+        });
+      }
+    }
 
     return [...staticRoutes, ...categoryRoutes, ...articleRoutes];
   } catch (error) {

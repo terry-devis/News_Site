@@ -554,33 +554,65 @@ const DEFAULT_AD_CREATIVES = [
   },
 ];
 
+const SYSTEM_AD_SLOT_KEYS = new Set(DEFAULT_AD_SLOTS.map((s) => s.slot_key));
+
 export async function getAdSlots() {
+  const remote = await getSiteSetting("ad_slots_v2");
+  if (Array.isArray(remote) && remote.length > 0) {
+    return remote.map((s) => ({
+      ...s,
+      is_system: Boolean(s.is_system || SYSTEM_AD_SLOT_KEYS.has(s.slot_key)),
+    }));
+  }
   const local = ensureLocalStore();
   if (!local.ad_slots_v2 || !Array.isArray(local.ad_slots_v2) || local.ad_slots_v2.length === 0) {
-    local.ad_slots_v2 = DEFAULT_AD_SLOTS;
-    if (!local.ad_creatives || local.ad_creatives.length === 0) {
+    local.ad_slots_v2 = DEFAULT_AD_SLOTS.map((s) => ({ ...s, is_system: true }));
+    if (!Array.isArray(local.ad_creatives)) {
       local.ad_creatives = DEFAULT_AD_CREATIVES;
     }
     writeLocalStore(local);
   }
-  return local.ad_slots_v2;
+  const withFlags = local.ad_slots_v2.map((s) => ({
+    ...s,
+    is_system: Boolean(s.is_system || SYSTEM_AD_SLOT_KEYS.has(s.slot_key)),
+  }));
+  await updateSiteSetting("ad_slots_v2", withFlags);
+  return withFlags;
+}
+
+async function saveAdSlotsList(slots) {
+  await updateSiteSetting("ad_slots_v2", slots);
+  const local = ensureLocalStore();
+  local.ad_slots_v2 = slots;
+  writeLocalStore(local);
 }
 
 export async function getAdCreatives(slotKey = null) {
-  const local = ensureLocalStore();
-  if (!local.ad_creatives || !Array.isArray(local.ad_creatives) || local.ad_creatives.length === 0) {
-    local.ad_creatives = DEFAULT_AD_CREATIVES;
-    writeLocalStore(local);
+  let list = await getSiteSetting("ad_creatives");
+  if (!Array.isArray(list)) {
+    const local = ensureLocalStore();
+    if (!Array.isArray(local.ad_creatives)) {
+      local.ad_creatives = DEFAULT_AD_CREATIVES;
+      writeLocalStore(local);
+    }
+    list = local.ad_creatives;
+    await updateSiteSetting("ad_creatives", list);
   }
   if (slotKey) {
-    return local.ad_creatives.filter((c) => c.slot_key === slotKey);
+    return list.filter((c) => c.slot_key === slotKey);
   }
-  return local.ad_creatives;
+  return list;
+}
+
+async function saveAdCreativesList(creatives) {
+  await updateSiteSetting("ad_creatives", creatives);
+  const local = ensureLocalStore();
+  local.ad_creatives = creatives;
+  writeLocalStore(local);
 }
 
 export async function createAdSlot(slotData) {
-  const local = ensureLocalStore();
-  const slots = await getAdSlots();
+  const slots = [...(await getAdSlots())];
   const newSlot = {
     id: Date.now(),
     slot_key: (slotData.slot_key || "").toLowerCase().trim().replace(/[^a-z0-9_-]/g, "-"),
@@ -588,42 +620,49 @@ export async function createAdSlot(slotData) {
     sizes: slotData.sizes || "728x90, 300x250",
     pages: Array.isArray(slotData.pages) ? slotData.pages : (slotData.pages || "all").split(",").map((s) => s.trim()),
     is_active: slotData.is_active !== false,
+    is_system: false,
+    impressions: 0,
+    clicks: 0,
     created_at: new Date().toISOString(),
   };
   slots.push(newSlot);
-  local.ad_slots_v2 = slots;
-  writeLocalStore(local);
+  await saveAdSlotsList(slots);
   return newSlot;
 }
 
 export async function updateAdSlot(slotKey, updates) {
-  const local = ensureLocalStore();
-  const slots = await getAdSlots();
+  const slots = [...(await getAdSlots())];
   const idx = slots.findIndex((s) => s.slot_key === slotKey);
   if (idx >= 0) {
     slots[idx] = { ...slots[idx], ...updates, updated_at: new Date().toISOString() };
-    local.ad_slots_v2 = slots;
-    writeLocalStore(local);
+    await saveAdSlotsList(slots);
     return slots[idx];
   }
   return null;
 }
 
 export async function deleteAdSlot(slotKey) {
-  const local = ensureLocalStore();
-  let slots = await getAdSlots();
-  slots = slots.filter((s) => s.slot_key !== slotKey);
-  local.ad_slots_v2 = slots;
-  if (local.ad_creatives) {
-    local.ad_creatives = local.ad_creatives.filter((c) => c.slot_key !== slotKey);
+  if (SYSTEM_AD_SLOT_KEYS.has(slotKey)) {
+    return {
+      error: "Default fallback ad slots cannot be deleted. You can disable them instead.",
+    };
   }
-  writeLocalStore(local);
+  let slots = await getAdSlots();
+  const target = slots.find((s) => s.slot_key === slotKey);
+  if (target?.is_system) {
+    return {
+      error: "Default fallback ad slots cannot be deleted. You can disable them instead.",
+    };
+  }
+  slots = slots.filter((s) => s.slot_key !== slotKey);
+  await saveAdSlotsList(slots);
+  const creatives = (await getAdCreatives()).filter((c) => c.slot_key !== slotKey);
+  await saveAdCreativesList(creatives);
   return { success: true };
 }
 
 export async function createAdCreative(creativeData) {
-  const local = ensureLocalStore();
-  const creatives = await getAdCreatives();
+  const creatives = [...(await getAdCreatives())];
   const newCreative = {
     id: Date.now(),
     slot_key: creativeData.slot_key,
@@ -643,31 +682,111 @@ export async function createAdCreative(creativeData) {
     created_at: new Date().toISOString(),
   };
   creatives.unshift(newCreative);
-  local.ad_creatives = creatives;
-  writeLocalStore(local);
+  await saveAdCreativesList(creatives);
   return newCreative;
 }
 
 export async function updateAdCreative(id, updates) {
-  const local = ensureLocalStore();
-  const creatives = await getAdCreatives();
-  const idx = creatives.findIndex((c) => c.id === Number(id));
+  const creatives = [...(await getAdCreatives())];
+  const idx = creatives.findIndex((c) => String(c.id) === String(id));
   if (idx >= 0) {
     creatives[idx] = { ...creatives[idx], ...updates, updated_at: new Date().toISOString() };
-    local.ad_creatives = creatives;
-    writeLocalStore(local);
+    await saveAdCreativesList(creatives);
     return creatives[idx];
   }
   return null;
 }
 
 export async function deleteAdCreative(id) {
-  const local = ensureLocalStore();
   let creatives = await getAdCreatives();
-  creatives = creatives.filter((c) => c.id !== Number(id));
-  local.ad_creatives = creatives;
-  writeLocalStore(local);
+  creatives = creatives.filter((c) => String(c.id) !== String(id));
+  await saveAdCreativesList(creatives);
   return { success: true };
+}
+
+export async function clearAllAdCreatives() {
+  await saveAdCreativesList([]);
+  return { success: true };
+}
+
+const DEFAULT_AD_NETWORK_CONFIG = {
+  adsense_client_id: "",
+  global_head_scripts: "",
+  universal_banner_html: "",
+  overlay_enabled: false,
+  overlay_position: "bottom-anchor",
+  overlay_delay_seconds: 3,
+  overlay_cooldown_seconds: 0,
+  overlay_once_per_session: false,
+  overlay_image_url: "",
+  overlay_click_url: "",
+  overlay_html_code: "",
+};
+
+export async function getAdNetworkConfig() {
+  const remote = await getSiteSetting("ad_network_config");
+  if (remote && typeof remote === "object") {
+    return { ...DEFAULT_AD_NETWORK_CONFIG, ...remote };
+  }
+  const local = ensureLocalStore();
+  return { ...DEFAULT_AD_NETWORK_CONFIG, ...(local.ad_network_config || {}) };
+}
+
+export async function saveAdNetworkConfig(payload = {}) {
+  const current = await getAdNetworkConfig();
+  const allowedPositions = ["bottom-anchor", "top-anchor", "vignette", "bottom-corner", "bottom-bar"];
+  const pos = allowedPositions.includes(payload.overlay_position)
+    ? payload.overlay_position
+    : "bottom-anchor";
+  const next = {
+    ...current,
+    adsense_client_id: String(payload.adsense_client_id ?? current.adsense_client_id).trim(),
+    global_head_scripts: String(payload.global_head_scripts ?? current.global_head_scripts),
+    universal_banner_html: String(payload.universal_banner_html ?? current.universal_banner_html),
+    overlay_enabled: Boolean(payload.overlay_enabled),
+    overlay_position: pos,
+    overlay_delay_seconds: Math.max(0, Math.min(60, Number(payload.overlay_delay_seconds ?? 3) || 0)),
+    overlay_cooldown_seconds: Math.max(0, Math.min(86400, Number(payload.overlay_cooldown_seconds ?? 0) || 0)),
+    overlay_once_per_session: Boolean(payload.overlay_once_per_session),
+    overlay_image_url: String(payload.overlay_image_url ?? "").trim(),
+    overlay_click_url: String(payload.overlay_click_url ?? "").trim(),
+    overlay_html_code: String(payload.overlay_html_code ?? ""),
+    updated_at: new Date().toISOString(),
+  };
+  await updateSiteSetting("ad_network_config", next);
+  const local = ensureLocalStore();
+  local.ad_network_config = next;
+  writeLocalStore(local);
+  return next;
+}
+
+export async function trackAdEvent({ creativeId = null, slotKey = null, type = "impression" }) {
+  const field = type === "click" ? "clicks" : "impressions";
+  if (creativeId) {
+    const creatives = [...(await getAdCreatives())];
+    const idx = creatives.findIndex((c) => Number(c.id) === Number(creativeId));
+    if (idx >= 0) {
+      creatives[idx] = {
+        ...creatives[idx],
+        [field]: (Number(creatives[idx][field]) || 0) + 1,
+      };
+      await saveAdCreativesList(creatives);
+      return { success: true, [field]: creatives[idx][field], creativeId };
+    }
+  }
+  if (slotKey) {
+    const slots = [...(await getAdSlots())];
+    const sIdx = slots.findIndex((s) => s.slot_key === slotKey);
+    if (sIdx >= 0) {
+      slots[sIdx] = {
+        ...slots[sIdx],
+        [field]: (Number(slots[sIdx][field]) || 0) + 1,
+      };
+      await saveAdSlotsList(slots);
+      return { success: true, [field]: slots[sIdx][field], slotKey };
+    }
+  }
+  return { success: false };
 }
 
 export async function getAdSlot(slotKey) {
@@ -918,6 +1037,28 @@ export async function deleteContactMessage(id) {
 // ==========================================
 // 6. VIDEOS API
 // ==========================================
+function parseVideoViewsCount(raw) {
+  if (typeof raw === "number" && Number.isFinite(raw)) return Math.max(0, Math.floor(raw));
+  const str = String(raw || "").trim().toUpperCase().replace(/,/g, "");
+  if (!str) return 0;
+  if (str.endsWith("K")) return Math.round((parseFloat(str.slice(0, -1)) || 0) * 1000);
+  if (str.endsWith("M")) return Math.round((parseFloat(str.slice(0, -1)) || 0) * 1000000);
+  const num = parseInt(str, 10);
+  return Number.isFinite(num) ? Math.max(0, num) : 0;
+}
+
+async function applyPersistedVideoViews(list) {
+  const viewMap = (await getSiteSetting("video_views")) || {};
+  if (!viewMap || typeof viewMap !== "object") return list;
+  return list.map((v) => {
+    const persisted = viewMap[String(v.id)];
+    if (persisted !== undefined && persisted !== null) {
+      return { ...v, views_count: persisted };
+    }
+    return v;
+  });
+}
+
 export async function getVideos(category = null) {
   try {
     let q = supabaseAdmin.from("videos").select("*").order("created_at", { ascending: false });
@@ -925,7 +1066,7 @@ export async function getVideos(category = null) {
       q = q.eq("category", category);
     }
     const { data, error } = await q;
-    if (!error && data && data.length > 0) return data;
+    if (!error && data && data.length > 0) return await applyPersistedVideoViews(data);
   } catch (e) {}
 
   const local = ensureLocalStore();
@@ -933,17 +1074,50 @@ export async function getVideos(category = null) {
   if (category && category !== "all") {
     list = list.filter((v) => v.category === category);
   }
-  return list;
+  return await applyPersistedVideoViews(list);
 }
 
 export async function getVideoById(id) {
   try {
     const { data, error } = await supabaseAdmin.from("videos").select("*").eq("id", id).maybeSingle();
-    if (!error && data) return data;
+    if (!error && data) {
+      const [merged] = await applyPersistedVideoViews([data]);
+      return merged;
+    }
   } catch (e) {}
 
   const local = ensureLocalStore();
-  return (local.videos || []).find((v) => String(v.id) === String(id));
+  const found = (local.videos || []).find((v) => String(v.id) === String(id));
+  if (!found) return null;
+  const [merged] = await applyPersistedVideoViews([found]);
+  return merged;
+}
+
+export async function incrementVideoViews(id) {
+  const video = await getVideoById(id);
+  if (!video) return null;
+
+  const viewMap = { ...((await getSiteSetting("video_views")) || {}) };
+  const currentCount = parseVideoViewsCount(
+    viewMap[String(id)] !== undefined ? viewMap[String(id)] : video.views_count || video.views
+  );
+  const nextCount = currentCount + 1;
+  viewMap[String(id)] = nextCount;
+
+  await updateSiteSetting("video_views", viewMap);
+
+  try {
+    await supabaseAdmin.from("videos").update({ views_count: nextCount }).eq("id", id);
+  } catch (e) {}
+
+  const local = ensureLocalStore();
+  const idx = (local.videos || []).findIndex((v) => String(v.id) === String(id));
+  if (idx !== -1) {
+    local.videos[idx] = { ...local.videos[idx], views_count: nextCount };
+    writeLocalStore(local);
+  }
+
+  return nextCount;
 }
 
 export async function saveVideo(videoData) {
@@ -1033,10 +1207,22 @@ function normalizeCitySlug(rawCity) {
   const c = String(rawCity || "islamabad").toLowerCase();
   if (c.includes("lahore") || c.includes("لاہور")) return "lahore";
   if (c.includes("karachi") || c.includes("کراچی")) return "karachi";
+  if (c.includes("peshawar") || c.includes("پشاور")) return "peshawar";
   if (c.includes("quetta") || c.includes("کوئٹہ")) return "quetta";
+  if (c.includes("multan") || c.includes("ملتان")) return "multan";
   if (c.includes("international") || c.includes("انٹرنیشنل")) return "international";
   return "islamabad";
 }
+
+const CITY_LABELS = {
+  islamabad: { ur: "اسلام آباد / راولپنڈی", en: "Islamabad / Rawalpindi" },
+  lahore: { ur: "لاہور ایڈیشن", en: "Lahore Edition" },
+  karachi: { ur: "کراچی ایڈیشن", en: "Karachi Edition" },
+  peshawar: { ur: "پشاور ایڈیشن", en: "Peshawar Edition" },
+  quetta: { ur: "کوئٹہ ایڈیشن", en: "Quetta Edition" },
+  multan: { ur: "ملتان ایڈیشن", en: "Multan Edition" },
+  international: { ur: "انٹرنیشنل ایڈیشن", en: "International Edition" },
+};
 
 export async function getEpaperEditions(date = null, city = null) {
   try {
@@ -1045,7 +1231,8 @@ export async function getEpaperEditions(date = null, city = null) {
     if (liveIssues.length > 0) {
       const flattened = [];
       for (const issue of liveIssues) {
-        const citySlug = normalizeCitySlug(issue.city || issue.title);
+        const citySlug = normalizeCitySlug(issue.city_slug || issue.city || issue.title);
+        const cityMeta = CITY_LABELS[citySlug] || CITY_LABELS.islamabad;
         const pdfUrl = normalizePdfUrl(issue.pdf_url);
         for (const p of issue.pages || []) {
           flattened.push({
@@ -1054,8 +1241,8 @@ export async function getEpaperEditions(date = null, city = null) {
             edition_date: issue.edition_date,
             paper: issue.paper || "ur",
             city_slug: citySlug,
-            city_name_ur: issue.title || issue.city || "اسلام آباد / راولپنڈی",
-            city_name_en: issue.city || issue.title || "Islamabad",
+            city_name_ur: issue.title_ur || cityMeta.ur,
+            city_name_en: issue.title_en || cityMeta.en,
             page_number: Number(p.page_number) || 1,
             page_title_ur: p.title || `صفحہ ${p.page_number}`,
             page_title_en: p.title || `Page ${p.page_number}`,
@@ -1286,12 +1473,20 @@ export async function createEpaperEditionV2(data) {
     }
   }
 
+  const citySlug = normalizeCitySlug(data.city_slug || data.city || data.title);
+  const cityMeta = CITY_LABELS[citySlug] || CITY_LABELS.islamabad;
+  const editionDate = data.edition_date || new Date().toISOString().split("T")[0];
+  const paper = data.paper || "ur";
+
   const newIssue = {
     id: Date.now(),
-    edition_date: data.edition_date || new Date().toISOString().split("T")[0],
-    paper: data.paper || "ur",
-    city: data.city || data.title || "Islamabad",
-    title: data.title || "Islamabad",
+    edition_date: editionDate,
+    paper,
+    city_slug: citySlug,
+    city: data.city || cityMeta.en,
+    title: data.title || (paper === "ur" ? cityMeta.ur : cityMeta.en),
+    title_ur: data.title_ur || cityMeta.ur,
+    title_en: data.title_en || cityMeta.en,
     status: "ready",
     is_live: true,
     file_size: data.file_size || "15.6 MB",
@@ -1300,7 +1495,19 @@ export async function createEpaperEditionV2(data) {
     pages: finalPages,
   };
 
-  list.unshift(newIssue);
+  // Replace any older edition with the exact same date + language + city_slug so re-uploading replaces cleanly
+  const existingIdx = list.findIndex(
+    (e) =>
+      e.edition_date === editionDate &&
+      (e.paper || "ur") === paper &&
+      normalizeCitySlug(e.city_slug || e.city || e.title) === citySlug
+  );
+  if (existingIdx >= 0) {
+    newIssue.id = list[existingIdx].id;
+    list[existingIdx] = newIssue;
+  } else {
+    list.unshift(newIssue);
+  }
   await saveEpaperIssuesV2(list);
   return newIssue;
 }
@@ -3168,4 +3375,190 @@ export async function appendNotificationLog(entry) {
   local.notification_log = [item, ...log].slice(0, 100);
   writeLocalStore(local);
   return item;
+}
+
+// ==========================================
+// 17. PUBLIC STAFF DIRECTORY (Admin & Public /staff)
+// ==========================================
+const DEFAULT_PUBLIC_STAFF = [
+  {
+    id: "st_1",
+    name_ur: "ارشد ندیم",
+    name_en: "Arshad Nadeem",
+    designation_ur: "چیف ایڈیٹر (Chief Editor)",
+    designation_en: "Editor-in-Chief",
+    department_ur: "ادارتی بورڈ",
+    department_en: "Editorial Board",
+    city_ur: "اسلام آباد",
+    city_en: "Islamabad",
+    phone: "+92 300 5123456",
+    email: "editor@dailyafadiat.com",
+    image_url: "https://randomuser.me/api/portraits/men/32.jpg",
+    bio_ur: "روزنامہ افادیت کے مرکزی ادارتی اور پالیسی امور کی نگرانی۔",
+    bio_en: "Oversees editorial policy, print editions, and national newsroom operations.",
+    display_order: 1,
+    is_active: true,
+  },
+  {
+    id: "st_2",
+    name_ur: "بلال حسین",
+    name_en: "Bilal Hussain",
+    designation_ur: "سینئر کالم نگار و تجزیہ کار",
+    designation_en: "Senior Columnist & Analyst",
+    department_ur: "اداریہ و کالم",
+    department_en: "Opinion & Editorial",
+    city_ur: "لاہور",
+    city_en: "Lahore",
+    phone: "+92 321 4987654",
+    email: "bilal@dailyafadiat.com",
+    image_url: "https://randomuser.me/api/portraits/men/75.jpg",
+    bio_ur: "قومی سیاست، معیشت اور خارجہ امور پر خصوصی کالم اور تجزیے۔",
+    bio_en: "Writes analytical columns on national politics, economy, and foreign policy.",
+    display_order: 2,
+    is_active: true,
+  },
+  {
+    id: "st_3",
+    name_ur: "عائشہ نور",
+    name_en: "Ayesha Noor",
+    designation_ur: "نیوز ایڈیٹر (News Editor)",
+    designation_en: "Managing News Editor",
+    department_ur: "نیوز ڈیسک",
+    department_en: "Central News Desk",
+    city_ur: "اسلام آباد",
+    city_en: "Islamabad",
+    phone: "+92 333 5544332",
+    email: "ayesha@dailyafadiat.com",
+    image_url: "https://randomuser.me/api/portraits/women/44.jpg",
+    bio_ur: "بریکنگ نیوز، فیکٹ چیکنگ اور ڈیجیٹل ڈیسک کی انچارج۔",
+    bio_en: "Heads breaking news verification, fact-checking, and digital newsroom desk.",
+    display_order: 3,
+    is_active: true,
+  },
+  {
+    id: "st_4",
+    name_ur: "طارق محمود",
+    name_en: "Tariq Mehmood",
+    designation_ur: "بیورو چیف کراچی",
+    designation_en: "Bureau Chief Karachi",
+    department_ur: "سندھ بیورو",
+    department_en: "Sindh Bureau",
+    city_ur: "کراچی",
+    city_en: "Karachi",
+    phone: "+92 345 2211998",
+    email: "karachi.bureau@dailyafadiat.com",
+    image_url: "https://randomuser.me/api/portraits/men/46.jpg",
+    bio_ur: "کراچی اور سندھ بھر کی سیاسی، تجارتی اور شہری خبروں کی کوریج۔",
+    bio_en: "Leads business, financiero, and regional reporting across Karachi and Sindh.",
+    display_order: 4,
+    is_active: true,
+  },
+];
+
+function withMockStaffPhotos(list) {
+  const mockById = new Map(DEFAULT_PUBLIC_STAFF.map((m) => [m.id, m.image_url]));
+  return list.map((m) =>
+    !m.image_url && mockById.get(m.id) ? { ...m, image_url: mockById.get(m.id) } : m
+  );
+}
+
+async function loadPublicStaffList() {
+  const remote = await getSiteSetting("public_staff_directory");
+  if (Array.isArray(remote)) {
+    return withMockStaffPhotos(remote);
+  }
+  const local = ensureLocalStore();
+  const seed =
+    Array.isArray(local.public_staff_directory) && local.public_staff_directory.length > 0
+      ? local.public_staff_directory
+      : DEFAULT_PUBLIC_STAFF;
+  await updateSiteSetting("public_staff_directory", seed);
+  return seed;
+}
+
+async function savePublicStaffList(list) {
+  await updateSiteSetting("public_staff_directory", list);
+  const local = ensureLocalStore();
+  local.public_staff_directory = list;
+  writeLocalStore(local);
+}
+
+export async function getPublicStaffMembers({ includeInactive = false } = {}) {
+  const list = await loadPublicStaffList();
+  const filtered = includeInactive ? list : list.filter((m) => m.is_active !== false);
+  return [...filtered].sort(
+    (a, b) => (Number(a.display_order) || 999) - (Number(b.display_order) || 999)
+  );
+}
+
+export async function createPublicStaffMember(payload = {}) {
+  const list = [...(await loadPublicStaffList())];
+  const member = {
+    id: `st_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    name_ur: (payload.name_ur || payload.name_en || "").trim(),
+    name_en: (payload.name_en || payload.name_ur || "").trim(),
+    designation_ur: (payload.designation_ur || payload.designation_en || "").trim(),
+    designation_en: (payload.designation_en || payload.designation_ur || "").trim(),
+    department_ur: (payload.department_ur || payload.department_en || "").trim(),
+    department_en: (payload.department_en || payload.department_ur || "").trim(),
+    city_ur: (payload.city_ur || payload.city_en || "").trim(),
+    city_en: (payload.city_en || payload.city_ur || "").trim(),
+    phone: (payload.phone || "").trim(),
+    email: (payload.email || "").trim(),
+    image_url: (payload.image_url || "").trim(),
+    bio_ur: (payload.bio_ur || "").trim(),
+    bio_en: (payload.bio_en || "").trim(),
+    display_order: Number(payload.display_order) || list.length + 1,
+    is_active: payload.is_active !== false,
+    created_at: new Date().toISOString(),
+  };
+  list.push(member);
+  await savePublicStaffList(list);
+  return member;
+}
+
+export async function updatePublicStaffMember(id, payload = {}) {
+  const list = [...(await loadPublicStaffList())];
+  const idx = list.findIndex((m) => String(m.id) === String(id));
+  if (idx === -1) return null;
+  const cur = list[idx];
+  list[idx] = {
+    ...cur,
+    ...payload,
+    id: cur.id,
+    display_order:
+      payload.display_order !== undefined
+        ? Number(payload.display_order) || 1
+        : cur.display_order,
+    updated_at: new Date().toISOString(),
+  };
+  await savePublicStaffList(list);
+  return list[idx];
+}
+
+export async function reorderPublicStaffMembers(orderedIds = []) {
+  const list = await loadPublicStaffList();
+  const byId = new Map(list.map((m) => [String(m.id), m]));
+  const seen = new Set();
+  const next = [];
+  for (const id of orderedIds) {
+    const m = byId.get(String(id));
+    if (m && !seen.has(String(id))) {
+      seen.add(String(id));
+      next.push(m);
+    }
+  }
+  for (const m of list) {
+    if (!seen.has(String(m.id))) next.push(m);
+  }
+  const reordered = next.map((m, i) => ({ ...m, display_order: i + 1 }));
+  await savePublicStaffList(reordered);
+  return reordered;
+}
+
+export async function deletePublicStaffMember(id) {
+  const list = await loadPublicStaffList();
+  const next = list.filter((m) => String(m.id) !== String(id));
+  await savePublicStaffList(next);
+  return { success: true };
 }

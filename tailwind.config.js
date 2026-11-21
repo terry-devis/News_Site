@@ -36,7 +36,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        nastaliq: ['"Noto Nastaliq Urdu"', '"Jameel Noori Nastaleeq"', 'serif'],
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        nastaliq: ['"Noto Nastaliq Urdu"', '"Jameel Noori Nastaleeq"', '"Noto Naskh Arabic"', 'serif'],
         inter: ['Inter', 'sans-serif'],
       },
     },

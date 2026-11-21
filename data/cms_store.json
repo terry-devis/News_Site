@@ -97,7 +97,222 @@
       "ads_email": "ads@dailyafadiat.com",
       "timing_ur": "پیر تا ہفتہ: صبح ۹ تا شام ۶ بجے",
       "timing_en": "Mon to Sat: 9:00 AM to 6:00 PM"
-    }
+    },
+    "public_staff_directory": [
+      {
+        "id": "st_3",
+        "name_ur": "عائشہ نور",
+        "name_en": "Ayesha Noor",
+        "designation_ur": "نیوز ایڈیٹر (News Editor)",
+        "designation_en": "Managing News Editor",
+        "department_ur": "نیوز ڈیسک",
+        "department_en": "Central News Desk",
+        "city_ur": "اسلام آباد",
+        "city_en": "Islamabad",
+        "phone": "+92 333 5544332",
+        "email": "ayesha@dailyafadiat.com",
+        "image_url": "https://randomuser.me/api/portraits/women/44.jpg",
+        "bio_ur": "بریکنگ نیوز، فیکٹ چیکنگ اور ڈیجیٹل ڈیسک کی انچارج۔",
+        "bio_en": "Heads breaking news verification, fact-checking, and digital newsroom desk.",
+        "display_order": 1,
+        "is_active": true
+      },
+      {
+        "id": "st_2",
+        "name_ur": "بلال حسین",
+        "name_en": "Bilal Hussain",
+        "designation_ur": "سینئر کالم نگار و تجزیہ کار",
+        "designation_en": "Senior Columnist & Analyst",
+        "department_ur": "اداریہ و کالم",
+        "department_en": "Opinion & Editorial",
+        "city_ur": "لاہور",
+        "city_en": "Lahore",
+        "phone": "+92 321 4987654",
+        "email": "bilal@dailyafadiat.com",
+        "image_url": "https://randomuser.me/api/portraits/men/75.jpg",
+        "bio_ur": "قومی سیاست، معیشت اور خارجہ امور پر خصوصی کالم اور تجزیے۔",
+        "bio_en": "Writes analytical columns on national politics, economy, and foreign policy.",
+        "display_order": 2,
+        "is_active": true
+      },
+      {
+        "id": "st_1",
+        "name_ur": "ارشد ندیم",
+        "name_en": "Arshad Nadeem",
+        "designation_ur": "چیف ایڈیٹر (Chief Editor)",
+        "designation_en": "Editor-in-Chief",
+        "department_ur": "ادارتی بورڈ",
+        "department_en": "Editorial Board",
+        "city_ur": "اسلام آباد",
+        "city_en": "Islamabad",
+        "phone": "+92 300 5123456",
+        "email": "editor@dailyafadiat.com",
+        "image_url": "https://randomuser.me/api/portraits/men/32.jpg",
+        "bio_ur": "روزنامہ افادیت کے مرکزی ادارتی اور پالیسی امور کی نگرانی۔",
+        "bio_en": "Oversees editorial policy, print editions, and national newsroom operations.",
+        "display_order": 3,
+        "is_active": true
+      },
+      {
+        "id": "st_4",
+        "name_ur": "طارق محمود",
+        "name_en": "Tariq Mehmood",
+        "designation_ur": "بیورو چیف کراچی",
+        "designation_en": "Bureau Chief Karachi",
+        "department_ur": "سندھ بیورو",
+        "department_en": "Sindh Bureau",
+        "city_ur": "کراچی",
+        "city_en": "Karachi",
+        "phone": "+92 345 2211998",
+        "email": "karachi.bureau@dailyafadiat.com",
+        "image_url": "https://randomuser.me/api/portraits/men/46.jpg",
+        "bio_ur": "کراچی اور سندھ بھر کی سیاسی، تجارتی اور شہری خبروں کی کوریج۔",
+        "bio_en": "Leads business, financiero, and regional reporting across Karachi and Sindh.",
+        "display_order": 4,
+        "is_active": true
+      }
+    ],
+    "ad_slots_v2": [
+      {
+        "id": 1,
+        "slot_key": "footer-strip",
+        "name": "Footer · strip (all pages)",
+        "sizes": "728x90, 320x50",
+        "pages": [
+          "all"
+        ],
+        "is_active": true,
+        "impressions": 2,
+        "is_system": true
+      },
+      {
+        "id": 2,
+        "slot_key": "home-leaderboard",
+        "name": "Home leaderboard",
+        "sizes": "728x90, 320x50",
+        "pages": [
+          "home"
+        ],
+        "is_active": true,
+        "is_system": true,
+        "impressions": 1
+      },
+      {
+        "id": 3,
+        "slot_key": "home-infeed-1",
+        "name": "Home · in-feed #1",
+        "sizes": "728x90, 300x250",
+        "pages": [
+          "home"
+        ],
+        "is_active": true,
+        "is_system": true
+      },
+      {
+        "id": 4,
+        "slot_key": "home-infeed-2",
+        "name": "Home · in-feed #2",
+        "sizes": "728x90, 300x250",
+        "pages": [
+          "home"
+        ],
+        "is_active": true,
+        "is_system": true
+      },
+      {
+        "id": 5,
+        "slot_key": "home-mpu",
+        "name": "Home MPU",
+        "sizes": "300x250",
+        "pages": [
+          "home"
+        ],
+        "is_active": true,
+        "is_system": true
+      },
+      {
+        "id": 6,
+        "slot_key": "home-sidebar",
+        "name": "Home · sidebar",
+        "sizes": "300x600, 300x250",
+        "pages": [
+          "home"
+        ],
+        "is_active": true,
+        "is_system": true,
+        "impressions": 1
+      },
+      {
+        "id": 7,
+        "slot_key": "section-leaderboard",
+        "name": "Section · leaderboard (top)",
+        "sizes": "728x90, 320x50",
+        "pages": [
+          "section"
+        ],
+        "is_active": true,
+        "is_system": true
+      },
+      {
+        "id": 8,
+        "slot_key": "section-infeed",
+        "name": "Section · in-feed",
+        "sizes": "728x90, 300x250",
+        "pages": [
+          "section"
+        ],
+        "is_active": true,
+        "is_system": true
+      },
+      {
+        "id": 9,
+        "slot_key": "section-sidebar",
+        "name": "Section · sidebar",
+        "sizes": "300x600, 300x250",
+        "pages": [
+          "section"
+        ],
+        "is_active": true,
+        "is_system": true
+      },
+      {
+        "id": 10,
+        "slot_key": "article-mpu",
+        "name": "Article MPU",
+        "sizes": "300x250",
+        "pages": [
+          "story",
+          "article"
+        ],
+        "is_active": true,
+        "is_system": true
+      },
+      {
+        "id": 11,
+        "slot_key": "story-inline",
+        "name": "Story · inline (in-body)",
+        "sizes": "728x90, 300x250",
+        "pages": [
+          "story",
+          "article"
+        ],
+        "is_active": true,
+        "is_system": true
+      },
+      {
+        "id": 12,
+        "slot_key": "story-mpu",
+        "name": "Story · MPU (sidebar / in-body)",
+        "sizes": "300x250, 300x600",
+        "pages": [
+          "story",
+          "article"
+        ],
+        "is_active": true,
+        "is_system": true
+      }
+    ],
+    "ad_creatives": []
   },
   "newsletter_subscribers": [
     {
@@ -428,7 +643,9 @@
       "pages": [
         "all"
       ],
-      "is_active": true
+      "is_active": true,
+      "impressions": 2,
+      "is_system": true
     },
     {
       "id": 2,
@@ -438,7 +655,9 @@
       "pages": [
         "home"
       ],
-      "is_active": true
+      "is_active": true,
+      "is_system": true,
+      "impressions": 1
     },
     {
       "id": 3,
@@ -448,7 +667,8 @@
       "pages": [
         "home"
       ],
-      "is_active": true
+      "is_active": true,
+      "is_system": true
     },
     {
       "id": 4,
@@ -458,7 +678,8 @@
       "pages": [
         "home"
       ],
-      "is_active": true
+      "is_active": true,
+      "is_system": true
     },
     {
       "id": 5,
@@ -468,7 +689,8 @@
       "pages": [
         "home"
       ],
-      "is_active": true
+      "is_active": true,
+      "is_system": true
     },
     {
       "id": 6,
@@ -478,7 +700,9 @@
       "pages": [
         "home"
       ],
-      "is_active": true
+      "is_active": true,
+      "is_system": true,
+      "impressions": 1
     },
     {
       "id": 7,
@@ -488,7 +712,8 @@
       "pages": [
         "section"
       ],
-      "is_active": true
+      "is_active": true,
+      "is_system": true
     },
     {
       "id": 8,
@@ -498,7 +723,8 @@
       "pages": [
         "section"
       ],
-      "is_active": true
+      "is_active": true,
+      "is_system": true
     },
     {
       "id": 9,
@@ -508,7 +734,8 @@
       "pages": [
         "section"
       ],
-      "is_active": true
+      "is_active": true,
+      "is_system": true
     },
     {
       "id": 10,
@@ -519,7 +746,8 @@
         "story",
         "article"
       ],
-      "is_active": true
+      "is_active": true,
+      "is_system": true
     },
     {
       "id": 11,
@@ -530,7 +758,8 @@
         "story",
         "article"
       ],
-      "is_active": true
+      "is_active": true,
+      "is_system": true
     },
     {
       "id": 12,
@@ -541,190 +770,11 @@
         "story",
         "article"
       ],
-      "is_active": true
-    }
-  ],
-  "ad_creatives": [
-    {
-      "id": 101,
-      "slot_key": "footer-strip",
-      "name": "AD: Meezan Bank — Apna Ghar — Footer · strip (all pages)",
-      "type": "direct",
-      "runs_on": "both",
-      "weight": 1,
-      "image_url": "https://pub-afe682c6e960401f9f06ea1705e8db77.r2.dev/author_signature_final_1795194374699.svg",
-      "image_alt": "میزان بینک اپنا گھر آسان ہوم فنانسنگ اسکیم",
-      "click_url": "https://www.meezanbank.com",
-      "status": "pause",
-      "impressions": 412,
-      "clicks": 14,
-      "created_at": "2026-11-18T03:18:01.057Z",
-      "target": "creative",
-      "creative_id": 101,
-      "page_type": "all",
-      "html_code": "",
-      "starts_at": "",
-      "ends_at": "",
       "is_active": true,
-      "updated_at": "2026-11-20T17:07:11.191Z"
-    },
-    {
-      "id": 102,
-      "slot_key": "home-leaderboard",
-      "name": "State Life Insurance — Digital Health Takaful",
-      "type": "direct",
-      "runs_on": "ur",
-      "weight": 2,
-      "image_url": "",
-      "image_alt": "اسٹیٹ لائف انشورنس ڈیجیٹل ہیلتھ تکافل پلان",
-      "click_url": "https://statelife.com.pk",
-      "status": "run",
-      "impressions": 680,
-      "clicks": 22,
-      "created_at": "2026-11-17T03:18:01.057Z",
-      "target": "creative",
-      "creative_id": 102,
-      "updated_at": "2026-11-20T03:19:08.865Z"
-    },
-    {
-      "id": 103,
-      "slot_key": "home-infeed-1",
-      "name": "HBL Mobile App — Digital Banking Freedom",
-      "type": "direct",
-      "runs_on": "both",
-      "weight": 1,
-      "image_url": "",
-      "image_alt": "ایچ بی ایل موبائل ایپ آسان بینکاری",
-      "click_url": "https://hbl.com",
-      "status": "run",
-      "impressions": 530,
-      "clicks": 17,
-      "created_at": "2026-11-19T03:18:01.057Z"
-    },
-    {
-      "id": 104,
-      "slot_key": "home-infeed-2",
-      "name": "National Bank of Pakistan — Kamyab Jawan Financing",
-      "type": "direct",
-      "runs_on": "ur",
-      "weight": 1,
-      "image_url": "",
-      "image_alt": "نیشنل بینک آف پاکستان کامیاب نوجوان اسکیم",
-      "click_url": "https://nbp.com.pk",
-      "status": "run",
-      "impressions": 310,
-      "clicks": 8,
-      "created_at": "2026-11-16T03:18:01.057Z"
-    },
-    {
-      "id": 105,
-      "slot_key": "home-mpu",
-      "name": "PTCL Flash Fiber — Ultra High Speed Internet",
-      "type": "direct",
-      "runs_on": "both",
-      "weight": 1,
-      "image_url": "",
-      "image_alt": "پی ٹی سی ایل فلیش فائبر تیز رفتار انٹرنیٹ",
-      "click_url": "https://ptcl.com.pk",
-      "status": "run",
-      "impressions": 275,
-      "clicks": 11,
-      "created_at": "2026-11-15T03:18:01.057Z"
-    },
-    {
-      "id": 106,
-      "slot_key": "home-sidebar",
-      "name": "Afadiat Digital Edition — Mobile App Subscription",
-      "type": "house",
-      "runs_on": "both",
-      "weight": 1,
-      "image_url": "",
-      "image_alt": "ڈیلی افادیت ڈیجیٹل موبائل ایپ ابھی ڈاؤنلوڈ کریں",
-      "click_url": "https://dailyafadiat.com/apps",
-      "status": "run",
-      "impressions": 190,
-      "clicks": 6,
-      "created_at": "2026-11-14T03:18:01.057Z"
-    },
-    {
-      "id": 107,
-      "slot_key": "section-leaderboard",
-      "name": "Pak Suzuki — Hybrid Sedan Special Financing Offer",
-      "type": "direct",
-      "runs_on": "en",
-      "weight": 1,
-      "image_url": "",
-      "image_alt": "Pak Suzuki Hybrid Sedan Financing Scheme",
-      "click_url": "https://suzukipakistan.com",
-      "status": "run",
-      "impressions": 240,
-      "clicks": 7,
-      "created_at": "2026-11-18T03:18:01.057Z"
-    },
-    {
-      "id": 108,
-      "slot_key": "section-infeed",
-      "name": "Jazz Super 4G — Corporate Data Packages",
-      "type": "direct",
-      "runs_on": "both",
-      "weight": 1,
-      "image_url": "",
-      "image_alt": "جاز سپر فور جی کارپوریٹ ڈیٹا پیکجز",
-      "click_url": "https://jazz.com.pk",
-      "status": "run",
-      "impressions": 185,
-      "clicks": 5,
-      "created_at": "2026-11-17T03:18:01.057Z"
-    },
-    {
-      "id": 109,
-      "slot_key": "article-mpu",
-      "name": "article-mpu-house",
-      "type": "house",
-      "runs_on": "both",
-      "weight": 1,
-      "image_url": "",
-      "image_alt": "اشتہار دینے کے لیے رابطہ کریں — 0300-1234567",
-      "click_url": "https://dailyafadiat.com/advertise",
-      "status": "pause",
-      "impressions": 345,
-      "clicks": 12,
-      "created_at": "2026-11-13T03:18:01.057Z",
-      "target": "creative",
-      "creative_id": 109,
-      "updated_at": "2026-11-20T17:01:38.662Z"
-    },
-    {
-      "id": 110,
-      "slot_key": "story-inline",
-      "name": "Faysal Bank — Noor Islamic Digital Cards",
-      "type": "direct",
-      "runs_on": "both",
-      "weight": 1,
-      "image_url": "",
-      "image_alt": "فیصل بینک نور اسلامک ڈیجیٹل کارڈز",
-      "click_url": "https://faysalbank.com",
-      "status": "run",
-      "impressions": 290,
-      "clicks": 9,
-      "created_at": "2026-11-18T03:18:01.057Z"
-    },
-    {
-      "id": 111,
-      "slot_key": "story-mpu",
-      "name": "Ufone 4G — Super Card Gold Subscription",
-      "type": "direct",
-      "runs_on": "both",
-      "weight": 1,
-      "image_url": "",
-      "image_alt": "یو فون سپر کارڈ گولڈ سبسکربشن",
-      "click_url": "https://ufone.com",
-      "status": "run",
-      "impressions": 210,
-      "clicks": 6,
-      "created_at": "2026-11-16T03:18:01.057Z"
+      "is_system": true
     }
   ],
+  "ad_creatives": [],
   "categories_v2": [
     {
       "id": 1,
@@ -2071,6 +2121,80 @@
         "comment.view",
         "epaper.view"
       ]
+    }
+  ],
+  "public_staff_directory": [
+    {
+      "id": "st_3",
+      "name_ur": "عائشہ نور",
+      "name_en": "Ayesha Noor",
+      "designation_ur": "نیوز ایڈیٹر (News Editor)",
+      "designation_en": "Managing News Editor",
+      "department_ur": "نیوز ڈیسک",
+      "department_en": "Central News Desk",
+      "city_ur": "اسلام آباد",
+      "city_en": "Islamabad",
+      "phone": "+92 333 5544332",
+      "email": "ayesha@dailyafadiat.com",
+      "image_url": "https://randomuser.me/api/portraits/women/44.jpg",
+      "bio_ur": "بریکنگ نیوز، فیکٹ چیکنگ اور ڈیجیٹل ڈیسک کی انچارج۔",
+      "bio_en": "Heads breaking news verification, fact-checking, and digital newsroom desk.",
+      "display_order": 1,
+      "is_active": true
+    },
+    {
+      "id": "st_2",
+      "name_ur": "بلال حسین",
+      "name_en": "Bilal Hussain",
+      "designation_ur": "سینئر کالم نگار و تجزیہ کار",
+      "designation_en": "Senior Columnist & Analyst",
+      "department_ur": "اداریہ و کالم",
+      "department_en": "Opinion & Editorial",
+      "city_ur": "لاہور",
+      "city_en": "Lahore",
+      "phone": "+92 321 4987654",
+      "email": "bilal@dailyafadiat.com",
+      "image_url": "https://randomuser.me/api/portraits/men/75.jpg",
+      "bio_ur": "قومی سیاست، معیشت اور خارجہ امور پر خصوصی کالم اور تجزیے۔",
+      "bio_en": "Writes analytical columns on national politics, economy, and foreign policy.",
+      "display_order": 2,
+      "is_active": true
+    },
+    {
+      "id": "st_1",
+      "name_ur": "ارشد ندیم",
+      "name_en": "Arshad Nadeem",
+      "designation_ur": "چیف ایڈیٹر (Chief Editor)",
+      "designation_en": "Editor-in-Chief",
+      "department_ur": "ادارتی بورڈ",
+      "department_en": "Editorial Board",
+      "city_ur": "اسلام آباد",
+      "city_en": "Islamabad",
+      "phone": "+92 300 5123456",
+      "email": "editor@dailyafadiat.com",
+      "image_url": "https://randomuser.me/api/portraits/men/32.jpg",
+      "bio_ur": "روزنامہ افادیت کے مرکزی ادارتی اور پالیسی امور کی نگرانی۔",
+      "bio_en": "Oversees editorial policy, print editions, and national newsroom operations.",
+      "display_order": 3,
+      "is_active": true
+    },
+    {
+      "id": "st_4",
+      "name_ur": "طارق محمود",
+      "name_en": "Tariq Mehmood",
+      "designation_ur": "بیورو چیف کراچی",
+      "designation_en": "Bureau Chief Karachi",
+      "department_ur": "سندھ بیورو",
+      "department_en": "Sindh Bureau",
+      "city_ur": "کراچی",
+      "city_en": "Karachi",
+      "phone": "+92 345 2211998",
+      "email": "karachi.bureau@dailyafadiat.com",
+      "image_url": "https://randomuser.me/api/portraits/men/46.jpg",
+      "bio_ur": "کراچی اور سندھ بھر کی سیاسی، تجارتی اور شہری خبروں کی کوریج۔",
+      "bio_en": "Leads business, financiero, and regional reporting across Karachi and Sindh.",
+      "display_order": 4,
+      "is_active": true
     }
   ]
 }

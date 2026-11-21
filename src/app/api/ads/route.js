@@ -9,6 +9,9 @@ import {
   createAdCreative,
   updateAdCreative,
   deleteAdCreative,
+  clearAllAdCreatives,
+  getAdNetworkConfig,
+  saveAdNetworkConfig,
 } from "@/lib/cmsDb";
 import { requirePermission } from "@/lib/auth";
 
@@ -25,11 +28,12 @@ export async function GET(req) {
       return NextResponse.json({ slot, creatives });
     }
 
-    const [slots, creatives] = await Promise.all([
+    const [slots, creatives, networkConfig] = await Promise.all([
       getAdSlots(),
       getAdCreatives(),
+      getAdNetworkConfig(),
     ]);
-    return NextResponse.json({ success: true, slots, creatives });
+    return NextResponse.json({ success: true, slots, creatives, networkConfig });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -41,6 +45,11 @@ export async function POST(req) {
 
   try {
     const body = await req.json();
+
+    if (body.action === "save_network_config") {
+      const networkConfig = await saveAdNetworkConfig(body.config || body);
+      return NextResponse.json({ success: true, networkConfig });
+    }
 
     if (body.action === "create_slot" || (!body.action && body.slot_key && !body.name)) {
       const slot = await createAdSlot(body);
@@ -95,6 +104,12 @@ export async function DELETE(req) {
     const { searchParams } = new URL(req.url);
     const slotKey = searchParams.get("slot_key");
     const creativeId = searchParams.get("creative_id");
+    const clearCreatives = searchParams.get("clear_creatives");
+
+    if (clearCreatives === "1") {
+      await clearAllAdCreatives();
+      return NextResponse.json({ success: true, message: "All creatives cleared" });
+    }
 
     if (creativeId) {
       await deleteAdCreative(creativeId);
@@ -102,7 +117,10 @@ export async function DELETE(req) {
     }
 
     if (slotKey) {
-      await deleteAdSlot(slotKey);
+      const res = await deleteAdSlot(slotKey);
+      if (res?.error) {
+        return NextResponse.json({ error: res.error }, { status: 400 });
+      }
       return NextResponse.json({ success: true, message: "Slot deleted successfully" });
     }
 

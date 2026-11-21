@@ -4,6 +4,7 @@ import React from "react";
 import { Globe, Search, Share2 } from "lucide-react";
 
 export default function SeoSocialPanel({
+  activeTab = "ur",
   title,
   summary,
   slug,
@@ -12,8 +13,18 @@ export default function SeoSocialPanel({
   meta,
   onChangeMeta,
 }) {
-  const effectiveTitle = meta.seoTitle || title || "Article headline";
-  const effectiveDesc = meta.seoDescription || summary || "Summary appears in Google Search and social previews.";
+  const isUr = activeTab === "ur";
+  const langLabel = isUr ? "Urdu" : "English";
+  const seoTitleKey = isUr ? "seoTitleUr" : "seoTitleEn";
+  const seoDescKey = isUr ? "seoDescriptionUr" : "seoDescriptionEn";
+  const focusKey = isUr ? "focusKeywordUr" : "focusKeywordEn";
+
+  const currentSeoTitle = meta[seoTitleKey] ?? (isUr ? meta.seoTitle : "") ?? "";
+  const currentSeoDesc = meta[seoDescKey] ?? (isUr ? meta.seoDescription : "") ?? "";
+  const currentFocus = meta[focusKey] ?? (isUr ? meta.focusKeyword : "") ?? "";
+
+  const effectiveTitle = currentSeoTitle || title || "Article headline";
+  const effectiveDesc = currentSeoDesc || summary || "Summary appears in Google Search and social previews.";
   const ogCrop = coverFraming?.crops?.og;
   const focal = coverFraming?.focal || { x: 50, y: 50 };
 
@@ -22,7 +33,7 @@ export default function SeoSocialPanel({
       <div className="border-b border-[#e5e2da] pb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Globe size={16} className="text-[#184e2d]" />
-          <h3 className="text-sm font-bold text-[#18221b]">SEO & Social Preview</h3>
+          <h3 className="text-sm font-bold text-[#18221b]">SEO & Social Preview ({langLabel})</h3>
         </div>
         <span className="text-[11px] text-[#5c635b]">Google Search & OpenGraph</span>
       </div>
@@ -32,55 +43,63 @@ export default function SeoSocialPanel({
         <div className="space-y-4">
           <div>
             <div className="flex justify-between text-xs font-semibold text-[#18221b] mb-1">
-              <label>SEO title</label>
+              <label>SEO title ({langLabel})</label>
               <span
                 className={`font-mono text-[11px] ${
                   effectiveTitle.length > 60 ? "text-amber-700" : "text-[#5c635b]"
                 }`}
               >
-                {(meta.seoTitle || title || "").length}/60 characters
+                {(currentSeoTitle || title || "").length}/60 characters
               </span>
             </div>
             <input
               type="text"
-              dir="auto"
-              value={meta.seoTitle || ""}
-              onChange={(e) => onChangeMeta("seoTitle", e.target.value)}
+              dir={isUr ? "rtl" : "ltr"}
+              value={currentSeoTitle}
+              onChange={(e) => onChangeMeta(seoTitleKey, e.target.value)}
               placeholder={title || "Custom search title (defaults to headline)"}
-              className="w-full px-3 py-2 text-xs border border-[#e5e2da] bg-[#fbfaf8] focus:bg-white focus:outline-none focus:border-[#184e2d]"
+              className={`w-full px-3 py-2 text-xs border border-[#e5e2da] bg-[#fbfaf8] focus:bg-white focus:outline-none focus:border-[#184e2d] ${
+                isUr ? "text-right font-nastaliq leading-loose" : "text-left font-sans"
+              }`}
             />
           </div>
 
           <div>
             <div className="flex justify-between text-xs font-semibold text-[#18221b] mb-1">
-              <label>Meta description</label>
+              <label>Meta description ({langLabel})</label>
               <span
                 className={`font-mono text-[11px] ${
-                  (meta.seoDescription || "").length > 160 ? "text-amber-700" : "text-[#5c635b]"
+                  currentSeoDesc.length > 160 ? "text-amber-700" : "text-[#5c635b]"
                 }`}
               >
-                {(meta.seoDescription || "").length}/160 characters
+                {currentSeoDesc.length}/160 characters
               </span>
             </div>
             <textarea
               rows={2}
-              dir="auto"
-              value={meta.seoDescription || ""}
-              onChange={(e) => onChangeMeta("seoDescription", e.target.value)}
+              dir={isUr ? "rtl" : "ltr"}
+              value={currentSeoDesc}
+              onChange={(e) => onChangeMeta(seoDescKey, e.target.value)}
               placeholder={summary || "Concise summary for Google Search results..."}
-              className="w-full px-3 py-2 text-xs border border-[#e5e2da] bg-[#fbfaf8] focus:bg-white focus:outline-none focus:border-[#184e2d]"
+              className={`w-full px-3 py-2 text-xs border border-[#e5e2da] bg-[#fbfaf8] focus:bg-white focus:outline-none focus:border-[#184e2d] ${
+                isUr ? "text-right font-nastaliq leading-loose" : "text-left font-sans"
+              }`}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#18221b] mb-1">Focus keyword</label>
+            <label className="block text-xs font-semibold text-[#18221b] mb-1">
+              Focus keyword ({langLabel})
+            </label>
             <input
               type="text"
-              dir="auto"
-              value={meta.focusKeyword || ""}
-              onChange={(e) => onChangeMeta("focusKeyword", e.target.value)}
-              placeholder="e.g. Pakistan economy, budget 2026"
-              className="w-full px-3 py-2 text-xs border border-[#e5e2da] bg-[#fbfaf8] focus:bg-white focus:outline-none focus:border-[#184e2d]"
+              dir={isUr ? "rtl" : "ltr"}
+              value={currentFocus}
+              onChange={(e) => onChangeMeta(focusKey, e.target.value)}
+              placeholder={isUr ? "مثلاً پاکستان معیشت، بجٹ 2026" : "e.g. Pakistan economy, budget 2026"}
+              className={`w-full px-3 py-2 text-xs border border-[#e5e2da] bg-[#fbfaf8] focus:bg-white focus:outline-none focus:border-[#184e2d] ${
+                isUr ? "text-right font-nastaliq leading-loose" : "text-left font-sans"
+              }`}
             />
           </div>
 

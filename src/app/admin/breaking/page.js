@@ -53,19 +53,13 @@ export default function BreakingNewsAdmin() {
   async function loadBreakingNews() {
     setLoading(true);
     try {
-      const [res, settingsRes] = await Promise.all([
-        fetch("/api/breaking"),
-        fetch("/api/settings?key=breaking_ticker_enabled").catch(() => null),
-      ]);
+      const res = await fetch("/api/breaking");
       const data = await res.json();
       if (data?.breakingNews) {
         setItems(data.breakingNews);
       }
-      if (settingsRes && settingsRes.ok) {
-        const sData = await settingsRes.json();
-        if (sData?.breaking_ticker_enabled !== undefined && sData?.breaking_ticker_enabled !== null) {
-          setMasterTickerActive(Boolean(sData.breaking_ticker_enabled));
-        }
+      if (typeof data?.masterTickerActive === "boolean") {
+        setMasterTickerActive(data.masterTickerActive);
       }
     } catch (e) {
       console.error(e);
@@ -78,13 +72,19 @@ export default function BreakingNewsAdmin() {
     const next = !masterTickerActive;
     setMasterTickerActive(next);
     try {
-      await fetch("/api/settings", {
-        method: "POST",
+      const res = await fetch("/api/breaking", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "breaking_ticker_enabled", value: next }),
+        body: JSON.stringify({ masterTickerActive: next }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setMasterTickerActive(!next);
+        setNotice({ type: "error", text: err.error || "Permission denied or failed to update ticker state." });
+      }
     } catch (e) {
-      console.error(e);
+      setMasterTickerActive(!next);
+      setNotice({ type: "error", text: "Network error updating Master Portal Ticker." });
     }
   };
 

@@ -1,18 +1,41 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseServer";
+import { getSiteSetting, updateSiteSetting } from "@/lib/cmsDb";
 import { requirePermission } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const { data, error } = await supabaseAdmin
-      .from("breaking_news")
-      .select("*")
-      .order("priority", { ascending: true })
-      .order("created_at", { ascending: false });
+    const [{ data, error }, tickerSetting] = await Promise.all([
+      supabaseAdmin
+        .from("breaking_news")
+        .select("*")
+        .order("priority", { ascending: true })
+        .order("created_at", { ascending: false }),
+      getSiteSetting("breaking_ticker_enabled").catch(() => null),
+    ]);
 
     if (error) throw error;
-    return NextResponse.json({ breakingNews: data || [] });
+    const masterTickerActive =
+      tickerSetting !== false && tickerSetting?.enabled !== false;
+    return NextResponse.json({ breakingNews: data || [], masterTickerActive });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req) {
+  const { errorResponse } = await requirePermission("breaking.manage");
+  if (errorResponse) return errorResponse;
+
+  try {
+    const body = await req.json();
+    const next = Boolean(body?.masterTickerActive);
+    await updateSiteSetting("breaking_ticker_enabled", { enabled: next });
+    try {
+      revalidatePath("/");
+    } catch (e) {}
+    return NextResponse.json({ success: true, masterTickerActive: next });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -25,7 +25,8 @@ export async function GET(req) {
       return NextResponse.json({
         social_links,
         site_info,
-        breaking_ticker_enabled: breaking_ticker_enabled !== false,
+        breaking_ticker_enabled:
+          breaking_ticker_enabled !== false && breaking_ticker_enabled?.enabled !== false,
       });
     }
 

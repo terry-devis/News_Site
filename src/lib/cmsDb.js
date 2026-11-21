@@ -729,14 +729,17 @@ export async function getSiteSetting(key) {
   } catch (e) {}
 
   const local = ensureLocalStore();
-  return local.site_settings?.[key] || null;
+  return local.site_settings?.[key] ?? null;
 }
 
 export async function updateSiteSetting(key, value) {
   try {
     const { data, error } = await supabaseAdmin
       .from("site_settings")
-      .upsert({ setting_key: key, setting_value: value, updated_at: new Date().toISOString() })
+      .upsert(
+        { setting_key: key, setting_value: value, updated_at: new Date().toISOString() },
+        { onConflict: "setting_key" }
+      )
       .select();
     if (!error && data) return data[0].setting_value;
   } catch (e) {}

@@ -2776,6 +2776,23 @@ export async function updateNewsroomUser(idOrEmail, updates) {
   );
   if (idx >= 0) {
     const safeUpdates = { ...updates };
+    if (safeUpdates.email !== undefined) {
+      const normalizedEmail = String(safeUpdates.email).trim().toLowerCase();
+      if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        const err = new Error("Please enter a valid email address");
+        err.statusCode = 400;
+        throw err;
+      }
+      const duplicate = users.find(
+        (u, i) => i !== idx && String(u.email).trim().toLowerCase() === normalizedEmail
+      );
+      if (duplicate) {
+        const err = new Error("Another user already uses this email address");
+        err.statusCode = 409;
+        throw err;
+      }
+      safeUpdates.email = normalizedEmail;
+    }
     if (safeUpdates.starting_password && safeUpdates.starting_password !== "••••••••••••") {
       safeUpdates.starting_password = hashPassword(safeUpdates.starting_password);
     } else {

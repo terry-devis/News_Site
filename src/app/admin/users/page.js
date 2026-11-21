@@ -22,6 +22,15 @@ const FALLBACK_SECTIONS = [
   "Special Reports",
 ];
 
+const URDU_INPUT_CLASS =
+  "w-full rounded-md border border-[#e5e2da] px-3 py-2.5 text-[15px] leading-[1.9] text-gray-900 font-nastaliq text-right focus:outline-emerald-800 bg-white";
+const URDU_TEXTAREA_CLASS =
+  "w-full rounded-md border border-[#e5e2da] px-3 py-2.5 text-[15px] leading-[2.15] text-gray-900 font-nastaliq text-right focus:outline-emerald-800 bg-white min-h-[108px]";
+const EN_INPUT_CLASS =
+  "w-full rounded-md border border-[#e5e2da] px-3 py-2.5 text-xs text-gray-900 focus:outline-emerald-800 bg-white";
+const EN_TEXTAREA_CLASS =
+  "w-full rounded-md border border-[#e5e2da] px-3 py-2.5 text-xs leading-relaxed text-gray-900 focus:outline-emerald-800 bg-white min-h-[108px]";
+
 export default function UsersAdminPage() {
   const [users, setUsers] = useState([]);
   const [rolesList, setRolesList] = useState([]);
@@ -194,6 +203,7 @@ export default function UsersAdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           updates: {
+            email: editUserModal.email,
             full_name_ur: editUserModal.full_name_ur,
             full_name_en: editUserModal.full_name_en,
             byline_name: editUserModal.byline_name,
@@ -529,7 +539,7 @@ export default function UsersAdminPage() {
       {/* ======================================================== */}
       {newUserModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg border border-[#e5e2da] shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-lg border border-[#e5e2da] shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
             <header className="flex items-center justify-between border-b border-[#e5e2da] px-6 py-4 bg-white shrink-0">
               <h2 className="text-base font-semibold text-gray-900">New user</h2>
@@ -583,13 +593,14 @@ export default function UsersAdminPage() {
                   <label className="block font-medium text-gray-700 mb-1">Full name (Urdu) *</label>
                   <input
                     type="text"
+                    dir="rtl"
                     required
                     placeholder="محمد علی"
                     value={newUserForm.full_name_ur}
                     onChange={(e) =>
                       setNewUserForm({ ...newUserForm, full_name_ur: e.target.value })
                     }
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
+                    className={URDU_INPUT_CLASS}
                   />
                 </div>
 
@@ -597,12 +608,13 @@ export default function UsersAdminPage() {
                   <label className="block font-medium text-gray-700 mb-1">Full name (English)</label>
                   <input
                     type="text"
+                    dir="ltr"
                     placeholder="Muhammad Ali"
                     value={newUserForm.full_name_en}
                     onChange={(e) =>
                       setNewUserForm({ ...newUserForm, full_name_en: e.target.value })
                     }
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
+                    className={EN_INPUT_CLASS}
                   />
                   <p className="text-[11px] text-gray-400 mt-1">
                     Used on the English edition's byline
@@ -615,10 +627,11 @@ export default function UsersAdminPage() {
                 <label className="block font-medium text-gray-700 mb-1">Byline name</label>
                 <input
                   type="text"
+                  dir="rtl"
                   placeholder="علی خان"
                   value={newUserForm.byline_name}
                   onChange={(e) => setNewUserForm({ ...newUserForm, byline_name: e.target.value })}
-                  className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white font-nastaliq"
+                  className={URDU_INPUT_CLASS}
                 />
                 <p className="text-[11px] text-gray-400 mt-1">
                   Overrides the full name on published stories
@@ -631,12 +644,13 @@ export default function UsersAdminPage() {
                   <label className="block font-medium text-gray-700 mb-1">Designation (Urdu)</label>
                   <input
                     type="text"
+                    dir="rtl"
                     placeholder="سینئر رپورٹر"
                     value={newUserForm.designation_ur}
                     onChange={(e) =>
                       setNewUserForm({ ...newUserForm, designation_ur: e.target.value })
                     }
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
+                    className={URDU_INPUT_CLASS}
                   />
                 </div>
 
@@ -644,12 +658,13 @@ export default function UsersAdminPage() {
                   <label className="block font-medium text-gray-700 mb-1">Designation (English)</label>
                   <input
                     type="text"
+                    dir="ltr"
                     placeholder="Senior Reporter"
                     value={newUserForm.designation_en}
                     onChange={(e) =>
                       setNewUserForm({ ...newUserForm, designation_en: e.target.value })
                     }
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
+                    className={EN_INPUT_CLASS}
                   />
                   <p className="text-[11px] text-gray-400 mt-1">Used on the English edition</p>
                 </div>
@@ -660,10 +675,11 @@ export default function UsersAdminPage() {
                 <div>
                   <label className="block font-medium text-gray-700 mb-1">Bio (Urdu)</label>
                   <textarea
-                    rows={2}
+                    rows={3}
+                    dir="rtl"
                     value={newUserForm.bio_ur}
                     onChange={(e) => setNewUserForm({ ...newUserForm, bio_ur: e.target.value })}
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
+                    className={URDU_TEXTAREA_CLASS}
                   />
                   <p className="text-[11px] text-gray-400 mt-1">
                     Shown on the Urdu author page — Google News expects one
@@ -673,10 +689,11 @@ export default function UsersAdminPage() {
                 <div>
                   <label className="block font-medium text-gray-700 mb-1">Bio (English)</label>
                   <textarea
-                    rows={2}
+                    rows={3}
+                    dir="ltr"
                     value={newUserForm.bio_en}
                     onChange={(e) => setNewUserForm({ ...newUserForm, bio_en: e.target.value })}
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
+                    className={EN_TEXTAREA_CLASS}
                   />
                   <p className="text-[11px] text-gray-400 mt-1">
                     Shown on the English edition's author page
@@ -801,7 +818,7 @@ export default function UsersAdminPage() {
       {/* ======================================================== */}
       {editUserModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg border border-[#e5e2da] shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-lg border border-[#e5e2da] shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
             <header className="flex items-center justify-between border-b border-[#e5e2da] px-6 py-4 bg-white shrink-0">
               <h2 className="text-base font-semibold text-gray-900">
@@ -818,18 +835,37 @@ export default function UsersAdminPage() {
 
             {/* Modal Scrollable Body */}
             <form onSubmit={handleSaveEditUser} id="editUserForm" className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+              {/* Sign-in Email */}
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Sign-in Email *</label>
+                <input
+                  type="email"
+                  dir="ltr"
+                  required
+                  value={editUserModal.email || ""}
+                  onChange={(e) =>
+                    setEditUserModal({ ...editUserModal, email: e.target.value })
+                  }
+                  className={EN_INPUT_CLASS}
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Changing this updates the email address used to sign in
+                </p>
+              </div>
+
               {/* Full Name Urdu & English */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-medium text-gray-700 mb-1">Full name (Urdu) *</label>
                   <input
                     type="text"
+                    dir="rtl"
                     required
                     value={editUserModal.full_name_ur || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, full_name_ur: e.target.value })
                     }
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
+                    className={URDU_INPUT_CLASS}
                   />
                 </div>
 
@@ -837,11 +873,12 @@ export default function UsersAdminPage() {
                   <label className="block font-medium text-gray-700 mb-1">Full name (English)</label>
                   <input
                     type="text"
+                    dir="ltr"
                     value={editUserModal.full_name_en || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, full_name_en: e.target.value })
                     }
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
+                    className={EN_INPUT_CLASS}
                   />
                   <p className="text-[11px] text-gray-400 mt-1">
                     Used on the English edition's byline
@@ -854,11 +891,12 @@ export default function UsersAdminPage() {
                 <label className="block font-medium text-gray-700 mb-1">Byline name</label>
                 <input
                   type="text"
+                  dir="rtl"
                   value={editUserModal.byline_name || ""}
                   onChange={(e) =>
                     setEditUserModal({ ...editUserModal, byline_name: e.target.value })
                   }
-                  className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white font-nastaliq"
+                  className={URDU_INPUT_CLASS}
                 />
                 <p className="text-[11px] text-gray-400 mt-1">
                   Overrides the full name on published stories
@@ -871,11 +909,12 @@ export default function UsersAdminPage() {
                   <label className="block font-medium text-gray-700 mb-1">Designation (Urdu)</label>
                   <input
                     type="text"
+                    dir="rtl"
                     value={editUserModal.designation_ur || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, designation_ur: e.target.value })
                     }
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
+                    className={URDU_INPUT_CLASS}
                   />
                 </div>
 
@@ -883,11 +922,12 @@ export default function UsersAdminPage() {
                   <label className="block font-medium text-gray-700 mb-1">Designation (English)</label>
                   <input
                     type="text"
+                    dir="ltr"
                     value={editUserModal.designation_en || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, designation_en: e.target.value })
                     }
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
+                    className={EN_INPUT_CLASS}
                   />
                 </div>
               </div>
@@ -897,24 +937,26 @@ export default function UsersAdminPage() {
                 <div>
                   <label className="block font-medium text-gray-700 mb-1">Bio (Urdu)</label>
                   <textarea
-                    rows={2}
+                    rows={3}
+                    dir="rtl"
                     value={editUserModal.bio_ur || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, bio_ur: e.target.value })
                     }
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 font-nastaliq focus:outline-emerald-800 bg-white"
+                    className={URDU_TEXTAREA_CLASS}
                   />
                 </div>
 
                 <div>
                   <label className="block font-medium text-gray-700 mb-1">Bio (English)</label>
                   <textarea
-                    rows={2}
+                    rows={3}
+                    dir="ltr"
                     value={editUserModal.bio_en || ""}
                     onChange={(e) =>
                       setEditUserModal({ ...editUserModal, bio_en: e.target.value })
                     }
-                    className="w-full rounded-md border border-[#e5e2da] px-3 py-2 text-xs text-gray-900 focus:outline-emerald-800 bg-white"
+                    className={EN_TEXTAREA_CLASS}
                   />
                 </div>
               </div>

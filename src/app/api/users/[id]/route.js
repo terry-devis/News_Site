@@ -18,7 +18,8 @@ export async function PUT(req, context) {
     return NextResponse.json({ success: true, user: updated });
   } catch (error) {
     console.error("User PUT error:", error);
-    return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
+    const status = error?.statusCode || 500;
+    return NextResponse.json({ error: error?.message || "Failed to update user" }, { status });
   }
 }
 

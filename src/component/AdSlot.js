@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Megaphone, ExternalLink } from "lucide-react";
+import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
 const adSlotCache = new Map();
 const adSlotPromises = new Map();
@@ -32,7 +33,9 @@ function pickWeightedCreative(creatives = [], isMobile = false) {
   return eligible[0];
 }
 
-export default function AdSlot({ slotKey, title = "اشتہار", className = "" }) {
+export default function AdSlot({ slotKey, title, className = "" }) {
+  const { isUrdu } = useSiteLanguage();
+  const resolvedTitle = title || (isUrdu ? "اشتہار" : "Advertisement");
   const [slot, setSlot] = useState(null);
   const [creative, setCreative] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -108,7 +111,7 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
   // 1. Active Creative Image Banner
   const imgUrl = creative?.image_url || (slot?.ad_type === "image" ? slot.image_url : "");
   const clickUrl = creative?.click_url || slot?.target_url || "/advertise";
-  const imgAlt = creative?.image_alt || creative?.name || slot?.name || title;
+  const imgAlt = creative?.image_alt || creative?.name || slot?.name || resolvedTitle;
 
   if (imgUrl) {
     const isTallSidebar = slotKey.includes("sidebar");
@@ -116,7 +119,7 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
       <div className={`relative text-center ${className}`}>
         <div className="relative inline-block w-full overflow-hidden border border-[#dcd8cd] bg-[#efeee9] shadow-2xs">
           <span className="absolute top-1 start-1 z-10 bg-black/65 text-white text-[9px] font-bold px-1.5 py-0.5 font-sans uppercase tracking-wider">
-            اشتہار
+            {isUrdu ? "اشتہار" : "AD"}
           </span>
           <a
             href={clickUrl}
@@ -142,8 +145,8 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
   if (htmlCode) {
     return (
       <div className={`relative text-center ${className}`}>
-        <span className="block text-[10px] text-gray-400 font-sans tracking-widest uppercase mb-1">
-          — اسپانسر شدہ —
+        <span className="block text-[10px] text-gray-600 font-sans tracking-widest uppercase mb-1">
+          {isUrdu ? "— اسپانسر شدہ —" : "— SPONSORED —"}
         </span>
         <div
           className="inline-block max-w-full overflow-hidden"
@@ -168,7 +171,7 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
         } ${className}`}
       >
         <span className="absolute top-1.5 start-1.5 bg-black/65 text-white text-[9px] font-bold px-1.5 py-0.5 font-sans uppercase">
-          اشتہار
+          {isUrdu ? "اشتہار" : "AD"}
         </span>
         <div
           className={`flex flex-col items-center justify-center py-2 ${
@@ -179,19 +182,21 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
             <Megaphone size={18} />
           </div>
           <span className="text-[11px] font-bold text-gray-600 font-sans uppercase tracking-widest mb-1">
-            ڈیلی افادیت ڈیجیٹل میڈیا
+            {isUrdu ? "ڈیلی افادیت ڈیجیٹل میڈیا" : "Daily Afadiat Digital Media"}
           </span>
-          <p className="text-sm font-bold text-gray-900 urdu-headline mb-1.5 max-w-[220px]">
-            ملک بھر کے لاکھوں قارئین تک اپنا برانڈ پہنچائیں
+          <p className={`text-sm font-bold text-gray-900 mb-1.5 max-w-[220px] ${isUrdu ? "urdu-headline" : "font-sans leading-snug"}`}>
+            {isUrdu ? "ملک بھر کے لاکھوں قارئین تک اپنا برانڈ پہنچائیں" : "Promote your brand to millions of readers nationwide"}
           </p>
           <p className="text-[11px] text-gray-600 font-sans mb-3">
-            {isTallSidebar ? "300×600 ہاف پیج" : "300×250 ایم پی یو"} بینر کے لیے دستیاب
+            {isUrdu
+              ? `${isTallSidebar ? "300×600 ہاف پیج" : "300×250 ایم پی یو"} بینر کے لیے دستیاب`
+              : `Available for ${isTallSidebar ? "300×600 Half Page" : "300×250 MPU"} banner`}
           </p>
           <Link
             href="/advertise"
             className="inline-flex items-center gap-1.5 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold px-3 py-1.5 transition font-sans"
           >
-            <span>اشتہار بُک کریں</span>
+            <span>{isUrdu ? "اشتہار بُک کریں" : "Book Ad Space"}</span>
             <ExternalLink size={11} />
           </Link>
         </div>
@@ -208,7 +213,7 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
       } ${className}`}
     >
       <span className="absolute top-1 start-1.5 bg-black/60 text-white text-[8px] font-bold px-1.5 py-0.5 font-sans uppercase tracking-wider">
-        اشتہار
+        {isUrdu ? "اشتہار" : "AD"}
       </span>
       <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 sm:pt-0 sm:ps-10">
         <div className="flex items-center gap-3">
@@ -216,11 +221,11 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
             <Megaphone size={16} />
           </div>
           <div className="text-center sm:text-start">
-            <h4 className="text-sm sm:text-base font-bold text-gray-900 urdu-headline">
-              ڈیلی افادیت پر اشتہار کے لیے رابطہ کریں
-            </h4>
-            <p className="text-[11px] sm:text-xs text-gray-500 font-sans">
-              روزانہ لاکھوں قارئین تک رسائی • {isBillboard ? "970×250 / 970×90" : slot.sizes || "728×90 / 970×90"}
+            <p className={`text-sm sm:text-base font-bold text-gray-900 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
+              {isUrdu ? "ڈیلی افادیت پر اشتہار کے لیے رابطہ کریں" : "Advertise on Daily Afadiat"}
+            </p>
+            <p className="text-[11px] sm:text-xs text-gray-600 font-sans">
+              {isUrdu ? "روزانہ لاکھوں قارئین تک رسائی" : "Reach millions of daily readers"} • {isBillboard ? "970×250 / 970×90" : slot.sizes || "728×90 / 970×90"}
             </p>
           </div>
         </div>
@@ -228,7 +233,7 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
           href="/advertise"
           className="inline-flex items-center gap-1.5 bg-[#184e2d] hover:bg-[#113820] text-white text-xs sm:text-sm font-bold px-4 py-2 transition shrink-0 font-sans"
         >
-          <span>بُک کریں</span>
+          <span>{isUrdu ? "بُک کریں" : "Book Now"}</span>
           <ExternalLink size={12} />
         </Link>
       </div>

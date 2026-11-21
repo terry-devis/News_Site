@@ -27,6 +27,7 @@ export default function SettingsAdmin() {
     instagram: "",
     twitter: "",
     tiktok: "",
+    threads: "",
   });
 
   const [contactInfo, setContactInfo] = useState({
@@ -283,6 +284,18 @@ export default function SettingsAdmin() {
                   value={socialLinks.tiktok}
                   onChange={(e) => setSocialLinks({ ...socialLinks, tiktok: e.target.value })}
                   placeholder="https://tiktok.com/@dailyafadiat"
+                  className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] font-mono text-left outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Threads</label>
+                <input
+                  type="text"
+                  dir="ltr"
+                  value={socialLinks.threads || ""}
+                  onChange={(e) => setSocialLinks({ ...socialLinks, threads: e.target.value })}
+                  placeholder="https://www.threads.com/@dailyafadiat"
                   className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] font-mono text-left outline-none"
                 />
               </div>

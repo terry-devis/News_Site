@@ -5,11 +5,41 @@ import fs from "fs";
 import path from "path";
 
 const localStorePath = path.join(process.cwd(), "data", "cms_store.json");
+const tmpStorePath = "/tmp/daily_afadiat_cms_store.json";
+let memoryStoreCache = null;
+
+function isReadOnlyFsError(err) {
+  return err && ["EROFS", "EACCES", "EPERM"].includes(err.code);
+}
+
+function safeWriteStoreFile(data) {
+  memoryStoreCache = data;
+  const serialized = JSON.stringify(data, null, 2);
+  try {
+    const dir = path.dirname(localStorePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(localStorePath, serialized);
+  } catch (err) {
+    if (isReadOnlyFsError(err)) {
+      try {
+        fs.writeFileSync(tmpStorePath, serialized);
+      } catch {}
+      return;
+    }
+    throw err;
+  }
+}
+
+function getReadableStorePath() {
+  if (fs.existsSync(tmpStorePath)) return tmpStorePath;
+  if (fs.existsSync(localStorePath)) return localStorePath;
+  return null;
+}
 
 function ensureLocalStore() {
-  const dir = path.dirname(localStorePath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(localStorePath)) {
+  if (memoryStoreCache) return memoryStoreCache;
+  const readablePath = getReadableStorePath();
+  if (!readablePath) {
     const defaultData = {
       ad_slots: [
         {
@@ -120,9 +150,10 @@ function ensureLocalStore() {
       epaper_editions: [],
       pages: [],
     };
-    fs.writeFileSync(localStorePath, JSON.stringify(defaultData, null, 2));
+    safeWriteStoreFile(defaultData);
   }
-  const currentData = JSON.parse(fs.readFileSync(localStorePath, "utf-8"));
+  const activePath = getReadableStorePath();
+  const currentData = activePath ? JSON.parse(fs.readFileSync(activePath, "utf-8")) : memoryStoreCache || {};
   let modified = false;
 
   if (!currentData.videos || currentData.videos.length === 0) {
@@ -324,14 +355,15 @@ function ensureLocalStore() {
   }
 
   if (modified) {
-    fs.writeFileSync(localStorePath, JSON.stringify(currentData, null, 2));
+    safeWriteStoreFile(currentData);
+  } else {
+    memoryStoreCache = currentData;
   }
   return currentData;
 }
 
 function writeLocalStore(data) {
-  ensureLocalStore();
-  fs.writeFileSync(localStorePath, JSON.stringify(data, null, 2));
+  safeWriteStoreFile(data);
 }
 
 // ==========================================

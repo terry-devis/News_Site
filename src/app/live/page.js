@@ -1,5 +1,6 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
+import { getSiteSetting } from "@/lib/cmsDb";
 import LiveClient from "./LiveClient";
 
 export const dynamic = "force-dynamic";
@@ -13,15 +14,18 @@ export const metadata = {
 export default async function LivePage() {
   let categories = [];
   let breakingNews = [];
+  let liveStreams = null;
 
   try {
-    const [catRes, breakRes, breakingArtsRes] = await Promise.all([
+    const [catRes, breakRes, breakingArtsRes, storedStreams] = await Promise.all([
       supabase.from("categories").select("*").order("display_order"),
       supabase.from("breaking_news").select("*").eq("is_active", true),
       supabase.from("articles").select("id, title_ur, title_en, slug, is_breaking").eq("is_breaking", true),
+      getSiteSetting("live_streams").catch(() => null),
     ]);
 
     if (catRes.data) categories = catRes.data;
+    if (Array.isArray(storedStreams) && storedStreams.length > 0) liveStreams = storedStreams;
 
     const artBreaking = (breakingArtsRes.data || []).map((a) => ({
       id: `art-${a.id}`,
@@ -45,5 +49,11 @@ export default async function LivePage() {
     console.error("Live page fetch error:", err);
   }
 
-  return <LiveClient categories={categories} breakingNews={breakingNews} />;
+  return (
+    <LiveClient
+      categories={categories}
+      breakingNews={breakingNews}
+      initialChannels={liveStreams}
+    />
+  );
 }

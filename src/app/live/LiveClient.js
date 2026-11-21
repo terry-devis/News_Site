@@ -5,6 +5,7 @@ import Header from "@/component/Header";
 import Footer from "@/component/Footer";
 import NewsletterBox from "@/component/NewsletterBox";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
+import { DEFAULT_LIVE_STREAMS, toYouTubeEmbedUrl } from "@/lib/liveStreams";
 import {
   Tv,
   Radio,
@@ -20,56 +21,19 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-export default function LiveClient({ categories = [], breakingNews = [] }) {
+export default function LiveClient({ categories = [], breakingNews = [], initialChannels = null }) {
   const { isUrdu, isEnglish, dir } = useSiteLanguage();
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
-  const channels = [
-    {
-      id: "afadiat-hls",
-      name_ur: "ڈیلی افادیت لائیو (HLS)",
-      name_en: "Daily Afadiat Live (HLS)",
-      desc_ur: "روزنامہ افادیت ایچ ڈی براہِ راست نشریات",
-      desc_en: "Daily Afadiat HD Live Stream",
-      isLive: true,
-      streamUrl: "https://mtoczko.github.io/hls-test-streams/test-vtt/playlist.m3u8",
-      embedUrl: "",
-    },
-    {
-      id: "afadiat-live",
-      name_ur: "ڈیلی افادیت لائیو",
-      name_en: "Daily Afadiat Live",
-      desc_ur: "اسلام آباد اسٹوڈیو — ۲۴ گھنٹے بریکنگ نیوز اور حالاتِ حاضرہ",
-      desc_en: "Islamabad Studio — 24/7 Breaking News & Current Affairs",
-      isLive: true,
-      streamUrl: "",
-      embedUrl: "https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig",
-    },
-    {
-      id: "afadiat-news-24",
-      name_ur: "افادیت نیوز ۲۴",
-      name_en: "Afadiat News 24",
-      desc_ur: "بزنس، مارکیٹس اور خصوصی رپورٹس",
-      desc_en: "Business, Markets & Special Bulletins",
-      isLive: true,
-      streamUrl: "",
-      embedUrl: "https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig",
-    },
-    {
-      id: "afadiat-world",
-      name_ur: "افادیت ورلڈ",
-      name_en: "Afadiat World",
-      desc_ur: "بین الاقوامی اور کھیلوں کی خصوصی نشریات",
-      desc_en: "International & Sports Special Coverage",
-      isLive: false,
-      streamUrl: "",
-      embedUrl: "",
-    },
-  ];
+  const channels =
+    Array.isArray(initialChannels) && initialChannels.length > 0
+      ? initialChannels
+      : DEFAULT_LIVE_STREAMS;
   const [activeChannelId, setActiveChannelId] = useState(channels[0].id);
   const [isPlayerStarted, setIsPlayerStarted] = useState(false);
   const activeChannel = channels.find((c) => c.id === activeChannelId) || channels[0];
+  const resolvedEmbedUrl = toYouTubeEmbedUrl(activeChannel?.embedUrl);
 
   const upcomingShows = [
     {
@@ -146,9 +110,9 @@ export default function LiveClient({ categories = [], breakingNews = [] }) {
             <div>
               <div className="relative aspect-video w-full overflow-hidden bg-black rounded-lg border border-[#dcd8cd]">
                 {isPlayerStarted && activeChannel.isLive ? (
-                  activeChannel.embedUrl ? (
+                  resolvedEmbedUrl ? (
                     <iframe
-                      src={`${activeChannel.embedUrl}&autoplay=1`}
+                      src={`${resolvedEmbedUrl}${resolvedEmbedUrl.includes("?") ? "&" : "?"}autoplay=1`}
                       title={activeChannel.name_en}
                       className="absolute inset-0 w-full h-full border-0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

@@ -57,12 +57,15 @@ export default function WeatherWidget({ className = "" }) {
       }
     } catch (e) {}
 
-    // 2. Fetch fresh weather from Open-Meteo only when needed
+    // 2. Fetch fresh weather from Open-Meteo only when needed (with 2.5s timeout)
     async function fetchWeather() {
       setLoading(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
       try {
         const res = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${selectedCity.lat}&longitude=${selectedCity.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code&timezone=Asia/Karachi`
+          `https://api.open-meteo.com/v1/forecast?latitude=${selectedCity.lat}&longitude=${selectedCity.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code&timezone=Asia/Karachi`,
+          { signal: controller.signal }
         );
         const data = await res.json();
         if (isMounted && data.current) {
@@ -75,8 +78,9 @@ export default function WeatherWidget({ className = "" }) {
           } catch (e) {}
         }
       } catch (err) {
-        console.error("Weather API error:", err);
+        // Fallback weather state remains visible if Open-Meteo times out or is unreachable
       } finally {
+        clearTimeout(timeoutId);
         if (isMounted) setLoading(false);
       }
     }

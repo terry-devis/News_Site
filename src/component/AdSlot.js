@@ -5,6 +5,8 @@ import { Megaphone, ExternalLink } from "lucide-react";
 
 const adSlotCache = new Map();
 const adSlotPromises = new Map();
+let allAdsCache = { data: null, ts: 0 };
+let allAdsPromise = null;
 const AD_CACHE_TTL_MS = 60_000;
 
 function pickWeightedCreative(creatives = [], isMobile = false) {
@@ -54,28 +56,40 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
           return;
         }
 
-        let reqPromise = adSlotPromises.get(slotKey);
-        if (!reqPromise) {
-          reqPromise = fetch(`/api/ads?slot=${encodeURIComponent(slotKey)}`)
-            .then((res) => res.json())
-            .then((data) => {
-              adSlotCache.set(slotKey, { data, ts: Date.now() });
-              adSlotPromises.delete(slotKey);
-              return data;
-            })
-            .catch((err) => {
-              adSlotPromises.delete(slotKey);
-              throw err;
-            });
-          adSlotPromises.set(slotKey, reqPromise);
+        if (allAdsCache.data && now - allAdsCache.ts < AD_CACHE_TTL_MS) {
+          const slotObj = (allAdsCache.data.slots || []).find((s) => s.slot_key === slotKey) || null;
+          const slotCreatives = (allAdsCache.data.creatives || []).filter((c) => c.slot_key === slotKey);
+          adSlotCache.set(slotKey, { data: { slot: slotObj, creatives: slotCreatives }, ts: now });
+          if (isMounted) {
+            if (slotObj) setSlot(slotObj);
+            setCreative(pickWeightedCreative(slotCreatives, isMobile));
+            setLoading(false);
+          }
+          return;
         }
 
-        const data = await reqPromise;
-        if (!isMounted) return;
-        if (data.slot) setSlot(data.slot);
-        if (Array.isArray(data.creatives)) {
-          setCreative(pickWeightedCreative(data.creatives, isMobile));
+        if (!allAdsPromise) {
+          allAdsPromise = fetch("/api/ads")
+            .then((res) => res.json())
+            .then((payload) => {
+              allAdsCache = { data: payload, ts: Date.now() };
+              allAdsPromise = null;
+              return payload;
+            })
+            .catch((err) => {
+              allAdsPromise = null;
+              throw err;
+            });
         }
+
+        const allData = await allAdsPromise;
+        const slotObj = (allData.slots || []).find((s) => s.slot_key === slotKey) || null;
+        const slotCreatives = (allData.creatives || []).filter((c) => c.slot_key === slotKey);
+        adSlotCache.set(slotKey, { data: { slot: slotObj, creatives: slotCreatives }, ts: Date.now() });
+
+        if (!isMounted) return;
+        if (slotObj) setSlot(slotObj);
+        setCreative(pickWeightedCreative(slotCreatives, isMobile));
       } catch (err) {
         console.error("Ad fetch error:", err);
       } finally {

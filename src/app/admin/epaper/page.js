@@ -27,6 +27,7 @@ export default function AdminEpaperPage() {
   const [editions, setEditions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgressText, setUploadProgressText] = useState("");
   const [activeTab, setActiveTab] = useState("both"); // 'both', 'ur', 'en'
   const [toast, setToast] = useState(null);
 
@@ -145,13 +146,104 @@ export default function AdminEpaperPage() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Load PDF.js lazily in the browser to render real uploaded PDF pages into JPEG images
+  const loadPdfJsFromCdn = () => {
+    if (typeof window === "undefined") return Promise.reject(new Error("No window"));
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+      script.async = true;
+      script.onload = () => {
+        if (window.pdfjsLib) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+          resolve(window.pdfjsLib);
+        } else {
+          reject(new Error("PDF.js failed to initialize"));
+        }
+      };
+      script.onerror = () => reject(new Error("Failed to load PDF.js script"));
+      document.head.appendChild(script);
+    });
+  };
+
+  const renderAndUploadPdfPages = async (file) => {
+    const pdfjsLib = await loadPdfJsFromCdn();
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const totalPages = pdfDoc.numPages;
+    const renderedPages = [];
+    const issueTag = `ep_${Date.now()}`;
+
+    const canvasToBlob = (canvas, quality = 0.85) =>
+      new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", quality));
+
+    const uploadBlob = async (blob, filename) => {
+      const fd = new FormData();
+      fd.append("file", blob, filename);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || `Failed to upload ${filename}`);
+      }
+      return data.url;
+    };
+
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      setUploadProgressText(`Rendering & uploading page ${pageNum} of ${totalPages}...`);
+      const page = await pdfDoc.getPage(pageNum);
+
+      // Render high-res page image (~1500px height)
+      const baseVp = page.getViewport({ scale: 1 });
+      const fullScale = Math.min(2.2, Math.max(1.2, 1600 / Math.max(baseVp.height, 1)));
+      const fullVp = page.getViewport({ scale: fullScale });
+      const fullCanvas = document.createElement("canvas");
+      fullCanvas.width = Math.round(fullVp.width);
+      fullCanvas.height = Math.round(fullVp.height);
+      const fullCtx = fullCanvas.getContext("2d");
+      fullCtx.fillStyle = "#ffffff";
+      fullCtx.fillRect(0, 0, fullCanvas.width, fullCanvas.height);
+      await page.render({ canvasContext: fullCtx, viewport: fullVp }).promise;
+      const fullBlob = await canvasToBlob(fullCanvas, 0.85);
+
+      // Render lightweight thumbnail (~420px width)
+      const thumbScale = Math.min(0.8, Math.max(0.35, 420 / Math.max(baseVp.width, 1)));
+      const thumbVp = page.getViewport({ scale: thumbScale });
+      const thumbCanvas = document.createElement("canvas");
+      thumbCanvas.width = Math.round(thumbVp.width);
+      thumbCanvas.height = Math.round(thumbVp.height);
+      const thumbCtx = thumbCanvas.getContext("2d");
+      thumbCtx.fillStyle = "#ffffff";
+      thumbCtx.fillRect(0, 0, thumbCanvas.width, thumbCanvas.height);
+      await page.render({ canvasContext: thumbCtx, viewport: thumbVp }).promise;
+      const thumbBlob = await canvasToBlob(thumbCanvas, 0.78);
+
+      const [imageUrl, thumbnailUrl] = await Promise.all([
+        uploadBlob(fullBlob, `${issueTag}_p${pageNum}.jpg`),
+        uploadBlob(thumbBlob, `${issueTag}_p${pageNum}_thumb.jpg`),
+      ]);
+
+      renderedPages.push({
+        page_number: pageNum,
+        title: `Page ${pageNum}`,
+        image_url: imageUrl,
+        thumbnail_url: thumbnailUrl,
+        regions: [],
+      });
+    }
+    return renderedPages;
+  };
+
   // Upload Edition
   const handleUploadEdition = async (e) => {
     e.preventDefault();
     setUploading(true);
+    setUploadProgressText("Uploading PDF file...");
 
     try {
       let uploadedPdfUrl = "";
+      let extractedPages = [];
       if (selectedFile) {
         const CHUNK_SIZE = 3 * 1024 * 1024; // 3 MB chunks (safely below Vercel 4.5 MB body limit)
         if (selectedFile.size <= CHUNK_SIZE) {
@@ -172,6 +264,7 @@ export default function AdminEpaperPage() {
           const totalParts = Math.ceil(selectedFile.size / CHUNK_SIZE);
           const uploadId = `ep_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
           for (let partIndex = 0; partIndex < totalParts; partIndex++) {
+            setUploadProgressText(`Uploading PDF chunk ${partIndex + 1} of ${totalParts}...`);
             const start = partIndex * CHUNK_SIZE;
             const end = Math.min(start + CHUNK_SIZE, selectedFile.size);
             const blob = selectedFile.slice(start, end);
@@ -185,6 +278,7 @@ export default function AdminEpaperPage() {
               throw new Error(`Chunk ${partIndex + 1}/${totalParts} upload failed`);
             }
           }
+          setUploadProgressText("Finalizing PDF on Cloudflare R2...");
           const doneFd = new FormData();
           doneFd.append("action", "complete");
           doneFd.append("uploadId", uploadId);
@@ -199,8 +293,16 @@ export default function AdminEpaperPage() {
             throw new Error(doneData.error || "Failed to finalize chunked PDF upload");
           }
         }
+
+        // Now render every actual page of the uploaded PDF into real page images & thumbnails
+        try {
+          extractedPages = await renderAndUploadPdfPages(selectedFile);
+        } catch (renderErr) {
+          console.error("Client PDF page rendering error:", renderErr);
+        }
       }
 
+      setUploadProgressText("Publishing edition...");
       const payload = {
         action: "upload_edition",
         edition_date: uploadDate,
@@ -209,6 +311,7 @@ export default function AdminEpaperPage() {
         city: uploadTitle.trim() || "Islamabad",
         file_size: selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : "—",
         pdf_url: uploadedPdfUrl || null,
+        pages: extractedPages.length > 0 ? extractedPages : undefined,
       };
 
       const res = await fetch("/api/epaper", {
@@ -222,7 +325,11 @@ export default function AdminEpaperPage() {
         if (data.edition) {
           setEditions((prev) => [data.edition, ...prev]);
         }
-        showToast("success", `New ${uploadPaper === "ur" ? "Urdu" : "English"} edition published! 8 pages generated.`);
+        const pageCount = data.edition?.pages?.length || extractedPages.length || 8;
+        showToast(
+          "success",
+          `New ${uploadPaper === "ur" ? "Urdu" : "English"} edition published! ${pageCount} real pages extracted.`
+        );
         setSelectedFile(null);
         setUploadTitle("");
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -234,6 +341,7 @@ export default function AdminEpaperPage() {
       showToast("error", err?.message || "Error uploading edition");
     } finally {
       setUploading(false);
+      setUploadProgressText("");
     }
   };
 
@@ -527,7 +635,7 @@ export default function AdminEpaperPage() {
               {uploading ? (
                 <>
                   <RefreshCw size={13} className="animate-spin" />
-                  <span>Splitting PDF into pages...</span>
+                  <span>{uploadProgressText || "Splitting PDF into pages..."}</span>
                 </>
               ) : (
                 <span>Upload edition</span>

@@ -75,10 +75,10 @@ export default function UsersAdminPage() {
     try {
       setLoading(true);
       const [usersRes, rolesRes, catsRes, meRes] = await Promise.all([
-        fetch("/api/users"),
-        fetch("/api/roles").catch(() => null),
+        fetch("/api/users", { cache: "no-store" }),
+        fetch("/api/roles", { cache: "no-store" }).catch(() => null),
         fetch("/api/categories").catch(() => null),
-        fetch("/api/auth/me").catch(() => null),
+        fetch("/api/auth/me", { cache: "no-store" }).catch(() => null),
       ]);
 
       const usersData = await usersRes.json();
@@ -220,7 +220,12 @@ export default function UsersAdminPage() {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`Updated user profile for ${editUserModal.email}`);
+        if (data.user) {
+          setUsers((prev) =>
+            prev.map((u) => (String(u.id) === String(data.user.id) ? data.user : u))
+          );
+        }
+        showToast(`Updated user profile for ${data.user?.email || editUserModal.email}`);
         setEditUserModal(null);
         await loadUsers();
       } else {

@@ -749,15 +749,22 @@ export async function deleteComment(commentId) {
 
 // ==========================================
 // 3. SITE SETTINGS API (Social Media & Info)
+// Backed by existing Supabase `ad_slots` table using `__cms_kv__:<key>` rows
 // ==========================================
+const KV_SLOT_PREFIX = "__cms_kv__:";
+
 export async function getSiteSetting(key) {
+  const slotKey = `${KV_SLOT_PREFIX}${key}`;
   try {
     const { data, error } = await supabaseAdmin
-      .from("site_settings")
-      .select("setting_value")
-      .eq("setting_key", key)
-      .maybeSingle();
-    if (!error && data) return data.setting_value;
+      .from("ad_slots")
+      .select("target_url")
+      .eq("slot_key", slotKey)
+      .order("id", { ascending: false })
+      .limit(1);
+    if (!error && Array.isArray(data) && data.length > 0 && data[0].target_url) {
+      return JSON.parse(data[0].target_url);
+    }
   } catch (e) {}
 
   const local = ensureLocalStore();
@@ -765,18 +772,55 @@ export async function getSiteSetting(key) {
 }
 
 export async function updateSiteSetting(key, value) {
+  const slotKey = `${KV_SLOT_PREFIX}${key}`;
+  const serialized = JSON.stringify(value);
   try {
-    const { data, error } = await supabaseAdmin
-      .from("site_settings")
-      .upsert(
-        { setting_key: key, setting_value: value, updated_at: new Date().toISOString() },
-        { onConflict: "setting_key" }
-      )
-      .select();
-    if (!error && data) return data[0].setting_value;
+    const { data: existing, error: selErr } = await supabaseAdmin
+      .from("ad_slots")
+      .select("id")
+      .eq("slot_key", slotKey)
+      .order("id", { ascending: false });
+
+    if (!selErr) {
+      if (Array.isArray(existing) && existing.length > 0) {
+        const latestId = existing[0].id;
+        const { error: updErr } = await supabaseAdmin
+          .from("ad_slots")
+          .update({ target_url: serialized, title: key, is_active: false })
+          .eq("id", latestId);
+        if (existing.length > 1) {
+          const duplicateIds = existing.slice(1).map((r) => r.id);
+          await supabaseAdmin.from("ad_slots").delete().in("id", duplicateIds);
+        }
+        if (!updErr) {
+          const local = ensureLocalStore();
+          if (!local.site_settings) local.site_settings = {};
+          local.site_settings[key] = value;
+          writeLocalStore(local);
+          return value;
+        }
+      } else {
+        const { error: insErr } = await supabaseAdmin
+          .from("ad_slots")
+          .insert({
+            slot_key: slotKey,
+            title: key,
+            target_url: serialized,
+            is_active: false,
+          });
+        if (!insErr) {
+          const local = ensureLocalStore();
+          if (!local.site_settings) local.site_settings = {};
+          local.site_settings[key] = value;
+          writeLocalStore(local);
+          return value;
+        }
+      }
+    }
   } catch (e) {}
 
   const local = ensureLocalStore();
+  if (!local.site_settings) local.site_settings = {};
   local.site_settings[key] = value;
   writeLocalStore(local);
   return value;

@@ -8,12 +8,17 @@ import {
 } from "@/lib/cmsDb";
 import { requirePermission } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const { errorResponse } = await requirePermission("user.view");
   if (errorResponse) return errorResponse;
   try {
     const users = await getNewsroomUsers();
-    return NextResponse.json({ success: true, users });
+    return NextResponse.json(
+      { success: true, users },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
+    );
   } catch (error) {
     console.error("Users GET error:", error);
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });

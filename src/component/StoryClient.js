@@ -56,6 +56,9 @@ export default function StoryClient({
       <Header categories={categories} breakingNews={breakingNews} />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
+        {/* Top Leaderboard Ad Banner (Same as Homepage under Header) */}
+        <AdSlot slotKey="home-leaderboard" className="mb-6 max-w-5xl mx-auto" />
+
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-gray-500 mb-4 font-sans">
           <Link href="/" className="hover:text-emerald-600 transition">

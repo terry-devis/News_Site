@@ -5,6 +5,7 @@ import {
   updateMediaAsset,
   deleteMediaAsset,
 } from "@/lib/cmsDb";
+import { requirePermission } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -16,6 +17,9 @@ export async function GET() {
 }
 
 export async function POST(req) {
+  const { errorResponse } = await requirePermission("media.upload");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const newAsset = await createMediaAsset(body);
@@ -26,6 +30,9 @@ export async function POST(req) {
 }
 
 export async function PUT(req) {
+  const { errorResponse } = await requirePermission("media.upload");
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const { id, ...updates } = body;
@@ -44,6 +51,9 @@ export async function PATCH(req) {
 }
 
 export async function DELETE(req) {
+  const { errorResponse } = await requirePermission("media.delete");
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(req.url);
     let id = searchParams.get("id");

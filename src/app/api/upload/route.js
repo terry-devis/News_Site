@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { uploadMedia } from "@/lib/r2";
+import { requirePermission } from "@/lib/auth";
 
 export async function POST(req) {
+  const { errorResponse } = await requirePermission("media.upload");
+  if (errorResponse) return errorResponse;
+
   try {
     const formData = await req.formData();
     const file = formData.get("file");

@@ -144,6 +144,9 @@ export async function PUT(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
+  const { errorResponse } = await requirePermission("article.delete");
+  if (errorResponse) return errorResponse;
+
   try {
     const { id } = params;
     const linkUrl = `/story/${id}`;

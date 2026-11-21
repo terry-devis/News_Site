@@ -83,9 +83,6 @@ export default function CommentSection({ articleId }) {
           <MessageSquare size={20} className="text-emerald-700" />
           <span>{t("commentsTitle")} ({comments.length})</span>
         </h3>
-        <span className="text-xs text-emerald-800 font-sans font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-          {isEnglish ? "Verified Comments" : "ایڈمن تصدیق شدہ"}
-        </span>
       </div>
 
       {/* 1. Comment Submission Form */}

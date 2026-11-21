@@ -3,8 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { getSiteSetting } from "@/lib/cmsDb";
 import LiveClient from "./LiveClient";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata = {
   title: "لائیو ٹی وی — ڈیلی افادیت | Live TV 24/7 Transmission",

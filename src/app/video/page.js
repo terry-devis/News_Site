@@ -4,8 +4,7 @@ import { getVideos } from "@/lib/cmsDb";
 import { filterPublishedArticles } from "@/lib/articleMeta";
 import VideoClient from "./VideoClient";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata = {
   title: "ویڈیوز — ڈیلی افادیت | Daily Afadiat Video Portal",

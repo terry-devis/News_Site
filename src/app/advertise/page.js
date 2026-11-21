@@ -2,8 +2,7 @@ import React from "react";
 import { supabase } from "@/lib/supabase";
 import AdvertiseClient from "./AdvertiseClient";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata = {
   title: "اشتہار دیں — ڈیلی افادیت میڈیا کٹ | Advertise with Daily Afadiat",

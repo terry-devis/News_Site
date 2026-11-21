@@ -3,8 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { getEpaperEditions } from "@/lib/cmsDb";
 import EPaperClient from "./EPaperClient";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata = {
   title: "ڈیلی افادیت ای پیپر — آج کا اخبار | Daily Afadiat Digital ePaper",

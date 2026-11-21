@@ -112,7 +112,22 @@ function AdminLayoutInner({ children }) {
   ];
 
   if (isLoginPage) {
+    if (typeof document !== "undefined") {
+      document.title = "Sign In — Daily Afadiat Admin";
+    }
     return <>{children}</>;
+  }
+
+  const activeTitleItem = navItems.find(
+    (item) =>
+      pathname === item.href ||
+      (item.altHref && pathname.startsWith(item.altHref)) ||
+      (item.href !== "/admin" && pathname.startsWith(item.href))
+  );
+  if (typeof document !== "undefined") {
+    document.title = activeTitleItem
+      ? `${activeTitleItem.label} — Daily Afadiat Admin`
+      : "Daily Afadiat — Newsroom Admin";
   }
 
   const visibleNavItems = currentUser

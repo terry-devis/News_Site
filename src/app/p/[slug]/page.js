@@ -8,8 +8,7 @@ import { getPageBySlug, getPages } from "@/lib/cmsDb";
 import Link from "next/link";
 import { FileText, Calendar, ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export async function generateMetadata({ params }) {
   const { slug } = params;

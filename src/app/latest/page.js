@@ -2,8 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { filterPublishedArticles } from "@/lib/articleMeta";
 import CategoryClient from "@/component/CategoryClient";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata = {
   title: "تازہ ترین خبریں — ڈیلی افادیت | Latest News",

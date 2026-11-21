@@ -118,5 +118,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-  matcher: ["/", "/admin/:path*", "/api/:path*"],
+  matcher: ["/admin/:path*", "/api/:path*"],
 };

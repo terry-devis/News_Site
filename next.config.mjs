@@ -18,6 +18,18 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    if ((process.env.NEXT_PUBLIC_APP_ROLE || "").toLowerCase() === "admin") {
+      return [
+        {
+          source: "/",
+          destination: "/admin",
+          permanent: false,
+        },
+      ];
+    }
+    return [];
+  },
   async headers() {
     return [
       {

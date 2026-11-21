@@ -1,14 +1,22 @@
 import "./globals.css";
-import { cookies } from "next/headers";
 import NextTopLoader from "nextjs-toploader";
 import { SiteLanguageProvider } from "@/context/SiteLanguageContext";
 
+const isAdminApp = process.env.NEXT_PUBLIC_APP_ROLE === "admin";
+
 export const metadata = {
-  title: {
-    default: "ڈیلی افادیت — سچ کے ساتھ، ہر خبر",
-    template: "%s — ڈیلی افادیت",
-  },
-  description: "ڈیلی افادیت نیوز پورٹل: پاکستان، دنیا، کھیل اور بزنس کی تازہ ترین اور مصدقہ خبریں | Daily Afadiat News",
+  title: isAdminApp
+    ? {
+        default: "Daily Afadiat — Newsroom Admin",
+        template: "%s — Daily Afadiat Admin",
+      }
+    : {
+        default: "ڈیلی افادیت — سچ کے ساتھ، ہر خبر",
+        template: "%s — ڈیلی افادیت",
+      },
+  description: isAdminApp
+    ? "Daily Afadiat Newsroom CMS & Editorial Administration Panel"
+    : "ڈیلی افادیت نیوز پورٹل: پاکستان، دنیا، کھیل اور بزنس کی تازہ ترین اور مصدقہ خبریں | Daily Afadiat News",
   icons: {
     icon: [
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -20,14 +28,15 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  const cookieStore = cookies();
-  const initialLang = cookieStore.get("site_lang")?.value === "en" ? "en" : "ur";
-  const initialDir = initialLang === "en" ? "ltr" : "rtl";
-
   return (
-    <html lang={initialLang} dir={initialDir} translate="no" className="notranslate">
+    <html lang="ur" dir="rtl" translate="no" className="notranslate" suppressHydrationWarning>
       <head>
         <meta name="google" content="notranslate" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var m=document.cookie.match(/(?:^|;\\s*)site_lang=(en|ur)/);var l=m?m[1]:localStorage.getItem("site_lang");if(l==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr";}}catch(e){}`,
+          }}
+        />
         <link
           rel="alternate"
           type="application/rss+xml"
@@ -46,7 +55,7 @@ export default function RootLayout({ children }) {
           easing="ease"
           speed={1000}
         />
-        <SiteLanguageProvider initialLang={initialLang}>
+        <SiteLanguageProvider initialLang="ur">
           <div className="min-h-screen flex flex-col">
             {children}
           </div>

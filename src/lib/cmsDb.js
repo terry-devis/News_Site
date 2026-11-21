@@ -2695,13 +2695,30 @@ const DEFAULT_NEWSROOM_USERS = [
   },
 ];
 
-export async function getNewsroomUsers() {
-  const local = ensureLocalStore();
-  if (!local.newsroom_users) {
-    local.newsroom_users = DEFAULT_NEWSROOM_USERS;
-    writeLocalStore(local);
+async function loadNewsroomUsers() {
+  const remoteUsers = await getSiteSetting("newsroom_users");
+  if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+    return remoteUsers;
   }
-  return local.newsroom_users.map((u) => ({
+  const local = ensureLocalStore();
+  const seed =
+    Array.isArray(local.newsroom_users) && local.newsroom_users.length > 0
+      ? local.newsroom_users
+      : DEFAULT_NEWSROOM_USERS;
+  await updateSiteSetting("newsroom_users", seed);
+  return seed;
+}
+
+async function saveNewsroomUsers(users) {
+  await updateSiteSetting("newsroom_users", users);
+  const local = ensureLocalStore();
+  local.newsroom_users = users;
+  writeLocalStore(local);
+}
+
+export async function getNewsroomUsers() {
+  const users = await loadNewsroomUsers();
+  return users.map((u) => ({
     ...u,
     starting_password: "••••••••••••",
   }));
@@ -2709,18 +2726,14 @@ export async function getNewsroomUsers() {
 
 export async function authenticateNewsroomUser(email, password) {
   if (!email || !password) return { error: "Email and password are required" };
-  const local = ensureLocalStore();
-  if (!local.newsroom_users) {
-    local.newsroom_users = DEFAULT_NEWSROOM_USERS;
-    writeLocalStore(local);
-  }
-  const idx = local.newsroom_users.findIndex(
+  const users = [...(await loadNewsroomUsers())];
+  const idx = users.findIndex(
     (u) => String(u.email).toLowerCase() === String(email).trim().toLowerCase()
   );
   if (idx < 0) {
     return { error: "Invalid email or password" };
   }
-  const user = local.newsroom_users[idx];
+  const user = users[idx];
   if (String(user.status || "Active").toLowerCase() !== "active") {
     return { error: "Account is disabled. Contact Super Admin." };
   }
@@ -2728,7 +2741,7 @@ export async function authenticateNewsroomUser(email, password) {
   if (!valid) {
     return { error: "Invalid email or password" };
   }
-  local.newsroom_users[idx] = {
+  users[idx] = {
     ...user,
     last_active: new Date().toLocaleString("en-GB", {
       day: "2-digit",
@@ -2738,16 +2751,12 @@ export async function authenticateNewsroomUser(email, password) {
       minute: "2-digit",
     }),
   };
-  writeLocalStore(local);
-  return { user: sanitizeUser(local.newsroom_users[idx]) };
+  await saveNewsroomUsers(users);
+  return { user: sanitizeUser(users[idx]) };
 }
 
 export async function createNewsroomUser(userData) {
-  const local = ensureLocalStore();
-  if (!local.newsroom_users) {
-    local.newsroom_users = DEFAULT_NEWSROOM_USERS;
-  }
-  const users = local.newsroom_users;
+  const users = [...(await loadNewsroomUsers())];
   const hashedPassword = userData.starting_password
     ? hashPassword(userData.starting_password)
     : "••••••••••••";
@@ -2760,17 +2769,12 @@ export async function createNewsroomUser(userData) {
     created_at: new Date().toISOString(),
   };
   users.unshift(newUser);
-  local.newsroom_users = users;
-  writeLocalStore(local);
+  await saveNewsroomUsers(users);
   return { ...newUser, starting_password: "••••••••••••" };
 }
 
 export async function updateNewsroomUser(idOrEmail, updates) {
-  const local = ensureLocalStore();
-  if (!local.newsroom_users) {
-    local.newsroom_users = DEFAULT_NEWSROOM_USERS;
-  }
-  const users = local.newsroom_users;
+  const users = [...(await loadNewsroomUsers())];
   const idx = users.findIndex(
     (u) => String(u.id) === String(idOrEmail) || String(u.email).toLowerCase() === String(idOrEmail).toLowerCase()
   );
@@ -2803,19 +2807,14 @@ export async function updateNewsroomUser(idOrEmail, updates) {
       ...safeUpdates,
       updated_at: new Date().toISOString(),
     };
-    local.newsroom_users = users;
-    writeLocalStore(local);
+    await saveNewsroomUsers(users);
     return { ...users[idx], starting_password: "••••••••••••" };
   }
   return null;
 }
 
 export async function resetNewsroomUserPassword(idOrEmail, newPassword) {
-  const local = ensureLocalStore();
-  if (!local.newsroom_users) {
-    local.newsroom_users = DEFAULT_NEWSROOM_USERS;
-  }
-  const users = local.newsroom_users;
+  const users = [...(await loadNewsroomUsers())];
   const idx = users.findIndex(
     (u) => String(u.id) === String(idOrEmail) || String(u.email).toLowerCase() === String(idOrEmail).toLowerCase()
   );
@@ -2826,24 +2825,17 @@ export async function resetNewsroomUserPassword(idOrEmail, newPassword) {
       last_active: "Password reset · signed out",
       updated_at: new Date().toISOString(),
     };
-    local.newsroom_users = users;
-    writeLocalStore(local);
+    await saveNewsroomUsers(users);
     return { success: true, email: users[idx].email };
   }
   return null;
 }
 
 export async function deleteNewsroomUser(idOrEmail) {
-  const local = ensureLocalStore();
-  if (!local.newsroom_users) {
-    local.newsroom_users = DEFAULT_NEWSROOM_USERS;
-  }
-  let users = local.newsroom_users;
-  users = users.filter(
+  const users = (await loadNewsroomUsers()).filter(
     (u) => String(u.id) !== String(idOrEmail) && String(u.email).toLowerCase() !== String(idOrEmail).toLowerCase()
   );
-  local.newsroom_users = users;
-  writeLocalStore(local);
+  await saveNewsroomUsers(users);
   return { success: true };
 }
 
@@ -2865,7 +2857,7 @@ function ensureRolesStore(local) {
 export async function getNewsroomRoles() {
   const local = ensureLocalStore();
   const roles = ensureRolesStore(local);
-  const users = local.newsroom_users || [];
+  const users = await loadNewsroomUsers();
 
   return roles.map((role) => {
     const userCount = users.filter(

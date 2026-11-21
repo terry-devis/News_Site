@@ -8,7 +8,7 @@ export async function GET(req) {
     const key = searchParams.get("key");
 
     if (key) {
-      if (key === "smtp_config") {
+      if (key === "smtp_config" || key === "newsroom_users") {
         const { errorResponse } = await requirePermission("settings.manage");
         if (errorResponse) return errorResponse;
       }

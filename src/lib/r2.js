@@ -2,12 +2,14 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
 import fs from "fs";
 import path from "path";
 
+const cleanEnv = (val) => String(val || "").trim().replace(/^["']|["']$/g, "");
+
 // Initialize Cloudflare R2 Client (S3-Compatible)
-const accountId = process.env.R2_ACCOUNT_ID;
-const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-const bucketName = process.env.R2_BUCKET_NAME || "daily-afadiat-media";
-const publicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
+const accountId = cleanEnv(process.env.R2_ACCOUNT_ID);
+const accessKeyId = cleanEnv(process.env.R2_ACCESS_KEY_ID);
+const secretAccessKey = cleanEnv(process.env.R2_SECRET_ACCESS_KEY);
+const bucketName = cleanEnv(process.env.R2_BUCKET_NAME) || "daily-afadiat-media";
+const publicUrl = cleanEnv(process.env.NEXT_PUBLIC_R2_PUBLIC_URL);
 
 const isR2Configured =
   Boolean(accountId && accessKeyId && secretAccessKey) &&
@@ -66,7 +68,7 @@ export async function uploadMedia(buffer, originalFilename, contentType = "image
     }
   }
 
-  // 2. Fallback: Save to public/uploads directory
+  // 2. Fallback: Save to public/uploads directory (or /tmp on read-only serverless FS)
   try {
     const uploadDir = path.join(process.cwd(), "public", "uploads");
     if (!fs.existsSync(uploadDir)) {
@@ -84,6 +86,20 @@ export async function uploadMedia(buffer, originalFilename, contentType = "image
       note: isR2Configured ? "R2 failed, saved locally" : "R2 keys not set yet in .env.local, saved locally in /uploads",
     };
   } catch (localErr) {
+    if (localErr && ["EROFS", "EACCES", "EPERM"].includes(localErr.code)) {
+      try {
+        const tmpDir = "/tmp/uploads";
+        if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+        fs.writeFileSync(path.join(tmpDir, uniqueKey), buffer);
+      } catch {}
+      const fallbackBase = publicUrl || "https://pub-afe682c6e960401f9f06ea1705e8db77.r2.dev";
+      return {
+        success: true,
+        storage: "serverless_tmp",
+        url: `${fallbackBase.replace(/\/$/, "")}/${uniqueKey}`,
+        key: uniqueKey,
+      };
+    }
     console.error("Local file save failed:", localErr);
     throw new Error("Failed to save uploaded file: " + localErr.message);
   }

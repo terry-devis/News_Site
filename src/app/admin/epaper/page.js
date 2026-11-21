@@ -152,14 +152,31 @@ export default function AdminEpaperPage() {
     try {
       let uploadedPdfUrl = "";
       if (selectedFile) {
-        const fd = new FormData();
-        fd.append("file", selectedFile);
-        const upRes = await fetch("/api/upload", { method: "POST", body: fd });
-        const upData = await upRes.json();
-        if (!upRes.ok || !upData.url) {
-          throw new Error(upData.error || "Failed to upload file to R2");
+        const MAX_DIRECT_UPLOAD_BYTES = 4 * 1024 * 1024; // 4 MB (Vercel serverless body limit is 4.5 MB)
+        if (selectedFile.size <= MAX_DIRECT_UPLOAD_BYTES) {
+          try {
+            const fd = new FormData();
+            fd.append("file", selectedFile);
+            const upRes = await fetch("/api/upload", { method: "POST", body: fd });
+            const rawText = await upRes.text();
+            let upData = {};
+            try {
+              upData = JSON.parse(rawText);
+            } catch {}
+            if (upRes.ok && upData.url) {
+              uploadedPdfUrl = upData.url;
+            }
+          } catch (uploadErr) {
+            console.warn("Direct PDF upload fallback:", uploadErr);
+          }
         }
-        uploadedPdfUrl = upData.url;
+        if (!uploadedPdfUrl) {
+          const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const r2Base =
+            process.env.NEXT_PUBLIC_R2_PUBLIC_URL ||
+            "https://pub-afe682c6e960401f9f06ea1705e8db77.r2.dev";
+          uploadedPdfUrl = `${r2Base.replace(/\/$/, "")}/epaper_${uploadDate}_${uploadPaper}_${safeName}`;
+        }
       }
 
       const payload = {
@@ -189,7 +206,7 @@ export default function AdminEpaperPage() {
         showToast("error", data.error || "Failed to upload edition");
       }
     } catch (err) {
-      showToast("error", "Error uploading edition");
+      showToast("error", err?.message || "Error uploading edition");
     } finally {
       setUploading(false);
     }

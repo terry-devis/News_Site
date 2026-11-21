@@ -9,6 +9,7 @@ import {
   saveEpaperEdition,
 } from "@/lib/cmsDb";
 import { requirePermission } from "@/lib/auth";
+import { revalidateAll } from "@/lib/revalidatePublic";
 
 export const dynamic = "force-dynamic";
 
@@ -51,11 +52,13 @@ export async function POST(req) {
     // 2. Upload / Create Edition (V2)
     if (body.action === "upload_edition" || body.paper || body.pdf_url) {
       const edition = await createEpaperEditionV2(body);
+      await revalidateAll(["/epaper", "/"]);
       return NextResponse.json({ success: true, edition });
     }
 
     // 3. Fallback Legacy
     const edition = await saveEpaperEdition(body);
+    await revalidateAll(["/epaper", "/"]);
     return NextResponse.json({ success: true, edition });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -73,6 +76,7 @@ export async function PUT(req) {
       return NextResponse.json({ error: "Edition ID is required" }, { status: 400 });
     }
     const updated = await updateEpaperEditionV2(id, updates);
+    await revalidateAll(["/epaper", "/"]);
     return NextResponse.json({ success: true, edition: updated });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -98,6 +102,7 @@ export async function DELETE(req) {
       return NextResponse.json({ error: "Edition ID is required" }, { status: 400 });
     }
     await deleteEpaperEditionV2(id);
+    await revalidateAll(["/epaper", "/"]);
     return NextResponse.json({ success: true, message: "Edition deleted successfully" });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

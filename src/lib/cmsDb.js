@@ -1165,21 +1165,36 @@ const DEFAULT_EPAPER_ISSUES = [
   },
 ];
 
-export async function getEpaperEditionsV2(date = null, paper = null) {
-  const local = ensureLocalStore();
-  if (!local.epaper_issues_v2 || !Array.isArray(local.epaper_issues_v2) || local.epaper_issues_v2.length === 0) {
-    local.epaper_issues_v2 = DEFAULT_EPAPER_ISSUES;
-    writeLocalStore(local);
+async function loadEpaperIssuesV2() {
+  const remote = await getSiteSetting("epaper_issues_v2");
+  if (Array.isArray(remote) && remote.length > 0) {
+    return remote;
   }
-  let list = local.epaper_issues_v2;
+  const local = ensureLocalStore();
+  const seed =
+    Array.isArray(local.epaper_issues_v2) && local.epaper_issues_v2.length > 0
+      ? local.epaper_issues_v2
+      : DEFAULT_EPAPER_ISSUES;
+  await updateSiteSetting("epaper_issues_v2", seed);
+  return seed;
+}
+
+async function saveEpaperIssuesV2(list) {
+  await updateSiteSetting("epaper_issues_v2", list);
+  const local = ensureLocalStore();
+  local.epaper_issues_v2 = list;
+  writeLocalStore(local);
+}
+
+export async function getEpaperEditionsV2(date = null, paper = null) {
+  let list = await loadEpaperIssuesV2();
   if (date) list = list.filter((e) => e.edition_date === date);
   if (paper && paper !== "both") list = list.filter((e) => e.paper === paper);
   return list;
 }
 
 export async function createEpaperEditionV2(data) {
-  const local = ensureLocalStore();
-  const list = await getEpaperEditionsV2();
+  const list = [...(await loadEpaperIssuesV2())];
 
   const numPages = 8;
   const samplePages = [];
@@ -1219,36 +1234,30 @@ export async function createEpaperEditionV2(data) {
   };
 
   list.unshift(newIssue);
-  local.epaper_issues_v2 = list;
-  writeLocalStore(local);
+  await saveEpaperIssuesV2(list);
   return newIssue;
 }
 
 export async function updateEpaperEditionV2(id, updates) {
-  const local = ensureLocalStore();
-  const list = await getEpaperEditionsV2();
+  const list = [...(await loadEpaperIssuesV2())];
   const idx = list.findIndex((e) => String(e.id) === String(id));
   if (idx >= 0) {
     list[idx] = { ...list[idx], ...updates, updated_at: new Date().toISOString() };
-    local.epaper_issues_v2 = list;
-    writeLocalStore(local);
+    await saveEpaperIssuesV2(list);
     return list[idx];
   }
   return null;
 }
 
 export async function deleteEpaperEditionV2(id) {
-  const local = ensureLocalStore();
-  let list = await getEpaperEditionsV2();
+  let list = await loadEpaperIssuesV2();
   list = list.filter((e) => String(e.id) !== String(id));
-  local.epaper_issues_v2 = list;
-  writeLocalStore(local);
+  await saveEpaperIssuesV2(list);
   return { success: true };
 }
 
 export async function saveEpaperPageRegions(editionId, pageNumber, regions) {
-  const local = ensureLocalStore();
-  const list = await getEpaperEditionsV2();
+  const list = [...(await loadEpaperIssuesV2())];
   const edition = list.find((e) => String(e.id) === String(editionId));
   if (!edition) return { error: "Edition not found" };
 
@@ -1256,8 +1265,7 @@ export async function saveEpaperPageRegions(editionId, pageNumber, regions) {
   if (!page) return { error: "Page not found" };
 
   page.regions = regions;
-  local.epaper_issues_v2 = list;
-  writeLocalStore(local);
+  await saveEpaperIssuesV2(list);
   return { success: true, page };
 }
 

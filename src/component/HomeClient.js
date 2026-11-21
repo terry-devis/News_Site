@@ -19,30 +19,48 @@ function extractYouTubeId(url) {
 
 const BrandIcons = {
   facebook: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M13.5 22v-8h2.7l.4-3h-3.1V9.1c0-.9.3-1.5 1.6-1.5h1.6V4.9c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1V11H7.7v3h2.6v8h3.2z" />
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+      <circle cx="12" cy="12" r="11" fill="#1877F2" />
+      <path d="M13.5 21v-7.2h2.4l.4-2.8h-2.8V9.2c0-.8.2-1.4 1.4-1.4h1.5V5.3c-.3 0-1.2-.1-2.2-.1-2.2 0-3.7 1.3-3.7 3.8v2H8.2v2.8h2.3V21h3z" fill="#FFFFFF" />
     </svg>
   ),
   youtube: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z" />
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+      <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8z" fill="#FF0000" />
+      <path d="M9.6 15.6V8.4l6.3 3.6-6.3 3.6z" fill="#FFFFFF" />
     </svg>
   ),
   x: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M18.9 2H22l-6.8 7.8L23 22h-6.1l-4.8-6.3L6.6 22H3.5l7.3-8.3L1 2h6.2l4.3 5.7L18.9 2zm-1.1 18h1.7L6.3 3.9H4.5L17.8 20z" />
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+      <rect x="1" y="1" width="22" height="22" rx="5" fill="#111111" />
+      <path d="M16.9 6h2.2l-4.8 5.5L20 19h-4.4l-3.4-4.5L8.2 19H6l5.1-5.9L5.6 6h4.5l3.1 4.1L16.9 6zm-.8 11.7h1.2L9.9 7.2H8.6l7.5 10.5z" fill="#FFFFFF" />
     </svg>
   ),
   instagram: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+      <defs>
+        <linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#F58529" />
+          <stop offset="50%" stopColor="#DD2A7B" />
+          <stop offset="100%" stopColor="#515BD4" />
+        </linearGradient>
+      </defs>
+      <rect x="1" y="1" width="22" height="22" rx="6" fill="url(#igGrad)" />
+      <rect x="5.5" y="5.5" width="13" height="13" rx="4" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="3.1" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+      <circle cx="16.2" cy="7.8" r="1" fill="#FFFFFF" />
     </svg>
   ),
   whatsapp: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.81 14.12c-.24.68-1.42 1.3-1.97 1.38-.51.07-1.15.1-1.85-.12-.43-.14-.98-.32-1.69-.63-2.97-1.28-4.91-4.29-5.06-4.49-.15-.2-1.21-1.61-1.21-3.07 0-1.46.76-2.18 1.03-2.48.27-.3.59-.38.79-.38.2 0 .4 0 .57.01.18.01.43-.07.67.51.24.59.83 2.04.9 2.19.07.15.12.33.02.53-.1.2-.15.33-.3.5-.15.17-.31.38-.44.51-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.02 1.12.99 2.06 1.3 2.36 1.45.3.15.47.13.65-.07.18-.2.74-.86.94-1.16.2-.3.4-.25.67-.15.27.1 1.73.82 2.03.97.3.15.5.22.57.34.07.12.07.69-.17 1.37z" />
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+      <circle cx="12" cy="12" r="11" fill="#25D366" />
+      <path d="M16.5 14.3c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.1.2-.5.7-.7.8-.1.1-.3.2-.5.1-.2-.1-.9-.3-1.7-1.1-.6-.6-1.1-1.3-1.2-1.5-.1-.2 0-.3.1-.4l.4-.4c.1-.1.1-.2.2-.3.1-.1 0-.3 0-.4s-.5-1.2-.7-1.6c-.2-.4-.4-.4-.5-.4h-.4c-.2 0-.4.1-.6.3-.2.2-.8.7-.8 1.8s.8 2.1.9 2.3c.1.1 1.5 2.4 3.7 3.3.5.2.9.4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1-.1-.1-.2-.2-.4-.3z" fill="#FFFFFF" />
+    </svg>
+  ),
+  tiktok: (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+      <rect x="1" y="1" width="22" height="22" rx="5" fill="#111111" />
+      <path d="M13.2 5.5v8.2a2.6 2.6 0 1 1-1.9-2.5V8.9a5 5 0 1 0 4.2 4.9V9.6a6 6 0 0 0 3.3 1V8.3a3.7 3.7 0 0 1-3.3-2.8h-2.3z" fill="#FFFFFF" />
     </svg>
   ),
 };
@@ -1005,12 +1023,12 @@ export default function HomeClient({
               <h2 className={`text-sm font-bold text-gray-900 border-b border-[#dcd8cd] pb-2 mb-3 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
                 {isUrdu ? "ہمیں فالو کریں" : "Follow Us"}
               </h2>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <a
                   href={socialLinks?.facebook || "https://facebook.com"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-[#dcd8cd] bg-[#f7f6f3]/60 hover:bg-white text-xs font-bold text-gray-800 hover:border-[#1877F2] transition"
                 >
                   {BrandIcons.facebook}
                   <span>Facebook</span>
@@ -1019,25 +1037,16 @@ export default function HomeClient({
                   href={socialLinks?.youtube || "https://youtube.com"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-[#dcd8cd] bg-[#f7f6f3]/60 hover:bg-white text-xs font-bold text-gray-800 hover:border-[#FF0000] transition"
                 >
                   {BrandIcons.youtube}
                   <span>YouTube</span>
                 </a>
                 <a
-                  href={socialLinks?.twitter || "https://x.com"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
-                >
-                  {BrandIcons.x}
-                  <span>X</span>
-                </a>
-                <a
                   href={socialLinks?.instagram || "https://instagram.com"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-[#dcd8cd] bg-[#f7f6f3]/60 hover:bg-white text-xs font-bold text-gray-800 hover:border-[#DD2A7B] transition"
                 >
                   {BrandIcons.instagram}
                   <span>Instagram</span>
@@ -1046,10 +1055,28 @@ export default function HomeClient({
                   href={socialLinks?.whatsapp || "https://whatsapp.com"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#dcd8cd] text-xs font-bold text-gray-700 hover:border-emerald-700 hover:text-emerald-800 transition"
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-[#dcd8cd] bg-[#f7f6f3]/60 hover:bg-white text-xs font-bold text-gray-800 hover:border-[#25D366] transition"
                 >
                   {BrandIcons.whatsapp}
                   <span>WhatsApp</span>
+                </a>
+                <a
+                  href={socialLinks?.twitter || "https://x.com"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-[#dcd8cd] bg-[#f7f6f3]/60 hover:bg-white text-xs font-bold text-gray-800 hover:border-black transition"
+                >
+                  {BrandIcons.x}
+                  <span>X / Twitter</span>
+                </a>
+                <a
+                  href={socialLinks?.tiktok || "https://tiktok.com"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-[#dcd8cd] bg-[#f7f6f3]/60 hover:bg-white text-xs font-bold text-gray-800 hover:border-black transition"
+                >
+                  {BrandIcons.tiktok}
+                  <span>TikTok</span>
                 </a>
               </div>
             </section>

@@ -93,14 +93,25 @@ export function filterPublishedArticles(rows = []) {
   for (const art of rows || []) {
     const { published, unpacked } = isArticlePubliclyPublished(art);
     if (!published) continue;
+    const { content_ur: rawUr, content_en: _rawEn, ...cardFields } = art;
+    let fallbackEn = "";
+    if (!art.summary_en && !unpacked.excerptEn && unpacked.cleanContentEn) {
+      const plainEn = unpacked.cleanContentEn.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      if (plainEn) fallbackEn = plainEn.length > 150 ? `${plainEn.slice(0, 150)}...` : plainEn;
+    }
+    let fallbackUr = "";
+    if (!art.summary_ur && rawUr) {
+      const plainUr = String(rawUr).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      if (plainUr) fallbackUr = plainUr.length > 160 ? `${plainUr.slice(0, 160)}...` : plainUr;
+    }
     out.push({
-      ...art,
+      ...cardFields,
       status: "published",
-      summary_en: art.summary_en || unpacked.excerptEn || "",
+      summary_ur: art.summary_ur || fallbackUr || "",
+      summary_en: art.summary_en || unpacked.excerptEn || fallbackEn || "",
       author_name: unpacked.meta?.bylineUr || art.author_name || "ایڈیٹوریل ڈیسک",
       author_name_en: unpacked.meta?.bylineEn || art.author_name_en || art.author_name || "Editorial Desk",
       meta: unpacked.meta,
-      content_en: unpacked.cleanContentEn,
     });
   }
   return out;

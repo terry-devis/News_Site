@@ -1,4 +1,5 @@
 import "./globals.css";
+import { cookies } from "next/headers";
 import NextTopLoader from "nextjs-toploader";
 import { SiteLanguageProvider } from "@/context/SiteLanguageContext";
 
@@ -19,8 +20,12 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const cookieStore = cookies();
+  const initialLang = cookieStore.get("site_lang")?.value === "en" ? "en" : "ur";
+  const initialDir = initialLang === "en" ? "ltr" : "rtl";
+
   return (
-    <html lang="ur" dir="rtl" translate="no" className="notranslate">
+    <html lang={initialLang} dir={initialDir} translate="no" className="notranslate">
       <head>
         <meta name="google" content="notranslate" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -47,7 +52,7 @@ export default function RootLayout({ children }) {
           easing="ease"
           speed={1000}
         />
-        <SiteLanguageProvider>
+        <SiteLanguageProvider initialLang={initialLang}>
           <div className="min-h-screen flex flex-col">
             {children}
           </div>

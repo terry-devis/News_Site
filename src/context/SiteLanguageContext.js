@@ -242,18 +242,21 @@ export const siteTranslations = {
   },
 };
 
-export function SiteLanguageProvider({ children }) {
-  const [lang, setLangState] = useState("ur");
+export function SiteLanguageProvider({ children, initialLang = "ur" }) {
+  const [lang, setLangState] = useState(initialLang === "en" ? "en" : "ur");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Check initial preference from localStorage or cookie or URL
+    // Sync from cookie first, then localStorage fallback
     try {
-      const savedLang = localStorage.getItem("site_lang");
-      if (savedLang === "en" || savedLang === "ur") {
-        setLangState(savedLang);
-      } else if (document.cookie.includes("site_lang=en")) {
-        setLangState("en");
+      const cookieMatch = document.cookie.match(/(?:^|;\s*)site_lang=(en|ur)/);
+      if (cookieMatch) {
+        setLangState(cookieMatch[1]);
+      } else {
+        const savedLang = localStorage.getItem("site_lang");
+        if (savedLang === "en" || savedLang === "ur") {
+          setLangState(savedLang);
+        }
       }
     } catch (e) {}
     setMounted(true);

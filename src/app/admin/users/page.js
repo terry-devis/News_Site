@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Pencil, X, AlertTriangle, Check, Search } from "lucide-react";
+import { Pencil, X, AlertTriangle, Check, Search, Users, ShieldCheck, UserCheck, KeyRound } from "lucide-react";
 import { hasPermission } from "@/lib/permissions";
 
 const FALLBACK_SECTIONS = [
@@ -28,6 +28,8 @@ export default function UsersAdminPage() {
   const [deskSections, setDeskSections] = useState(FALLBACK_SECTIONS);
   const [currentUser, setCurrentUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
@@ -108,15 +110,35 @@ export default function UsersAdminPage() {
 
   const filteredUsers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
+    return users.filter((u) => {
+      const matchesQuery =
+        !q ||
         String(u.email || "").toLowerCase().includes(q) ||
         String(u.full_name_en || "").toLowerCase().includes(q) ||
         String(u.full_name_ur || "").toLowerCase().includes(q) ||
-        (u.roles || []).some((r) => String(r).toLowerCase().includes(q))
-    );
-  }, [users, searchQuery]);
+        String(u.designation_en || "").toLowerCase().includes(q) ||
+        (u.roles || []).some((r) => String(r).toLowerCase().includes(q));
+
+      const matchesRole =
+        roleFilter === "all" ||
+        (u.roles || []).some(
+          (r) => String(r).toLowerCase() === String(roleFilter).toLowerCase()
+        );
+
+      const userStatus = (u.status || "Active").toLowerCase();
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" ? userStatus === "active" : userStatus !== "active");
+
+      return matchesQuery && matchesRole && matchesStatus;
+    });
+  }, [users, searchQuery, roleFilter, statusFilter]);
+
+  const activeUsersCount = useMemo(
+    () => users.filter((u) => (u.status || "Active").toLowerCase() === "active").length,
+    [users]
+  );
+  const inactiveUsersCount = users.length - activeUsersCount;
 
   // Create User Handler
   const handleCreateUser = async (e) => {
@@ -252,39 +274,103 @@ export default function UsersAdminPage() {
 
       {/* Header with emerald accent bar */}
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-[#e5e2da] pb-4">
-        <div className="border-l-4 border-emerald-800 pl-3">
-          <h1 className="text-lg font-bold tracking-tight text-gray-900">Users & roles</h1>
-          <p className="mt-0.5 text-[0.8125rem] text-gray-500">
-            A role is just a set of permissions — adding one needs no code change
+        <div className="border-l-4 border-[#184e2d] pl-3">
+          <h1 className="text-xl font-bold tracking-tight text-gray-900">Users & Roles</h1>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Manage newsroom staff, role-based permissions, and desk access scopes
           </p>
         </div>
         {canManageUsers && (
           <button
             onClick={() => setNewUserModalOpen(true)}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition bg-[#184e2d] text-white shadow-2xs hover:bg-[#0a2618]"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2 text-xs sm:text-sm font-semibold transition bg-[#184e2d] text-white shadow-2xs hover:bg-[#0d3b20]"
           >
-            + New user
+            + New User
           </button>
         )}
       </div>
 
-      {/* Equal 2-Column Split Layout */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
+      {/* Summary KPI Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div className="rounded-lg border border-[#e5e2da] bg-white px-4 py-3 flex items-center gap-3">
+          <div className="size-9 rounded-md bg-[#184e2d]/10 text-[#184e2d] flex items-center justify-center shrink-0">
+            <Users size={17} />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total Staff</p>
+            <p className="text-lg font-bold text-gray-900 font-mono">{users.length}</p>
+          </div>
+        </div>
+        <div className="rounded-lg border border-[#e5e2da] bg-white px-4 py-3 flex items-center gap-3">
+          <div className="size-9 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+            <UserCheck size={17} />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Active</p>
+            <p className="text-lg font-bold text-emerald-800 font-mono">{activeUsersCount}</p>
+          </div>
+        </div>
+        <div className="rounded-lg border border-[#e5e2da] bg-white px-4 py-3 flex items-center gap-3">
+          <div className="size-9 rounded-md bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+            <KeyRound size={17} />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Inactive</p>
+            <p className="text-lg font-bold text-gray-800 font-mono">{inactiveUsersCount}</p>
+          </div>
+        </div>
+        <div className="rounded-lg border border-[#e5e2da] bg-white px-4 py-3 flex items-center gap-3">
+          <div className="size-9 rounded-md bg-sky-50 text-sky-700 flex items-center justify-center shrink-0">
+            <ShieldCheck size={17} />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Roles</p>
+            <p className="text-lg font-bold text-gray-900 font-mono">{rolesList.length}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Balanced 12-Col Split Layout (7 Cols Users, 5 Cols Roles) */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-start">
         {/* Left Column: Newsroom Users */}
-        <section className="rounded-lg border border-[#e5e2da] bg-white shadow-2xs overflow-hidden">
-          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e5e2da] px-4 py-2.5 bg-[#faf9f6]">
-            <h2 className="text-[0.6875rem] font-bold tracking-wide text-gray-500 uppercase">
-              Newsroom users ({filteredUsers.length})
-            </h2>
-            <div className="relative">
-              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search staff..."
-                className="pl-7 pr-2.5 py-1 text-xs border border-[#e5e2da] rounded bg-white text-gray-800 focus:outline-none focus:border-[#184e2d] w-44"
-              />
+        <section className="lg:col-span-7 rounded-lg border border-[#e5e2da] bg-white shadow-2xs overflow-hidden">
+          <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-[#e5e2da] px-4 py-3 bg-[#faf9f6]">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[0.6875rem] font-bold tracking-wide text-gray-600 uppercase">
+                Newsroom Users ({filteredUsers.length})
+              </h2>
+              {roleFilter !== "all" && (
+                <button
+                  type="button"
+                  onClick={() => setRoleFilter("all")}
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#184e2d] text-white flex items-center gap-1 cursor-pointer"
+                >
+                  <span>{roleFilter}</span>
+                  <X size={10} />
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                aria-label="Filter by status"
+                className="px-2 py-1 text-xs border border-[#e5e2da] rounded bg-white text-gray-700 focus:outline-none focus:border-[#184e2d] cursor-pointer"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <div className="relative">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search staff..."
+                  className="pl-7 pr-2.5 py-1 text-xs border border-[#e5e2da] rounded bg-white text-gray-800 focus:outline-none focus:border-[#184e2d] w-44"
+                />
+              </div>
             </div>
           </header>
 
@@ -292,32 +378,39 @@ export default function UsersAdminPage() {
             {loading ? (
               <li className="p-8 text-center text-xs text-gray-400">Loading users...</li>
             ) : filteredUsers.length === 0 ? (
-              <li className="p-8 text-center text-xs text-gray-400">No users found.</li>
+              <li className="p-8 text-center text-xs text-gray-400">No users match the current filter.</li>
             ) : (
               filteredUsers.map((user) => {
-                const initial = (user.email || "u").trim().charAt(0).toLowerCase();
+                const initial = (user.full_name_en || user.email || "u").trim().charAt(0).toUpperCase();
                 const userRoles = Array.isArray(user.roles) ? user.roles : [];
-                const isActive = user.status === "Active";
+                const isActive = (user.status || "Active").toLowerCase() === "active";
 
                 return (
                   <li
                     key={user.id || user.email}
-                    className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-[#f9f8f5] transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 hover:bg-[#f9f8f5] transition-colors"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* 36x36 circular avatar taking email initial */}
-                      <div className="size-9 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-bold flex items-center justify-center shrink-0 uppercase">
+                    <div className="flex items-start sm:items-center gap-3 min-w-0">
+                      <div className="size-9 rounded-full bg-[#184e2d]/10 text-[#184e2d] border border-[#184e2d]/20 text-sm font-bold flex items-center justify-center shrink-0">
                         {initial}
                       </div>
 
                       <div className="min-w-0 space-y-0.5">
-                        <p className="truncate text-sm font-medium text-gray-900 font-mono">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                          <p className="truncate text-sm font-semibold text-gray-900">
+                            {user.full_name_en || user.email}
+                          </p>
+                          {user.full_name_ur && (
+                            <span className="text-xs text-gray-500 font-nastaliq">
+                              ({user.full_name_ur})
+                            </span>
+                          )}
+                        </div>
+                        <p className="truncate text-xs text-gray-500 font-mono">
                           {user.email}
+                          {user.designation_en ? ` · ${user.designation_en}` : ""}
                         </p>
-                        <p className="auto-dir truncate text-xs text-gray-500 font-nastaliq">
-                          {user.full_name_ur || user.full_name_en}
-                        </p>
-                        <div className="mt-1 flex flex-wrap gap-1">
+                        <div className="mt-1.5 flex flex-wrap gap-1">
                           {userRoles.map((r) => (
                             <span
                               key={r}
@@ -339,20 +432,20 @@ export default function UsersAdminPage() {
                       </div>
                     </div>
 
-                    <div className="shrink-0 text-right space-y-1">
-                      <p className="mb-1 text-[11px] text-gray-400">
-                        {user.last_active || "never signed in"}
+                    <div className="shrink-0 flex sm:flex-col items-center sm:items-end justify-between gap-1.5">
+                      <p className="text-[11px] text-gray-400 font-sans">
+                        {user.last_active || "Never signed in"}
                       </p>
                       <div className="flex items-center justify-end gap-1">
                         {canManageUsers && (
                           <button
                             type="button"
                             aria-label="Edit"
-                            title="Edit"
+                            title="Edit user"
                             onClick={() => setEditUserModal({ ...user })}
-                            className="text-gray-400 hover:bg-[#f2efe9] hover:text-gray-700 p-1.5 rounded-md transition-colors cursor-pointer"
+                            className="text-gray-500 hover:bg-[#f2efe9] hover:text-[#184e2d] p-1.5 rounded-md transition-colors cursor-pointer"
                           >
-                            <Pencil size={15} />
+                            <Pencil size={14} />
                           </button>
                         )}
                         {canResetPassword && (
@@ -362,7 +455,7 @@ export default function UsersAdminPage() {
                               setPasswordModal(user);
                               setNewPasswordValue("");
                             }}
-                            className="text-xs font-semibold px-2.5 py-1 text-gray-500 hover:bg-[#f2efe9] hover:text-gray-900 rounded-md transition-colors cursor-pointer"
+                            className="text-xs font-semibold px-2.5 py-1 text-gray-600 hover:bg-[#f2efe9] hover:text-gray-900 rounded-md transition-colors cursor-pointer border border-[#e5e2da]"
                           >
                             Password
                           </button>
@@ -376,21 +469,29 @@ export default function UsersAdminPage() {
           </ul>
         </section>
 
-        {/* Right Column: Roles and Permissions */}
-        <div>
+        {/* Right Column: Roles and Permissions (Click to filter users) */}
+        <div className="lg:col-span-5">
           <section className="rounded-lg border border-[#e5e2da] bg-white shadow-2xs overflow-hidden">
-            <header className="flex items-center justify-between gap-4 border-b border-[#e5e2da] px-4 py-2.5 bg-[#faf9f6]">
-              <h2 className="text-[0.6875rem] font-bold tracking-wide text-gray-500 uppercase">
-                Roles and permissions
+            <header className="flex items-center justify-between gap-4 border-b border-[#e5e2da] px-4 py-3 bg-[#faf9f6]">
+              <h2 className="text-[0.6875rem] font-bold tracking-wide text-gray-600 uppercase">
+                Roles & Permissions
               </h2>
+              <span className="text-[10px] text-gray-400">Click role to filter</span>
             </header>
 
             <ul className="divide-y divide-[#e5e2da]">
               {rolesList.map((role) => {
                 const count = role.userCount ?? 0;
                 const isSuper = role.key === "super_admin";
+                const isSelected = roleFilter.toLowerCase() === String(role.nameEn || "").toLowerCase();
                 return (
-                  <li key={role.id} className="p-4 hover:bg-[#f9f8f5] transition-colors">
+                  <li
+                    key={role.id}
+                    onClick={() => setRoleFilter(isSelected ? "all" : role.nameEn)}
+                    className={`p-4 transition-colors cursor-pointer ${
+                      isSelected ? "bg-emerald-50/70" : "hover:bg-[#f9f8f5]"
+                    }`}
+                  >
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <span className="text-sm font-semibold text-gray-900 block">

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -104,13 +104,33 @@ export default function HomeClient({
 
   const storyHref = (story) => `/story/${story?.slug || story?.id}`;
 
-  // 1. Hero + Live Stories (Prioritize published featured stories, newest first)
-  const featuredPool = articles.filter((a) => a.is_featured);
-  const leadStory = featuredPool[0] || articles[0] || null;
+  // 1. Hero + Live Stories (Prioritize Red Alert breaking first, then featured stories, rotating every 12s)
+  const redAlertArticles = articles.filter(
+    (a) => a.is_breaking && Number(a.meta?.breakingPriority || 1) === 1
+  );
+  const otherFeatured = articles.filter(
+    (a) => a.is_featured && !redAlertArticles.some((r) => r.id === a.id)
+  );
+  const heroPool = [...redAlertArticles, ...otherFeatured];
+  const heroCandidates = heroPool.length > 0 ? heroPool : articles[0] ? [articles[0]] : [];
+
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [heroPaused, setHeroPaused] = useState(false);
+
+  useEffect(() => {
+    if (heroCandidates.length <= 1 || heroPaused) return;
+    const timer = setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % heroCandidates.length);
+    }, 12000);
+    return () => clearInterval(timer);
+  }, [heroCandidates.length, heroPaused]);
+
+  const safeHeroIndex = heroCandidates.length > 0 ? heroIndex % heroCandidates.length : 0;
+  const leadStory = heroCandidates[safeHeroIndex] || articles[0] || null;
   const nonLeadArticles = articles.filter((a) => a.id !== leadStory?.id);
-  const otherFeatured = featuredPool.filter((a) => a.id !== leadStory?.id);
-  const nonFeatured = nonLeadArticles.filter((a) => !a.is_featured);
-  const secondaryStories = [...otherFeatured, ...nonFeatured].slice(0, 4);
+  const remainingHeroPool = heroCandidates.filter((a) => a.id !== leadStory?.id);
+  const nonFeatured = nonLeadArticles.filter((a) => !remainingHeroPool.some((h) => h.id === a.id));
+  const secondaryStories = [...remainingHeroPool, ...nonFeatured].slice(0, 4);
   const usedIds = new Set([leadStory?.id, ...secondaryStories.map((s) => s.id)].filter(Boolean));
   const remainingLive = articles.filter((a) => !usedIds.has(a.id));
   const liveFeatured = remainingLive[0] || articles[0] || null;
@@ -323,7 +343,11 @@ export default function HomeClient({
 
         {/* HERO SECTION */}
         {leadStory && (
-          <section className="bg-[#efeee9] border border-[#dcd8cd] rounded-none p-4 sm:p-5 mb-6 shadow-xs">
+          <section
+            onMouseEnter={() => setHeroPaused(true)}
+            onMouseLeave={() => setHeroPaused(false)}
+            className="bg-[#efeee9] border border-[#dcd8cd] rounded-none p-4 sm:p-5 mb-6 shadow-xs"
+          >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Lead Featured Story (7 Cols) */}
               <article className="lg:col-span-7 flex flex-col justify-between group">
@@ -358,6 +382,21 @@ export default function HomeClient({
                       className="object-cover group-hover:scale-102 transition duration-500"
                       priority
                     />
+                    {heroCandidates.length > 1 && (
+                      <div className="absolute bottom-2.5 end-2.5 z-10 flex items-center gap-1.5 bg-black/55 px-2 py-1">
+                        {heroCandidates.map((hc, idx) => (
+                          <button
+                            key={hc.id}
+                            type="button"
+                            onClick={() => setHeroIndex(idx)}
+                            aria-label={`Featured ${idx + 1}`}
+                            className={`h-2 rounded-full transition-all cursor-pointer ${
+                              idx === safeHeroIndex ? "w-5 bg-white" : "w-2 bg-white/50 hover:bg-white/80"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <p

@@ -42,7 +42,7 @@ export async function PUT(req, { params }) {
 
     const { data: cur } = await supabaseAdmin
       .from("articles")
-      .select("content_en")
+      .select("content_en, is_breaking")
       .eq("id", id)
       .single();
 
@@ -53,8 +53,13 @@ export async function PUT(req, { params }) {
     const nextContentEn =
       body.content_en !== undefined ? body.content_en : existing.cleanContentEn;
 
+    const effectiveBreaking =
+      body.is_breaking !== undefined ? Boolean(body.is_breaking) : Boolean(cur?.is_breaking);
+    const isRedAlertBreaking = effectiveBreaking && Number(nextMeta?.breakingPriority || 1) === 1;
+
     const updates = {
       ...body,
+      ...(isRedAlertBreaking ? { is_featured: true } : {}),
       updated_at: new Date().toISOString(),
     };
 

@@ -83,6 +83,7 @@ export async function POST(req) {
       contentEn: content_en || "",
     });
 
+    const isRedAlertBreaking = Boolean(is_breaking) && Number(meta?.breakingPriority || 1) === 1;
     const newArticle = {
       title_ur,
       title_en: title_en || null,
@@ -93,7 +94,7 @@ export async function POST(req) {
       category_id: category_id ? Number(category_id) : null,
       cover_image: cover_image || null,
       is_breaking: Boolean(is_breaking),
-      is_featured: Boolean(is_featured),
+      is_featured: Boolean(is_featured) || isRedAlertBreaking,
       author_name: author_name || "ایڈیٹر ڈیلی افادیت",
       updated_at: new Date().toISOString(),
     };

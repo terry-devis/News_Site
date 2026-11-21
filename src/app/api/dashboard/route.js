@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { getSessionUser } from "@/lib/auth";
+import { unpackArticleMeta } from "@/lib/articleMeta";
 
 function extractStatus(article) {
   if (article?.content_en) {
@@ -39,10 +40,14 @@ export async function GET() {
 
     if (error) throw error;
 
-    const articles = (rawArticles || []).map((art) => ({
-      ...art,
-      status: extractStatus(art),
-    }));
+    const articles = (rawArticles || []).map((art) => {
+      const unpacked = unpackArticleMeta(art.content_en);
+      return {
+        ...art,
+        status: unpacked.status || extractStatus(art),
+        meta: unpacked.meta,
+      };
+    });
 
     const todayPkt = getPktDateString(new Date());
 
@@ -54,7 +59,7 @@ export async function GET() {
     let imagesMissingAltText = 0;
 
     for (const art of articles) {
-      if (art.status === "trashed") continue;
+      if (art.status === "trashed" || art.meta?.deletedAt) continue;
 
       if (art.status === "draft") drafts++;
       else if (art.status === "in_review") inReview++;
@@ -67,7 +72,12 @@ export async function GET() {
         }
       }
 
-      if (art.cover_image && !art.cover_image_alt && !art.lead_image_alt) {
+      const hasAltText = Boolean(
+        (art.meta?.coverImageAlt && art.meta.coverImageAlt.trim()) ||
+          art.cover_image_alt ||
+          art.lead_image_alt
+      );
+      if (art.cover_image && !hasAltText) {
         imagesMissingAltText++;
       }
     }

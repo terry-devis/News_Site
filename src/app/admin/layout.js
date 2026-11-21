@@ -111,23 +111,25 @@ function AdminLayoutInner({ children }) {
     { label: "Settings", href: "/admin/settings", icon: Settings, perm: "settings.manage" },
   ];
 
-  if (isLoginPage) {
-    if (typeof document !== "undefined") {
-      document.title = "Sign In — Daily Afadiat Admin";
-    }
-    return <>{children}</>;
-  }
-
   const activeTitleItem = navItems.find(
     (item) =>
       pathname === item.href ||
       (item.altHref && pathname.startsWith(item.altHref)) ||
       (item.href !== "/admin" && pathname.startsWith(item.href))
   );
-  if (typeof document !== "undefined") {
+
+  useEffect(() => {
+    if (isLoginPage) {
+      document.title = "Sign In — Daily Afadiat Admin";
+      return;
+    }
     document.title = activeTitleItem
       ? `${activeTitleItem.label} — Daily Afadiat Admin`
       : "Daily Afadiat — Newsroom Admin";
+  }, [pathname, isLoginPage, activeTitleItem]);
+
+  if (isLoginPage) {
+    return <>{children}</>;
   }
 
   const visibleNavItems = currentUser

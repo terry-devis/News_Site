@@ -85,13 +85,14 @@ export default function StoryClient({
                   {authorName}
                 </span>
                 <span>•</span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1" suppressHydrationWarning>
                   <Clock size={14} />
                   {new Date(article.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US", {
                     weekday: "long",
                     year: "numeric",
                     month: "long",
                     day: "numeric",
+                    timeZone: "Asia/Karachi",
                   })}
                 </span>
               </div>
@@ -175,8 +176,8 @@ export default function StoryClient({
                             {relTitle}
                           </h3>
                         </Link>
-                        <span className="text-xs text-gray-400 font-sans mt-1 block">
-                          {new Date(item.created_at).toLocaleTimeString(isUrdu ? "ur-PK" : "en-US", { hour: "2-digit", minute: "2-digit" })}
+                        <span className="text-xs text-gray-400 font-sans mt-1 block" suppressHydrationWarning>
+                          {new Date(item.created_at).toLocaleTimeString(isUrdu ? "ur-PK" : "en-US", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Karachi" })}
                         </span>
                       </div>
                     </div>

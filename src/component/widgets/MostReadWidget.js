@@ -76,7 +76,7 @@ export default function MostReadWidget({ stories = [] }) {
               <Eye size={11} className="text-gray-400" />
               <span>{formatViews(lead.views_count)} {isUrdu ? "مشاہدات" : "views"}</span>
             </span>
-            <span>{new Date(lead.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US")}</span>
+            <span suppressHydrationWarning>{new Date(lead.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US", { timeZone: "Asia/Karachi" })}</span>
           </div>
         </article>
       )}

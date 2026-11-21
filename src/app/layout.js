@@ -32,11 +32,6 @@ export default function RootLayout({ children }) {
     <html lang="ur" dir="rtl" translate="no" className="notranslate" suppressHydrationWarning>
       <head>
         <meta name="google" content="notranslate" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var m=document.cookie.match(/(?:^|;\\s*)site_lang=(en|ur)/);var l=m?m[1]:localStorage.getItem("site_lang");if(l==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr";}}catch(e){}`,
-          }}
-        />
         <link
           rel="alternate"
           type="application/rss+xml"

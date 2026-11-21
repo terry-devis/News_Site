@@ -246,10 +246,11 @@ export default function HomeClient({
             </div>
             <div className="mt-2 pt-2 border-t border-[#dcd8cd]/60 flex items-center justify-between text-[11px] text-gray-500 font-sans">
               <span>{getAuthor(lead)}</span>
-              <span>
+              <span suppressHydrationWarning>
                 {new Date(lead.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US", {
                   day: "numeric",
                   month: "short",
+                  timeZone: "Asia/Karachi",
                 })}
               </span>
             </div>
@@ -434,12 +435,13 @@ export default function HomeClient({
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-gray-800">{getAuthor(leadStory)}</span>
                     <span>•</span>
-                    <span className="flex items-center gap-1 text-gray-600">
+                    <span className="flex items-center gap-1 text-gray-600" suppressHydrationWarning>
                       <Clock size={12} />
                       {new Date(leadStory.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US", {
                         day: "numeric",
                         month: "long",
                         year: "numeric",
+                        timeZone: "Asia/Karachi",
                       })}
                     </span>
                   </div>
@@ -488,10 +490,11 @@ export default function HomeClient({
                           {getTitle(story)}
                         </h3>
                       </Link>
-                      <span className="text-[11px] text-gray-600 font-sans mt-0.5 block">
+                      <span className="text-[11px] text-gray-600 font-sans mt-0.5 block" suppressHydrationWarning>
                         {new Date(story.created_at).toLocaleTimeString(isUrdu ? "ur-PK" : "en-US", {
                           hour: "2-digit",
                           minute: "2-digit",
+                          timeZone: "Asia/Karachi",
                         })}
                       </span>
                     </div>
@@ -557,12 +560,13 @@ export default function HomeClient({
 
               <div className="flex min-w-0 flex-col">
                 <div className="mb-2">
-                  <span className="text-[11px] text-gray-400 font-sans block mb-1">
+                  <span className="text-[11px] text-gray-400 font-sans block mb-1" suppressHydrationWarning>
                     {isUrdu ? "اپ ڈیٹ" : "Live Feed"} •{" "}
-                    {new Date().toLocaleDateString(isUrdu ? "ur-PK" : "en-US", {
+                    {new Date(liveFeatured.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",
+                      timeZone: "Asia/Karachi",
                     })}
                   </span>
                 </div>
@@ -575,10 +579,11 @@ export default function HomeClient({
                         className="bg-red-600 ring-4 ring-[#efeee9] absolute start-1 top-2 size-2 rounded-full"
                         aria-hidden="true"
                       />
-                      <time className="text-[10px] text-gray-400 font-sans block mb-0.5">
+                      <time className="text-[10px] text-gray-400 font-sans block mb-0.5" suppressHydrationWarning>
                         {new Date(item.created_at).toLocaleTimeString(isUrdu ? "ur-PK" : "en-US", {
                           hour: "2-digit",
                           minute: "2-digit",
+                          timeZone: "Asia/Karachi",
                         })}
                       </time>
                       <Link href={storyHref(item)}>
@@ -657,11 +662,12 @@ export default function HomeClient({
                           <p className="text-[11px] font-sans text-gray-500 flex items-center gap-1.5">
                             <span className="font-semibold text-[#184e2d]">{getCatName(st.category)}</span>
                             <span>•</span>
-                            <span>
+                            <span suppressHydrationWarning>
                               {new Date(st.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-GB", {
                                 day: "numeric",
                                 month: "long",
                                 year: "numeric",
+                                timeZone: "Asia/Karachi",
                               })}
                             </span>
                           </p>
@@ -699,11 +705,12 @@ export default function HomeClient({
                     <p className="text-[11px] font-sans text-gray-500 flex items-center gap-1.5">
                       <span className="font-semibold text-[#184e2d]">{getCatName(sportsCenter.category)}</span>
                       <span>•</span>
-                      <span>
+                      <span suppressHydrationWarning>
                         {new Date(sportsCenter.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-GB", {
                           day: "numeric",
                           month: "long",
                           year: "numeric",
+                          timeZone: "Asia/Karachi",
                         })}
                       </span>
                     </p>
@@ -732,11 +739,12 @@ export default function HomeClient({
                           <p className="text-[11px] font-sans text-gray-500 flex items-center gap-1.5">
                             <span className="font-semibold text-[#184e2d]">{getCatName(st.category)}</span>
                             <span>•</span>
-                            <span>
+                            <span suppressHydrationWarning>
                               {new Date(st.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-GB", {
                                 day: "numeric",
                                 month: "long",
                                 year: "numeric",
+                                timeZone: "Asia/Karachi",
                               })}
                             </span>
                           </p>

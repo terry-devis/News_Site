@@ -87,9 +87,9 @@ export default function CategoryClient({ slug, category, articles = [], categori
 
                   <div className="px-4 py-2.5 border-t border-[#dcd8cd] flex items-center justify-between text-[11px] text-gray-500 font-sans">
                     <span>{story.author_name || "Daily Afadiat"}</span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1" suppressHydrationWarning>
                       <Clock size={11} />
-                      {new Date(story.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US")}
+                      {new Date(story.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US", { timeZone: "Asia/Karachi" })}
                     </span>
                   </div>
                 </article>

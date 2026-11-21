@@ -59,6 +59,8 @@ export default async function StoryDetail({ params }) {
           ...data,
           status: "published",
           summary_en: data.summary_en || unpacked.excerptEn || "",
+          author_name: unpacked.meta?.bylineUr || data.author_name || "ایڈیٹوریل ڈیسک",
+          author_name_en: unpacked.meta?.bylineEn || data.author_name_en || data.author_name || "Editorial Desk",
           meta: unpacked.meta,
           content_en: unpacked.cleanContentEn,
         };

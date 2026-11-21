@@ -40,8 +40,8 @@ export default function StoryClient({
   const content = rawContent ? rawContent.replace(/<!--excerpt:[\s\S]*?-->\n?/, "") : "";
 
   const authorName = isEnglish
-    ? (article.author_name_en || "Daily Afadiat Editorial Board")
-    : (article.author_name || "ایڈیٹوریل بورڈ ڈیلی افادیت");
+    ? (article.author_name_en || article.meta?.bylineEn || article.author_name || "Editorial Desk")
+    : (article.author_name || article.meta?.bylineUr || "ایڈیٹوریل ڈیسک");
 
   const categoryName = isEnglish
     ? (article.category?.name_en || article.category?.name_ur || "News")

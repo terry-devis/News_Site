@@ -17,6 +17,8 @@ export const DEFAULT_ARTICLE_META = {
   coverImageAlt: "",
   coverFraming: null, // { focal: { x, y }, crops: { "16:9": ..., "4:3": ..., "1:1": ..., "3:4": ..., og: ... } }
   breakingPriority: 1,
+  bylineUr: "",
+  bylineEn: "",
   deletedAt: null,
 };
 
@@ -95,6 +97,8 @@ export function filterPublishedArticles(rows = []) {
       ...art,
       status: "published",
       summary_en: art.summary_en || unpacked.excerptEn || "",
+      author_name: unpacked.meta?.bylineUr || art.author_name || "ایڈیٹوریل ڈیسک",
+      author_name_en: unpacked.meta?.bylineEn || art.author_name_en || art.author_name || "Editorial Desk",
       meta: unpacked.meta,
       content_en: unpacked.cleanContentEn,
     });

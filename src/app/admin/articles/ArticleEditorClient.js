@@ -114,12 +114,17 @@ export default function ArticleEditorClient({ initialId = null }) {
             setContentEn(a.content_en || "");
             setSlug(a.slug || "");
             setCategoryId(a.category_id ? String(a.category_id) : loadedCats[0]?.id ? String(loadedCats[0].id) : "");
-            setAuthorName(a.author_name || "ایڈیٹوریل ڈیسک");
+            setAuthorName(a.meta?.bylineUr || a.author_name || "ایڈیٹوریل ڈیسک");
             setStatus(a.status || "published");
             setCoverImage(a.cover_image || "");
             setIsBreaking(Boolean(a.is_breaking));
             setIsFeatured(Boolean(a.is_featured));
-            setMeta({ ...DEFAULT_ARTICLE_META, ...(a.meta || {}) });
+            setMeta({
+              ...DEFAULT_ARTICLE_META,
+              ...(a.meta || {}),
+              bylineUr: a.meta?.bylineUr || a.author_name || "",
+              bylineEn: a.meta?.bylineEn || a.author_name_en || "",
+            });
           }
         }
       } catch (err) {
@@ -577,10 +582,10 @@ export default function ArticleEditorClient({ initialId = null }) {
             )}
           </div>
 
-          {/* 2. Section & Author (Dynamic) */}
+          {/* 2. Section & Bilingual Byline */}
           <div className="bg-white border border-[#e5e2da] p-4 shadow-2xs space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#5c635b] border-b border-[#e5e2da] pb-2">
-              Section & Byline
+              Section & Bilingual Byline
             </h3>
             <div>
               <label className="block text-xs font-semibold text-[#18221b] mb-1">Section</label>
@@ -591,28 +596,69 @@ export default function ArticleEditorClient({ initialId = null }) {
               >
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
-                    {cat.name_ur} ({cat.name_en})
+                    {cat.name_en ? `${cat.name_en} — ${cat.name_ur}` : cat.name_ur}
                   </option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-[#18221b] mb-1">Author / Byline</label>
-              <select
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-[#e5e2da] bg-[#fbfaf8] focus:outline-none focus:border-[#184e2d]"
-              >
-                <option value="ایڈیٹوریل ڈیسک">ایڈیٹوریل ڈیسک (Editorial Desk)</option>
-                {authors.map((u) => {
-                  const label = u.byline_name || u.full_name_ur || u.full_name_en;
-                  return (
-                    <option key={u.id} value={label}>
-                      {label} ({u.roles?.[0] || "Staff"})
+
+            {authors.length > 0 && (
+              <div>
+                <label className="block text-[11px] font-semibold text-[#5c635b] mb-1">
+                  Quick Fill from Staff (Optional)
+                </label>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const selected = authors.find((u) => String(u.id) === e.target.value);
+                    if (!selected) return;
+                    const urName = selected.full_name_ur || selected.byline_name || selected.full_name_en || "";
+                    const enName = selected.full_name_en || selected.byline_name || selected.full_name_ur || "";
+                    setAuthorName(urName);
+                    setMeta((prev) => ({ ...prev, bylineUr: urName, bylineEn: enName }));
+                  }}
+                  className="w-full px-3 py-1.5 text-xs border border-[#e5e2da] bg-[#fbfaf8] focus:outline-none focus:border-[#184e2d]"
+                >
+                  <option value="">— Select staff member to auto-fill —</option>
+                  {authors.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name_en || u.byline_name} ({u.roles?.[0] || "Staff"})
                     </option>
-                  );
-                })}
-              </select>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-[#18221b] mb-1">
+                Byline (Urdu)
+              </label>
+              <input
+                type="text"
+                dir="rtl"
+                value={authorName}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setAuthorName(val);
+                  updateMeta("bylineUr", val);
+                }}
+                placeholder="ایڈیٹوریل ڈیسک / نامہ نگار"
+                className="w-full px-3 py-2 text-xs text-right font-nastaliq border border-[#e5e2da] bg-[#fbfaf8] focus:outline-none focus:border-[#184e2d]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#18221b] mb-1">
+                Byline (English)
+              </label>
+              <input
+                type="text"
+                dir="ltr"
+                value={meta.bylineEn || ""}
+                onChange={(e) => updateMeta("bylineEn", e.target.value)}
+                placeholder="Editorial Desk / Staff Reporter"
+                className="w-full px-3 py-2 text-xs text-left font-sans border border-[#e5e2da] bg-[#fbfaf8] focus:outline-none focus:border-[#184e2d]"
+              />
             </div>
           </div>
 

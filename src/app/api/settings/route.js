@@ -17,11 +17,16 @@ export async function GET(req) {
 
     const isPublicOnly = searchParams.get("public") === "1";
     if (isPublicOnly) {
-      const [social_links, site_info] = await Promise.all([
+      const [social_links, site_info, breaking_ticker_enabled] = await Promise.all([
         getSiteSetting("social_links"),
         getSiteSetting("site_info"),
+        getSiteSetting("breaking_ticker_enabled"),
       ]);
-      return NextResponse.json({ social_links, site_info });
+      return NextResponse.json({
+        social_links,
+        site_info,
+        breaking_ticker_enabled: breaking_ticker_enabled !== false,
+      });
     }
 
     const [social_links, site_info, rawSmtp] = await Promise.all([

@@ -11,6 +11,22 @@ export default function Header({ categories = [], breakingNews = [] }) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [tickerEnabled, setTickerEnabled] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/settings?public=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (active && data && typeof data.breaking_ticker_enabled === "boolean") {
+          setTickerEnabled(data.breaking_ticker_enabled);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
   const [hoveredCat, setHoveredCat] = useState(null);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [megaCache, setMegaCache] = useState({});
@@ -585,7 +601,8 @@ export default function Header({ categories = [], breakingNews = [] }) {
         </div>
       </div>
 
-      {/* 5. BREAKING NEWS RED TICKER: CONTINUOUS HORIZONTAL MARQUEE (Starts from start, zero delay, zero replay delay) */}
+      {/* 5. BREAKING NEWS RED TICKER: CONTINUOUS HORIZONTAL MARQUEE (Controlled by Master Portal Ticker) */}
+      {tickerEnabled && (
       <div className="w-full bg-[#b91c1c] text-white flex items-center overflow-hidden border-b border-red-900 h-9 sm:h-10">
         {/* Flame Badge */}
         <div className="bg-[#881337] px-3.5 sm:px-4 h-full font-bold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 z-10 shadow-sm font-sans">
@@ -649,6 +666,7 @@ export default function Header({ categories = [], breakingNews = [] }) {
           </div>
         </div>
       </div>
+      )}
 
       {/* 6. SLIDE-OUT MOBILE SIDEBAR DRAWER */}
       {mobileDrawerOpen && (

@@ -53,10 +53,19 @@ export default function BreakingNewsAdmin() {
   async function loadBreakingNews() {
     setLoading(true);
     try {
-      const res = await fetch("/api/breaking");
+      const [res, settingsRes] = await Promise.all([
+        fetch("/api/breaking"),
+        fetch("/api/settings?key=breaking_ticker_enabled").catch(() => null),
+      ]);
       const data = await res.json();
       if (data?.breakingNews) {
         setItems(data.breakingNews);
+      }
+      if (settingsRes && settingsRes.ok) {
+        const sData = await settingsRes.json();
+        if (sData?.breaking_ticker_enabled !== undefined && sData?.breaking_ticker_enabled !== null) {
+          setMasterTickerActive(Boolean(sData.breaking_ticker_enabled));
+        }
       }
     } catch (e) {
       console.error(e);
@@ -64,6 +73,20 @@ export default function BreakingNewsAdmin() {
       setLoading(false);
     }
   }
+
+  const toggleMasterTicker = async () => {
+    const next = !masterTickerActive;
+    setMasterTickerActive(next);
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "breaking_ticker_enabled", value: next }),
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     loadBreakingNews();
@@ -229,7 +252,7 @@ export default function BreakingNewsAdmin() {
             <span className="text-xs font-bold text-gray-800">Master Portal Ticker:</span>
             <button
               type="button"
-              onClick={() => setMasterTickerActive(!masterTickerActive)}
+              onClick={toggleMasterTicker}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                 masterTickerActive ? "bg-red-600" : "bg-gray-300"
               }`}

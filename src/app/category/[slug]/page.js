@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { filterPublishedArticles } from "@/lib/articleMeta";
 import CategoryClient from "@/component/CategoryClient";
 
 export const revalidate = 60;
@@ -26,8 +27,8 @@ export default async function CategoryPage({ params }) {
     if (category?.id) {
       artQuery = artQuery.eq("category_id", category.id);
     }
-    const { data: artData } = await artQuery.limit(18);
-    if (artData) articles = artData;
+    const { data: artData } = await artQuery.limit(30);
+    if (artData) articles = filterPublishedArticles(artData).slice(0, 18);
   } catch (err) {
     console.error("Category fetch error:", err);
   }

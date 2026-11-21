@@ -43,6 +43,7 @@ export default function SettingsAdmin() {
   const [siteInfo, setSiteInfo] = useState({
     title_ur: "ڈیلی افادیت",
     tagline_ur: "سچ کے ساتھ، ہر لمحہ باخبر — TRUST • FACTS • GLOBAL NEWS",
+    max_featured_posts: 5,
   });
 
   const [smtpConfig, setSmtpConfig] = useState({
@@ -383,6 +384,32 @@ export default function SettingsAdmin() {
                   placeholder="پیر تا ہفتہ: صبح ۹ تا شام ۶ بجے"
                   className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] outline-none"
                 />
+              </div>
+
+              <div className="pt-3 border-t border-[#dcd8cd]/70">
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  {lang === "ur" ? "زیادہ سے زیادہ فیچرڈ پوسٹس کی حد (Max Featured Posts)" : "Max Featured Posts Limit (Hero & Featured Rotation)"}
+                </label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <input
+                    type="number"
+                    min={1}
+                    max={25}
+                    value={siteInfo.max_featured_posts ?? 5}
+                    onChange={(e) =>
+                      setSiteInfo({
+                        ...siteInfo,
+                        max_featured_posts: Math.max(1, Math.min(25, Number(e.target.value) || 1)),
+                      })
+                    }
+                    className="w-28 text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] font-mono outline-none focus:border-emerald-700"
+                  />
+                  <p className="text-[11px] text-gray-500">
+                    {lang === "ur"
+                      ? "جب نئی پوسٹ فیچرڈ ہو اور حد پوری ہو جائے تو سب سے پرانی فیچرڈ پوسٹ خودکار طور پر نارمل ہو جائے گی۔"
+                      : "When a new article is marked Featured above this limit, the oldest featured post automatically reverts to normal."}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCategories } from "@/lib/cmsDb";
+import { filterPublishedArticles } from "@/lib/articleMeta";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
@@ -28,16 +29,18 @@ export async function GET(req) {
 
     const { data: articles, error } = await supabaseAdmin
       .from("articles")
-      .select("id, title_ur, title_en, slug, cover_image, created_at")
+      .select("id, title_ur, title_en, slug, cover_image, content_en, created_at")
       .in("category_id", targetIds)
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .limit(limit * 3);
 
     if (error) throw error;
 
+    const publishedArticles = filterPublishedArticles(articles || []).slice(0, limit);
+
     return NextResponse.json({
       category: cat,
-      articles: (articles || []).map((a) => ({
+      articles: publishedArticles.map((a) => ({
         id: a.id,
         title_ur: a.title_ur,
         title_en: a.title_en,

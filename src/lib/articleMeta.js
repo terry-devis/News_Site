@@ -71,3 +71,33 @@ export function packArticleMeta({ status = "published", excerptEn = "", meta = n
   }
   return parts.join("\n");
 }
+
+export function isArticlePubliclyPublished(article) {
+  if (!article) return { published: false, unpacked: null };
+  const unpacked = unpackArticleMeta(article.content_en);
+  if (unpacked.meta?.deletedAt) return { published: false, unpacked };
+  if (unpacked.status === "published") return { published: true, unpacked };
+  if (unpacked.status === "scheduled" && unpacked.meta?.scheduledAt) {
+    const due = new Date(unpacked.meta.scheduledAt).getTime();
+    if (!Number.isNaN(due) && due <= Date.now()) {
+      return { published: true, unpacked };
+    }
+  }
+  return { published: false, unpacked };
+}
+
+export function filterPublishedArticles(rows = []) {
+  const out = [];
+  for (const art of rows || []) {
+    const { published, unpacked } = isArticlePubliclyPublished(art);
+    if (!published) continue;
+    out.push({
+      ...art,
+      status: "published",
+      summary_en: art.summary_en || unpacked.excerptEn || "",
+      meta: unpacked.meta,
+      content_en: unpacked.cleanContentEn,
+    });
+  }
+  return out;
+}

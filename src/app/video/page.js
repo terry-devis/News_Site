@@ -1,6 +1,7 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
 import { getVideos } from "@/lib/cmsDb";
+import { filterPublishedArticles } from "@/lib/articleMeta";
 import VideoClient from "./VideoClient";
 
 export const dynamic = "force-dynamic";
@@ -21,21 +22,22 @@ export default async function VideoPage() {
     const [catRes, breakRes, breakingArtsRes, videoList, mostReadRes] = await Promise.all([
       supabase.from("categories").select("*").order("display_order"),
       supabase.from("breaking_news").select("*").eq("is_active", true),
-      supabase.from("articles").select("id, title_ur, title_en, slug, is_breaking").eq("is_breaking", true),
+      supabase.from("articles").select("id, title_ur, title_en, slug, is_breaking, content_en").eq("is_breaking", true),
       getVideos(),
       supabase
         .from("articles")
-        .select("id, title_ur, title_en, slug, views, created_at, featured_image")
-        .eq("status", "published")
-        .order("views", { ascending: false })
-        .limit(6),
+        .select("id, title_ur, title_en, slug, views_count, created_at, cover_image, content_en")
+        .order("views_count", { ascending: false })
+        .limit(18),
     ]);
 
     if (catRes.data) categories = catRes.data;
     if (videoList) videos = videoList;
-    if (mostReadRes.data) mostReadStories = mostReadRes.data;
+    if (mostReadRes.data) {
+      mostReadStories = filterPublishedArticles(mostReadRes.data).slice(0, 6);
+    }
 
-    const artBreaking = (breakingArtsRes.data || []).map((a) => ({
+    const artBreaking = filterPublishedArticles(breakingArtsRes.data || []).map((a) => ({
       id: `art-${a.id}`,
       text_ur: a.title_ur,
       text_en: a.title_en || a.title_ur,

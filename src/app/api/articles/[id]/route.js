@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { unpackArticleMeta, packArticleMeta } from "@/lib/articleMeta";
+import { enforceMaxFeaturedLimit } from "@/lib/featuredLimit";
 import { requirePermission } from "@/lib/auth";
 
 export async function GET(req, { params }) {
@@ -77,6 +78,10 @@ export async function PUT(req, { params }) {
       .select();
 
     if (error) throw error;
+
+    if (data?.[0]?.is_featured) {
+      await enforceMaxFeaturedLimit(data[0].id);
+    }
 
     // Automatic synchronization with breaking_news ticker
     if (updates.is_breaking !== undefined) {

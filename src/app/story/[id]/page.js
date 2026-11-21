@@ -1,4 +1,6 @@
+import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { isArticlePubliclyPublished, filterPublishedArticles } from "@/lib/articleMeta";
 import StoryClient from "@/component/StoryClient";
 
 export const dynamic = "force-dynamic";
@@ -10,16 +12,17 @@ export default async function StoryDetail({ params }) {
   let related = [];
   let categories = [];
   let breakingNews = [];
+  let isHiddenDraft = false;
 
   try {
     const [catRes, breakRes, breakingArtsRes] = await Promise.all([
       supabase.from("categories").select("*").order("display_order"),
       supabase.from("breaking_news").select("*").eq("is_active", true),
-      supabase.from("articles").select("id, title_ur, title_en, slug, is_breaking").eq("is_breaking", true),
+      supabase.from("articles").select("id, title_ur, title_en, slug, is_breaking, content_en").eq("is_breaking", true),
     ]);
     if (catRes.data) categories = catRes.data;
 
-    const artBreaking = (breakingArtsRes.data || []).map((a) => ({
+    const artBreaking = filterPublishedArticles(breakingArtsRes.data || []).map((a) => ({
       id: `art-${a.id}`,
       text_ur: a.title_ur,
       text_en: a.title_en || a.title_ur,
@@ -48,7 +51,18 @@ export default async function StoryDetail({ params }) {
 
     const { data } = await query.single();
     if (data) {
-      article = data;
+      const { published, unpacked } = isArticlePubliclyPublished(data);
+      if (!published) {
+        isHiddenDraft = true;
+      } else {
+        article = {
+          ...data,
+          status: "published",
+          summary_en: data.summary_en || unpacked.excerptEn || "",
+          meta: unpacked.meta,
+          content_en: unpacked.cleanContentEn,
+        };
+      }
     }
 
     // Fetch related/recent stories
@@ -57,11 +71,15 @@ export default async function StoryDetail({ params }) {
       .select("*, categories(*)")
       .neq("id", article?.id || 0)
       .order("created_at", { ascending: false })
-      .limit(5);
+      .limit(10);
 
-    if (recents) related = recents;
+    if (recents) related = filterPublishedArticles(recents).slice(0, 5);
   } catch (err) {
     console.error("Story fetch error:", err);
+  }
+
+  if (isHiddenDraft) {
+    notFound();
   }
 
   // Fallback article if Supabase tables are still empty

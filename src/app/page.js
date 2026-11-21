@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { getVideos, getSiteSetting } from "@/lib/cmsDb";
+import { filterPublishedArticles } from "@/lib/articleMeta";
 import HomeClient from "@/component/HomeClient";
 
 export const dynamic = "force-dynamic";
@@ -593,12 +594,14 @@ export default async function Home() {
     const [catRes, breakRes, artRes] = await Promise.all([
       supabase.from("categories").select("*").order("display_order"),
       supabase.from("breaking_news").select("*").eq("is_active", true).order("priority"),
-      supabase.from("articles").select("*, categories(*)").order("created_at", { ascending: false }).limit(40),
+      supabase.from("articles").select("*, categories(*)").order("created_at", { ascending: false }).limit(60),
     ]);
 
     if (catRes.data && catRes.data.length > 0) categories = catRes.data;
     if (breakRes.data && breakRes.data.length > 0) breakingNews = breakRes.data;
-    if (artRes.data && artRes.data.length > 0) articles = artRes.data;
+    if (artRes.data && artRes.data.length > 0) {
+      articles = filterPublishedArticles(artRes.data);
+    }
   } catch (err) {
     console.error("Supabase fetch error, using fallback data:", err);
   }

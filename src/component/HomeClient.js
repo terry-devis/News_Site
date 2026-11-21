@@ -104,11 +104,17 @@ export default function HomeClient({
 
   const storyHref = (story) => `/story/${story?.slug || story?.id}`;
 
-  // 1. Hero + Live Stories (kept 100% intact)
-  const leadStory = articles[0] || null;
-  const secondaryStories = articles.slice(1, 5);
-  const liveFeatured = articles[5] || articles[0] || null;
-  const liveTimeline = articles.slice(6, 12);
+  // 1. Hero + Live Stories (Prioritize published featured stories, newest first)
+  const featuredPool = articles.filter((a) => a.is_featured);
+  const leadStory = featuredPool[0] || articles[0] || null;
+  const nonLeadArticles = articles.filter((a) => a.id !== leadStory?.id);
+  const otherFeatured = featuredPool.filter((a) => a.id !== leadStory?.id);
+  const nonFeatured = nonLeadArticles.filter((a) => !a.is_featured);
+  const secondaryStories = [...otherFeatured, ...nonFeatured].slice(0, 4);
+  const usedIds = new Set([leadStory?.id, ...secondaryStories.map((s) => s.id)].filter(Boolean));
+  const remainingLive = articles.filter((a) => !usedIds.has(a.id));
+  const liveFeatured = remainingLive[0] || articles[0] || null;
+  const liveTimeline = remainingLive.slice(1, 7);
 
   // 2. Category Story Selector with safe fallback
   const getCategoryStories = (slugs, count = 5) => {

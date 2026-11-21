@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { unpackArticleMeta, packArticleMeta } from "@/lib/articleMeta";
+import { enforceMaxFeaturedLimit } from "@/lib/featuredLimit";
 import { requirePermission } from "@/lib/auth";
 import { generateSeoSlug } from "@/lib/slugify";
 
@@ -99,6 +100,10 @@ export async function POST(req) {
 
     const { data, error } = await supabaseAdmin.from("articles").insert(newArticle).select();
     if (error) throw error;
+
+    if (newArticle.is_featured && data?.[0]?.id) {
+      await enforceMaxFeaturedLimit(data[0].id);
+    }
 
     // If marked as breaking, also add to breaking_news ticker
     if (is_breaking) {

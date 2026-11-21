@@ -27,33 +27,43 @@ export default function LiveClient({ categories = [], breakingNews = [] }) {
 
   const channels = [
     {
-      id: "afadiat-news",
-      name_ur: "ڈیلی افادیت نیوز لائیو",
-      name_en: "Daily Afadiat News Live",
-      desc_ur: "اسلام آباد اسٹوڈیو — ۲۴ گھنٹے بریکنگ نیوز اور تازہ ترین حالاتِ حاضرہ",
-      desc_en: "Islamabad Studio — 24/7 Breaking News & Current Affairs",
+      id: "afadiat-hls",
+      name_ur: "ڈیلی افادیت لائیو (HLS)",
+      name_en: "Daily Afadiat Live (HLS)",
+      desc_ur: "روزنامہ افادیت ایچ ڈی براہِ راست نشریات",
+      desc_en: "Daily Afadiat HD Live Stream",
       isLive: true,
-      quality: "1080p HD",
-      embedUrl: "https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig",
-    },
-    {
-      id: "afadiat-business",
-      name_ur: "ڈیلی افادیت بزنس و معیشت",
-      name_en: "Daily Afadiat Business & Markets",
-      desc_ur: "کراچی اسٹاک ایکسچینج، ڈالر ریٹ، سونا اور کاروباری خبریں",
-      desc_en: "PSX Market Watch, Currency Rates & Economic Bulletins",
-      isLive: true,
-      quality: "1080p HD",
+      streamUrl: "https://mtoczko.github.io/hls-test-streams/test-vtt/playlist.m3u8",
       embedUrl: "",
     },
     {
-      id: "afadiat-sports",
-      name_ur: "ڈیلی افادیت اسپورٹس فیڈ",
-      name_en: "Daily Afadiat Sports Feed",
-      desc_ur: "کرکٹ، ہاکی اور بین الاقوامی کھیلوں کی خصوصی نشریات",
-      desc_en: "Cricket, Hockey & International Sports Coverage",
+      id: "afadiat-live",
+      name_ur: "ڈیلی افادیت لائیو",
+      name_en: "Daily Afadiat Live",
+      desc_ur: "اسلام آباد اسٹوڈیو — ۲۴ گھنٹے بریکنگ نیوز اور حالاتِ حاضرہ",
+      desc_en: "Islamabad Studio — 24/7 Breaking News & Current Affairs",
+      isLive: true,
+      streamUrl: "",
+      embedUrl: "https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig",
+    },
+    {
+      id: "afadiat-news-24",
+      name_ur: "افادیت نیوز ۲۴",
+      name_en: "Afadiat News 24",
+      desc_ur: "بزنس، مارکیٹس اور خصوصی رپورٹس",
+      desc_en: "Business, Markets & Special Bulletins",
+      isLive: true,
+      streamUrl: "",
+      embedUrl: "https://www.youtube.com/embed/live_stream?channel=UC4R8DWoMoI7CAwX8_LjQHig",
+    },
+    {
+      id: "afadiat-world",
+      name_ur: "افادیت ورلڈ",
+      name_en: "Afadiat World",
+      desc_ur: "بین الاقوامی اور کھیلوں کی خصوصی نشریات",
+      desc_en: "International & Sports Special Coverage",
       isLive: false,
-      quality: "STANDBY",
+      streamUrl: "",
       embedUrl: "",
     },
   ];
@@ -116,158 +126,153 @@ export default function LiveClient({ categories = [], breakingNews = [] }) {
     <div className="min-h-screen bg-[#f7f6f3] flex flex-col font-sans" dir={dir}>
       <Header categories={categories} breakingNews={breakingNews} />
 
-      <main className="flex-1 w-full max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-8 space-y-10">
-        
-        {/* Multi-Channel Live TV Switcher & Player Stage (Sharp Non-Round Edges) */}
-        <div className="bg-[#07130c] border border-gray-800 rounded-none text-white overflow-hidden shadow-2xl relative">
-          
-          {/* Top Frequency & Status Strip */}
-          <div className="bg-[#0b1d13] border-b border-emerald-950/80 px-4 py-2.5 flex items-center justify-between text-xs font-mono">
-            <div className="flex items-center gap-2">
-              <span
-                className={`size-2.5 rounded-full ${
-                  activeChannel.isLive ? "bg-red-500 animate-pulse" : "bg-amber-400"
-                }`}
-              />
-              <span
-                className={`font-bold uppercase tracking-wider ${
-                  activeChannel.isLive ? "text-red-400" : "text-amber-300"
-                }`}
-              >
-                {activeChannel.isLive
-                  ? isUrdu
-                    ? "براہِ راست نشریات (ON AIR)"
-                    : "ON AIR • LIVE STREAM"
-                  : isUrdu
-                  ? "آف ایئر • اسٹینڈ بائی موڈ"
-                  : "OFF AIR • STANDBY MODE"}
-              </span>
-            </div>
-            <div className="hidden sm:flex items-center gap-3 text-emerald-400/80 text-[11px]">
-              <span>SATELLITE: PAKSAT-MM1</span>
-              <span>•</span>
-              <span>STREAM: {activeChannel.quality}</span>
-            </div>
-          </div>
+      <main className="flex-1 u-shell py-5 sm:py-6 space-y-10">
 
-          {/* Multi-Channel Switcher Bar (scraped-site style) */}
-          <div className="bg-[#0d2417] border-b border-emerald-950 px-4 py-3 flex items-center gap-2.5 overflow-x-auto scrollbar-none">
-            <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider shrink-0 flex items-center gap-1.5 px-1">
-              <Tv size={14} />
-              <span>{isUrdu ? "چینلز:" : "Channels:"}</span>
-            </span>
-            {channels.map((ch) => {
-              const isSelected = ch.id === activeChannel.id;
-              return (
-                <button
-                  key={ch.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveChannelId(ch.id);
-                    setIsPlayerStarted(false);
-                  }}
-                  className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold whitespace-nowrap transition cursor-pointer border ${
-                    isSelected
-                      ? "bg-[#184e2d] text-white border-emerald-400 shadow-sm"
-                      : "bg-[#08170f] text-gray-300 border-emerald-950 hover:border-emerald-700 hover:text-white"
-                  }`}
-                >
-                  <span>{isUrdu ? ch.name_ur : ch.name_en}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 font-sans font-bold flex items-center gap-1 ${
-                      ch.isLive
-                        ? "bg-red-600 text-white"
-                        : "bg-zinc-700 text-gray-300"
-                    }`}
-                  >
-                    {ch.isLive && <span className="size-1.5 rounded-full bg-white animate-pulse" />}
-                    <span>{ch.isLive ? (isUrdu ? "آن ایئر" : "On Air") : isUrdu ? "آف ایئر" : "Off Air"}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="p-5 sm:p-8 lg:p-10 max-w-5xl mx-auto space-y-6">
-            {/* Active Channel Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-950 pb-4">
-              <div className="space-y-1">
-                <h1 className="text-xl sm:text-3xl font-black urdu-headline text-white">
-                  {isUrdu ? activeChannel.name_ur : activeChannel.name_en}
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-300">
-                  {isUrdu ? activeChannel.desc_ur : activeChannel.desc_en}
-                </p>
-              </div>
-              <div className="inline-flex items-center gap-2 bg-emerald-900/60 border border-emerald-700/80 text-emerald-200 text-xs font-bold px-3 py-1.5 uppercase tracking-wider font-sans self-start sm:self-auto">
-                <Signal size={14} className="text-emerald-400 animate-pulse" />
-                <span>
-                  {activeChannel.isLive
-                    ? isUrdu ? "لائیو فیڈ فعال" : "LIVE FEED ACTIVE"
-                    : isUrdu ? "عنقریب نشریات" : "STANDBY FEED"}
-                </span>
-              </div>
+        {/* Editorial Page Header + 2-Column Live TV Layout (Matches Daily Insaf) */}
+        <section>
+          <header className="border-b border-[#dcd8cd] mb-5 pb-4 sm:mb-6">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl lg:text-[2.125rem] font-black text-gray-950 urdu-headline">
+                {isUrdu ? "لائیو ٹی وی" : "Live TV"}
+              </h1>
             </div>
+            <p className="text-gray-500 mt-1.5 text-sm">
+              {isUrdu ? "روزنامہ افادیت کی براہِ راست نشریات۔" : "Daily Afadiat's live broadcast."}
+            </p>
+          </header>
 
-            {/* Interactive 16:9 Live Video Player Stage */}
-            <div className="relative aspect-video w-full bg-black border border-gray-700 rounded-none flex items-center justify-center overflow-hidden">
-              {activeChannel.isLive && isPlayerStarted && activeChannel.embedUrl ? (
-                <iframe
-                  src={`${activeChannel.embedUrl}&autoplay=1`}
-                  title={activeChannel.name_en}
-                  className="w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <>
-                  <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] pointer-events-none" />
-                  <div className="text-center space-y-3 z-10 p-6 max-w-lg">
-                    <div
-                      className={`size-14 sm:size-16 rounded-none border flex items-center justify-center mx-auto ${
-                        activeChannel.isLive
-                          ? "bg-red-600/20 border-red-500 text-red-400"
-                          : "bg-emerald-950/80 border-emerald-600/80 text-emerald-400"
-                      }`}
-                    >
-                      {activeChannel.isLive ? <Play size={28} className="translate-x-0.5" /> : <Tv size={28} />}
-                    </div>
-                    <div className="text-white text-sm sm:text-base font-bold uppercase tracking-wider font-sans">
-                      {isUrdu ? activeChannel.name_ur : activeChannel.name_en}
-                    </div>
-                    <p className="text-xs text-gray-300 leading-relaxed">
-                      {activeChannel.isLive
-                        ? activeChannel.embedUrl
-                          ? isUrdu
-                            ? "لائیو نشریات دیکھنے کے لیے نیچے پلے بٹن پر کلک کریں۔"
-                            : "Click below to start the live studio transmission."
-                          : isUrdu
-                          ? "ڈیلی افادیت ٹیسٹ ٹرانسمیشن فعال ہے — باقاعدہ اسٹریمنگ عنقریب شروع ہو گی۔"
-                          : "Daily Afadiat test transmission is active — full stream starting shortly."
-                        : isUrdu
-                        ? "یہ چینل اس وقت آف ایئر ہے۔ براہِ کرم دیگر آن ایئر چینل منتخب کریں یا الرٹس کے لیے سبسکرائب کریں۔"
-                        : "This channel is currently Off Air. Select an On Air channel above or subscribe for launch alerts."}
-                    </p>
-                    {activeChannel.isLive && activeChannel.embedUrl && (
+          <div className="grid gap-5 lg:grid-cols-[1fr_340px] lg:gap-6">
+            {/* Left Column: 16:9 Live Video Player + Active Stream Title */}
+            <div>
+              <div className="relative aspect-video w-full overflow-hidden bg-black rounded-lg border border-[#dcd8cd]">
+                {isPlayerStarted && activeChannel.isLive ? (
+                  activeChannel.embedUrl ? (
+                    <iframe
+                      src={`${activeChannel.embedUrl}&autoplay=1`}
+                      title={activeChannel.name_en}
+                      className="absolute inset-0 w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      className="absolute inset-0 h-full w-full"
+                      controls
+                      autoPlay
+                      playsInline
+                      crossOrigin="anonymous"
+                      src={activeChannel.streamUrl || undefined}
+                    />
+                  )
+                ) : (
+                  <>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white/80">
                       <button
                         type="button"
-                        onClick={() => setIsPlayerStarted(true)}
-                        className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-5 py-2.5 transition cursor-pointer shadow-lg"
+                        aria-label={isUrdu ? activeChannel.name_ur : activeChannel.name_en}
+                        onClick={() => activeChannel.isLive && setIsPlayerStarted(true)}
+                        className={`group grid place-items-center transition-colors ${
+                          activeChannel.isLive ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+                        }`}
                       >
-                        <Play size={14} />
-                        <span>{isUrdu ? "لائیو نشریات چلائیں" : "Watch Live Stream"}</span>
+                        <span className="bg-red-600/90 grid size-16 place-items-center rounded-full text-white shadow-lg transition-transform group-hover:scale-105">
+                          <Play size={26} className="translate-x-0.5" fill="currentColor" />
+                        </span>
                       </button>
-                    )}
-                  </div>
-                </>
-              )}
+                      <p className="mt-3 text-xs text-gray-300 max-w-md">
+                        {activeChannel.isLive
+                          ? isUrdu
+                            ? "نشریات چلانے کے لیے پلے بٹن پر کلک کریں"
+                            : "Click play to start the live stream"
+                          : isUrdu
+                          ? "یہ چینل اس وقت آف ایئر ہے"
+                          : "This channel is currently Off air"}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <h2 className="text-xl leading-tight sm:text-2xl font-black text-gray-950 urdu-headline">
+                  {isUrdu ? activeChannel.name_ur : activeChannel.name_en}
+                </h2>
+                {activeChannel.isLive ? (
+                  <span className="bg-red-600 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold text-white">
+                    <span className="size-1.5 animate-pulse rounded-full bg-white" />
+                    <span>{isUrdu ? "آن ایئر" : "On air"}</span>
+                  </span>
+                ) : (
+                  <span className="bg-gray-200 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold text-gray-700">
+                    <span>{isUrdu ? "آف ایئر" : "Off air"}</span>
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Notify Me Form */}
-            <div className="max-w-md mx-auto pt-2 text-center">
+            {/* Right Column: Vertical Channel Selector List */}
+            <ul className="grid content-start gap-2">
+              {channels.map((ch) => {
+                const isSelected = ch.id === activeChannel.id;
+                return (
+                  <li key={ch.id}>
+                    <button
+                      type="button"
+                      aria-current={isSelected ? "true" : undefined}
+                      onClick={() => {
+                        setActiveChannelId(ch.id);
+                        setIsPlayerStarted(false);
+                      }}
+                      className={`rounded-lg flex w-full items-center gap-3 border p-2 text-start transition-colors cursor-pointer ${
+                        isSelected
+                          ? "border-[#184e2d] bg-[#184e2d]/10"
+                          : "border-[#dcd8cd] bg-white hover:border-[#184e2d]"
+                      }`}
+                    >
+                      <span className="relative grid aspect-video w-24 shrink-0 place-items-center overflow-hidden rounded bg-black text-white/85">
+                        <Play size={18} fill="currentColor" />
+                        {ch.isLive && (
+                          <span className="bg-red-600 absolute start-1 top-1 rounded px-1 py-0.5 text-[0.5rem] font-bold text-white">
+                            ●
+                          </span>
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-bold text-gray-900 leading-snug urdu-headline">
+                          {isUrdu ? ch.name_ur : ch.name_en}
+                        </span>
+                        <span
+                          className={`text-xs font-semibold ${
+                            ch.isLive ? "text-red-600" : "text-gray-400"
+                          }`}
+                        >
+                          {ch.isLive
+                            ? isUrdu ? "آن ایئر" : "On air"
+                            : isUrdu ? "آف ایئر" : "Off air"}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
+
+        {/* Clean Light Notify Me Card */}
+        <div className="bg-[#efeee9] border border-[#dcd8cd] p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="text-base sm:text-lg font-bold text-gray-950 urdu-headline">
+              {isUrdu ? "خصوصی نشریات کے الرٹس حاصل کریں" : "Get Live Broadcast Alerts"}
+            </h3>
+            <p className="text-xs text-gray-600">
+              {isUrdu ? "کوئی اسپام نہیں • اہم لائیو پروگرامز کی فوری اطلاع" : "No spam • Instant alerts for special live broadcasts"}
+            </p>
+          </div>
+          <div className="w-full md:w-auto md:min-w-[360px]">
               {subscribed ? (
-                <div className="p-3.5 bg-emerald-950/90 border border-emerald-600 rounded-none text-emerald-200 text-xs font-bold flex items-center justify-center gap-2">
-                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                <div className="p-3 bg-emerald-50 border border-[#184e2d]/40 text-[#184e2d] text-xs font-bold flex items-center justify-center gap-2">
+                  <CheckCircle2 size={16} className="text-[#184e2d] shrink-0" />
                   <span>
                     {isUrdu
                       ? "شکریہ! لائیو نشریات کے آغاز پر آپ کو فوری اطلاع دی جائے گی۔"
@@ -287,22 +292,17 @@ export default function LiveClient({ categories = [], breakingNews = [] }) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="flex-1 p-3 bg-zinc-900 border border-gray-700 text-white text-xs rounded-none outline-none focus:border-emerald-500 text-left font-sans"
+                    className="flex-1 p-3 bg-white border border-[#dcd8cd] text-gray-900 text-xs rounded-none outline-none focus:border-[#184e2d] text-left font-sans"
                   />
                   <button
                     type="submit"
-                    className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-5 py-3 rounded-none flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0 uppercase tracking-wider font-sans"
+                    className="bg-[#184e2d] hover:bg-[#113820] text-white font-bold text-xs px-5 py-3 rounded-none flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0 uppercase tracking-wider font-sans"
                   >
                     <Bell size={14} />
                     <span>{isUrdu ? "مطلع کریں" : "Notify Me"}</span>
                   </button>
                 </form>
               )}
-              <p className="text-[11px] text-gray-400 mt-2 font-sans">
-                {isUrdu ? "کوئی اسپام نہیں • مکمل رازداری" : "No spam • Zero unverified alerts"}
-              </p>
-            </div>
-
           </div>
         </div>
 

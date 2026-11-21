@@ -386,17 +386,32 @@ export default function SettingsAdmin() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  {t("field_timings")}
-                </label>
-                <input
-                  type="text"
-                  value={contactInfo.timing_ur}
-                  onChange={(e) => setContactInfo({ ...contactInfo, timing_ur: e.target.value })}
-                  placeholder="پیر تا ہفتہ: صبح ۹ تا شام ۶ بجے"
-                  className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] outline-none"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    {t("field_timings")} (Urdu)
+                  </label>
+                  <input
+                    type="text"
+                    value={contactInfo.timing_ur}
+                    onChange={(e) => setContactInfo({ ...contactInfo, timing_ur: e.target.value })}
+                    placeholder="پیر تا ہفتہ: صبح ۹ تا شام ۶ بجے"
+                    className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Office Timings (English)
+                  </label>
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={contactInfo.timing_en}
+                    onChange={(e) => setContactInfo({ ...contactInfo, timing_en: e.target.value })}
+                    placeholder="Mon to Sat: 9:00 AM to 6:00 PM"
+                    className="w-full text-xs p-2.5 rounded-lg bg-white border border-[#dcd8cd] text-left font-sans outline-none"
+                  />
+                </div>
               </div>
 
               <div className="pt-3 border-t border-[#dcd8cd]/70">

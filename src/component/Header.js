@@ -2,11 +2,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Search, Menu, X, Globe, Tv, Newspaper, Flame, Home, Video, PhoneCall, Megaphone, ArrowUp, Lock, ChevronLeft, ChevronRight, ChevronDown, Briefcase, Info, ShieldCheck, TrendingUp } from "lucide-react";
 import AdSlot from "@/component/AdSlot";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
 export default function Header({ categories = [], breakingNews = [] }) {
+  const pathname = usePathname();
   const { lang, isUrdu, isEnglish, dir, toggleLanguage, t } = useSiteLanguage();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -340,30 +342,45 @@ export default function Header({ categories = [], breakingNews = [] }) {
         onMouseEnter={clearCloseTimer}
         className="border-y-2 border-[#1a1a1a] bg-[#f7f6f3] sticky top-0 z-40 shadow-xs"
       >
-        <div className="w-full max-w-[1440px] mx-auto px-2 sm:px-6 lg:px-8 flex items-center justify-between gap-2 relative">
+        <div className="w-full max-w-[1440px] mx-auto px-2 sm:px-6 lg:px-8 flex items-center justify-center gap-1 relative">
           
-          {/* Main Category Links: Smooth Horizontal Scroll on Mobile, Full on Desktop */}
-          <div className="flex items-center overflow-x-auto lg:overflow-visible scrollbar-none flex-1 py-0 text-xs sm:text-sm font-semibold select-none">
+          {/* Main Category Links + Inline Search Icon (Centered on Desktop like Daily Insaf) */}
+          <div
+            className={`flex items-center justify-start lg:justify-center overflow-x-auto lg:overflow-visible scrollbar-none py-0 select-none ${
+              isEnglish ? "font-sans text-[12px] font-semibold uppercase tracking-wide" : "text-xs sm:text-sm font-bold"
+            }`}
+          >
             <Link
               href="/"
               onMouseEnter={closeAllMenus}
-              className="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-900 hover:text-[#184e2d] transition shrink-0 border-b-2 border-transparent hover:border-[#184e2d] flex items-center"
+              className={`relative px-2.5 sm:px-3 py-2.5 transition shrink-0 flex items-center ${
+                pathname === "/" ? "text-[#184e2d]" : "text-gray-900 hover:text-[#184e2d]"
+              }`}
               aria-label={t("home")}
             >
-              <Home size={16} />
+              <Home size={17} />
+              {pathname === "/" && (
+                <span aria-hidden="true" className="bg-[#184e2d] absolute inset-x-2 bottom-0 h-0.5 rounded-full" />
+              )}
             </Link>
 
             <Link
               href="/latest"
               onMouseEnter={closeAllMenus}
-              className="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-900 hover:text-[#184e2d] transition whitespace-nowrap shrink-0 border-b-2 border-transparent hover:border-[#184e2d] font-bold"
+              className={`relative px-2.5 sm:px-3 py-2.5 transition whitespace-nowrap shrink-0 ${
+                pathname === "/latest" ? "text-[#184e2d]" : "text-gray-900 hover:text-[#184e2d]"
+              }`}
             >
               {t("latest")}
+              {pathname === "/latest" && (
+                <span aria-hidden="true" className="bg-[#184e2d] absolute inset-x-2 bottom-0 h-0.5 rounded-full" />
+              )}
             </Link>
 
             {activeCategories.slice(0, 10).map((cat) => {
               const displayName = isEnglish ? (cat.name_en || cat.name_ur) : (cat.name_ur || cat.name_en);
               const isHovered = hoveredCat?.id === cat.id;
+              const isCurrent = pathname?.startsWith(`/category/${cat.slug}`);
               return (
                 <Link
                   key={cat.id}
@@ -372,12 +389,12 @@ export default function Header({ categories = [], breakingNews = [] }) {
                   onFocus={() => handleCatHover(cat)}
                   onClick={closeAllMenus}
                   aria-expanded={isHovered}
-                  className={`relative px-2.5 sm:px-3 py-2 sm:py-2.5 transition whitespace-nowrap shrink-0 font-bold ${
-                    isHovered ? "text-[#184e2d]" : "text-gray-900 hover:text-[#184e2d]"
+                  className={`relative px-2.5 sm:px-3 py-2.5 transition whitespace-nowrap shrink-0 ${
+                    isHovered || isCurrent ? "text-[#184e2d]" : "text-gray-900 hover:text-[#184e2d]"
                   }`}
                 >
                   {displayName}
-                  {isHovered && (
+                  {(isHovered || isCurrent) && (
                     <span
                       aria-hidden="true"
                       className="bg-[#184e2d] absolute inset-x-2 bottom-0 h-0.5 rounded-full"
@@ -402,13 +419,13 @@ export default function Header({ categories = [], breakingNews = [] }) {
                   }}
                   aria-expanded={moreMenuOpen}
                   aria-haspopup="true"
-                  className={`flex items-center gap-1 whitespace-nowrap px-2.5 sm:px-3 py-2 sm:py-2.5 font-bold transition cursor-pointer ${
+                  className={`flex items-center gap-1 whitespace-nowrap px-2.5 sm:px-3 py-2.5 transition cursor-pointer ${
                     moreMenuOpen ? "text-[#184e2d]" : "text-gray-900 hover:text-[#184e2d]"
-                  }`}
+                  } ${isEnglish ? "uppercase tracking-wide font-semibold text-[12px]" : "font-bold"}`}
                 >
                   <span>{isUrdu ? "مزید" : "More"}</span>
                   <ChevronDown
-                    size={14}
+                    size={13}
                     className={`transition-transform duration-200 ${moreMenuOpen ? "rotate-180" : ""}`}
                   />
                 </button>
@@ -422,7 +439,7 @@ export default function Header({ categories = [], breakingNews = [] }) {
                           <Link
                             href={`/category/${cat.slug}`}
                             onClick={closeAllMenus}
-                            className="hover:bg-[#efeee9] hover:text-[#184e2d] block whitespace-nowrap px-4 py-2.5 text-sm font-semibold text-gray-800 transition-colors"
+                            className="hover:bg-[#efeee9] hover:text-[#184e2d] block whitespace-nowrap px-4 py-2.5 text-sm font-semibold text-gray-800 transition-colors normal-case"
                           >
                             {displayName}
                           </Link>
@@ -433,34 +450,39 @@ export default function Header({ categories = [], breakingNews = [] }) {
                 )}
               </div>
             )}
-          </div>
 
-          {/* Search Button & Expandable Box */}
-          <div className="flex items-center shrink-0">
-            {searchOpen ? (
-              <div className="flex items-center gap-1 border border-emerald-600 rounded-none px-2 py-1 bg-white my-1 shadow-sm">
-                <input
-                  type="text"
-                  placeholder={t("searchPlaceholder")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`text-xs outline-none bg-transparent w-28 sm:w-44 ${isUrdu ? "text-right font-sans" : "text-left font-sans"}`}
-                  autoFocus
-                />
-                <button onClick={() => setSearchOpen(false)} className="text-gray-400 hover:text-gray-600 p-0.5">
-                  <X size={14} />
+            {/* Inline Search Button & Expandable Box (Right next to nav items like Daily Insaf) */}
+            <div className="flex items-center shrink-0 ms-1">
+              {searchOpen ? (
+                <div className="flex items-center gap-1 border border-[#184e2d] rounded-none px-2 py-1 bg-white my-1 shadow-sm">
+                  <input
+                    type="text"
+                    placeholder={t("searchPlaceholder")}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`text-xs outline-none bg-transparent w-28 sm:w-44 normal-case font-normal ${isUrdu ? "text-right font-sans" : "text-left font-sans"}`}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSearchOpen(false)}
+                    className="text-gray-400 hover:text-gray-600 p-0.5 cursor-pointer"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
+                  className="size-9 grid place-items-center text-gray-800 hover:text-[#184e2d] transition cursor-pointer"
+                  aria-label={t("searchAria")}
+                  title={isUrdu ? "تلاش کریں" : "Search"}
+                >
+                  <Search size={17} />
                 </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="size-8 sm:size-9 grid place-items-center text-gray-800 hover:text-emerald-700 transition border-l rtl:border-r rtl:border-l-0 border-[#dcd8cd] pl-2 rtl:pr-2 rtl:pl-0"
-                aria-label={t("searchAria")}
-                title={isUrdu ? "تلاش کریں" : "Search"}
-              >
-                <Search size={16} />
-              </button>
-            )}
+              )}
+            </div>
           </div>
 
         </div>

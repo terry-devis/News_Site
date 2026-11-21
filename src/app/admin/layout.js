@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { hasPermission } from "@/lib/permissions";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import {
   LayoutDashboard,
   FileText,
@@ -152,9 +153,7 @@ function AdminLayoutInner({ children }) {
     ) || extraRoutePerms.find((r) => pathname === r.prefix || pathname.startsWith(`${r.prefix}/`));
   const routePerm = matchedNav?.perm || null;
   const isRouteForbidden = Boolean(currentUser && routePerm && !hasPermission(currentUser, routePerm));
-  const publicSiteUrl = process.env.NEXT_PUBLIC_APP_ROLE === "admin" && process.env.NEXT_PUBLIC_SITE_URL
-    ? process.env.NEXT_PUBLIC_SITE_URL
-    : "/";
+  const publicSiteUrl = toPublicSiteUrl("/");
   const userEmail = currentUser?.email || "Loading...";
   const userRole = currentUser?.roles?.[0] || "Staff";
   const userInitial = (currentUser?.full_name_en || currentUser?.email || "A").charAt(0).toUpperCase();

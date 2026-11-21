@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import {
   LayoutGrid,
   Plus,
@@ -603,7 +604,7 @@ export default function AdminLayoutBuilderPage() {
 
               <div className="flex items-center gap-2">
                 <a
-                  href={selectedEdition === "ur" ? "/" : "/en"}
+                  href={toPublicSiteUrl(selectedEdition === "ur" ? "/" : "/en")}
                   target="_blank"
                   rel="noreferrer"
                   className="text-[11px] font-semibold text-[#124e2b] hover:underline flex items-center gap-1"

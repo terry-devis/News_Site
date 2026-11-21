@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -572,7 +573,7 @@ export default function ArticleEditorClient({ initialId = null }) {
                   <span>Move to trash</span>
                 </button>
                 <Link
-                  href={`/story/${initialId}`}
+                  href={toPublicSiteUrl(`/story/${initialId}`)}
                   target="_blank"
                   className="text-xs font-semibold text-[#184e2d] hover:underline"
                 >

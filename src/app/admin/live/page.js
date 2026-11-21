@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import { DEFAULT_LIVE_STREAMS } from "@/lib/liveStreams";
 
 const EMPTY_FORM = {
@@ -169,7 +170,7 @@ export default function AdminLiveTvPage() {
         </div>
 
         <Link
-          href="/live"
+          href={toPublicSiteUrl("/live")}
           target="_blank"
           className="inline-flex items-center gap-1.5 text-xs font-semibold border border-[#e5e2da] bg-white hover:border-[#184e2d] hover:text-[#184e2d] px-3 py-2 rounded-md transition"
         >

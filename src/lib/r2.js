@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import fs from "fs";
 import path from "path";
 
@@ -134,4 +134,69 @@ export async function deleteMedia(key) {
   }
 
   return { success: false };
+}
+
+export async function uploadMediaChunk(buffer, uploadId, partIndex) {
+  const safeId = String(uploadId || "up").replace(/[^a-zA-Z0-9_-]/g, "_");
+  const chunkKey = `__chunks/${safeId}/part_${Number(partIndex)}`;
+
+  if (isR2Configured && s3Client) {
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: chunkKey,
+        Body: buffer,
+        ContentType: "application/octet-stream",
+      })
+    );
+    return { success: true, chunkKey };
+  }
+
+  const tmpDir = path.join("/tmp/uploads_chunks", safeId);
+  if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+  fs.writeFileSync(path.join(tmpDir, `part_${Number(partIndex)}`), buffer);
+  return { success: true, chunkKey };
+}
+
+export async function completeMediaChunks(uploadId, totalParts, originalFilename, contentType = "application/pdf") {
+  const safeId = String(uploadId || "up").replace(/[^a-zA-Z0-9_-]/g, "_");
+  const count = Number(totalParts) || 1;
+  const buffers = [];
+
+  if (isR2Configured && s3Client) {
+    for (let i = 0; i < count; i++) {
+      const chunkKey = `__chunks/${safeId}/part_${i}`;
+      const res = await s3Client.send(
+        new GetObjectCommand({
+          Bucket: bucketName,
+          Key: chunkKey,
+        })
+      );
+      const byteArray = await res.Body.transformToByteArray();
+      buffers.push(Buffer.from(byteArray));
+    }
+
+    const fullBuffer = Buffer.concat(buffers);
+    const result = await uploadMedia(fullBuffer, originalFilename, contentType);
+
+    for (let i = 0; i < count; i++) {
+      const chunkKey = `__chunks/${safeId}/part_${i}`;
+      s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: chunkKey })).catch(() => {});
+    }
+
+    return result;
+  }
+
+  const tmpDir = path.join("/tmp/uploads_chunks", safeId);
+  for (let i = 0; i < count; i++) {
+    const partPath = path.join(tmpDir, `part_${i}`);
+    if (fs.existsSync(partPath)) {
+      buffers.push(fs.readFileSync(partPath));
+      try {
+        fs.unlinkSync(partPath);
+      } catch {}
+    }
+  }
+  const fullBuffer = Buffer.concat(buffers);
+  return uploadMedia(fullBuffer, originalFilename, contentType);
 }

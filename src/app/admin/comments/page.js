@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import {
   MessageSquare,
   CheckCircle2,
@@ -499,7 +500,7 @@ export default function CommentsAdmin() {
                             Article #{comment.article_id}
                           </span>
                           <Link
-                            href={`/story/${comment.article_id}`}
+                            href={toPublicSiteUrl(`/story/${comment.article_id}`)}
                             target="_blank"
                             className="text-xs font-serif urdu-headline text-emerald-800 hover:underline flex items-center gap-1 font-bold"
                           >

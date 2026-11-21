@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import {
   Layers,
   PlusCircle,
@@ -258,7 +259,7 @@ export default function AdminPagesPage() {
                     <td className="p-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <Link
-                          href={`/p/${page.slug}`}
+                          href={toPublicSiteUrl(`/p/${page.slug}`)}
                           target="_blank"
                           className="p-1.5 text-gray-600 hover:text-emerald-700 hover:bg-white rounded-none border border-transparent hover:border-[#dcd8cd]"
                           title="View Live Page"

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import { useSearchParams } from "next/navigation";
 import {
   Plus,
@@ -557,7 +558,7 @@ function ArticlesAdminInner() {
                               </Link>
 
                               <Link
-                                href={`/story/${art.id || art.slug}`}
+                                href={toPublicSiteUrl(`/story/${art.id || art.slug}`)}
                                 target="_blank"
                                 className="p-1.5 text-gray-500 hover:text-emerald-800 hover:bg-gray-100 rounded transition"
                                 title="View public page"

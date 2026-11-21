@@ -1006,13 +1006,62 @@ export async function deleteVideo(id) {
 // ==========================================
 // 7. EPAPER API
 // ==========================================
+const SAMPLE_EPAPER_PDF_URL =
+  "https://pub-afe682c6e960401f9f06ea1705e8db77.r2.dev/daily-afadiat-sample-edition.pdf";
+
+function normalizePdfUrl(url) {
+  if (!url || String(url).includes("digitaloceanspaces.com")) {
+    return SAMPLE_EPAPER_PDF_URL;
+  }
+  return url;
+}
+
+function normalizeCitySlug(rawCity) {
+  const c = String(rawCity || "islamabad").toLowerCase();
+  if (c.includes("lahore") || c.includes("لاہور")) return "lahore";
+  if (c.includes("karachi") || c.includes("کراچی")) return "karachi";
+  if (c.includes("quetta") || c.includes("کوئٹہ")) return "quetta";
+  if (c.includes("international") || c.includes("انٹرنیشنل")) return "international";
+  return "islamabad";
+}
+
 export async function getEpaperEditions(date = null, city = null) {
   try {
-    let q = supabaseAdmin.from("epaper_editions").select("*").order("page_number", { ascending: true });
-    if (date) q = q.eq("edition_date", date);
-    if (city && city !== "all") q = q.eq("city_slug", city);
-    const { data, error } = await q;
-    if (!error && data && data.length > 0) return data;
+    const v2Issues = await loadEpaperIssuesV2();
+    const liveIssues = (v2Issues || []).filter((issue) => issue && issue.is_live !== false);
+    if (liveIssues.length > 0) {
+      const flattened = [];
+      for (const issue of liveIssues) {
+        const citySlug = normalizeCitySlug(issue.city || issue.title);
+        const pdfUrl = normalizePdfUrl(issue.pdf_url);
+        for (const p of issue.pages || []) {
+          flattened.push({
+            id: `${issue.id}_p${p.page_number}`,
+            issue_id: issue.id,
+            edition_date: issue.edition_date,
+            paper: issue.paper || "ur",
+            city_slug: citySlug,
+            city_name_ur: issue.title || issue.city || "اسلام آباد / راولپنڈی",
+            city_name_en: issue.city || issue.title || "Islamabad",
+            page_number: Number(p.page_number) || 1,
+            page_title_ur: p.title || `صفحہ ${p.page_number}`,
+            page_title_en: p.title || `Page ${p.page_number}`,
+            page_image: p.image_url || "",
+            thumbnail_url: p.thumbnail_url || p.image_url || "",
+            pdf_url: pdfUrl,
+            regions: Array.isArray(p.regions) ? p.regions : [],
+            is_active: true,
+          });
+        }
+      }
+      let filtered = flattened;
+      if (date) filtered = filtered.filter((e) => e.edition_date === date);
+      if (city && city !== "all") filtered = filtered.filter((e) => e.city_slug === city);
+      if (filtered.length > 0) {
+        return filtered.sort((a, b) => (Number(a.page_number) || 1) - (Number(b.page_number) || 1));
+      }
+      return flattened.sort((a, b) => (Number(a.page_number) || 1) - (Number(b.page_number) || 1));
+    }
   } catch (e) {}
 
   const local = ensureLocalStore();
@@ -1094,7 +1143,7 @@ const DEFAULT_EPAPER_ISSUES = [
     status: "ready",
     is_live: true,
     file_size: "34.6 MB",
-    pdf_url: "https://daily-afadiat.sgp1.digitaloceanspaces.com/epaper/2026/11/islamabad/2026-11-20.pdf",
+    pdf_url: SAMPLE_EPAPER_PDF_URL,
     published_at: "2026-11-20T09:30:00.000Z",
     pages: [
       {
@@ -1168,13 +1217,26 @@ const DEFAULT_EPAPER_ISSUES = [
 async function loadEpaperIssuesV2() {
   const remote = await getSiteSetting("epaper_issues_v2");
   if (Array.isArray(remote) && remote.length > 0) {
-    return remote;
+    let healed = false;
+    const normalized = remote.map((issue) => {
+      const cleanPdf = normalizePdfUrl(issue.pdf_url);
+      if (cleanPdf !== issue.pdf_url) healed = true;
+      return { ...issue, pdf_url: cleanPdf };
+    });
+    if (healed) {
+      await updateSiteSetting("epaper_issues_v2", normalized);
+    }
+    return normalized;
   }
   const local = ensureLocalStore();
-  const seed =
+  const rawSeed =
     Array.isArray(local.epaper_issues_v2) && local.epaper_issues_v2.length > 0
       ? local.epaper_issues_v2
       : DEFAULT_EPAPER_ISSUES;
+  const seed = rawSeed.map((issue) => ({
+    ...issue,
+    pdf_url: normalizePdfUrl(issue.pdf_url),
+  }));
   await updateSiteSetting("epaper_issues_v2", seed);
   return seed;
 }
@@ -1228,7 +1290,7 @@ export async function createEpaperEditionV2(data) {
     status: "ready",
     is_live: true,
     file_size: data.file_size || "32.4 MB",
-    pdf_url: data.pdf_url || "https://daily-afadiat.sgp1.digitaloceanspaces.com/epaper/sample.pdf",
+    pdf_url: normalizePdfUrl(data.pdf_url),
     published_at: new Date().toISOString(),
     pages: samplePages,
   };

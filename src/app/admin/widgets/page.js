@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import {
   Activity,
   RefreshCw,
@@ -379,7 +380,7 @@ export default function ServicesDataPage() {
         </div>
         <div className="flex items-center gap-3">
           <a
-            href="/"
+            href={toPublicSiteUrl("/")}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-semibold text-emerald-800 hover:text-emerald-900 flex items-center gap-1 border border-[#e5e2da] px-3 py-1.5 rounded bg-white hover:bg-gray-50 shadow-2xs transition-colors"

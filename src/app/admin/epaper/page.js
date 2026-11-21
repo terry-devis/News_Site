@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import {
   Newspaper,
   Calendar,
@@ -57,7 +58,7 @@ export default function AdminEpaperPage() {
   const fetchEditions = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/epaper");
+      const res = await fetch("/api/epaper", { cache: "no-store" });
       const data = await res.json();
       if (data.editions) {
         setEditions(data.editions);
@@ -152,30 +153,51 @@ export default function AdminEpaperPage() {
     try {
       let uploadedPdfUrl = "";
       if (selectedFile) {
-        const MAX_DIRECT_UPLOAD_BYTES = 4 * 1024 * 1024; // 4 MB (Vercel serverless body limit is 4.5 MB)
-        if (selectedFile.size <= MAX_DIRECT_UPLOAD_BYTES) {
+        const CHUNK_SIZE = 3 * 1024 * 1024; // 3 MB chunks (safely below Vercel 4.5 MB body limit)
+        if (selectedFile.size <= CHUNK_SIZE) {
+          const fd = new FormData();
+          fd.append("file", selectedFile);
+          const upRes = await fetch("/api/upload", { method: "POST", body: fd });
+          const rawText = await upRes.text();
+          let upData = {};
           try {
-            const fd = new FormData();
-            fd.append("file", selectedFile);
-            const upRes = await fetch("/api/upload", { method: "POST", body: fd });
-            const rawText = await upRes.text();
-            let upData = {};
-            try {
-              upData = JSON.parse(rawText);
-            } catch {}
-            if (upRes.ok && upData.url) {
-              uploadedPdfUrl = upData.url;
-            }
-          } catch (uploadErr) {
-            console.warn("Direct PDF upload fallback:", uploadErr);
+            upData = JSON.parse(rawText);
+          } catch {}
+          if (upRes.ok && upData.url) {
+            uploadedPdfUrl = upData.url;
+          } else {
+            throw new Error(upData.error || `PDF upload failed (${upRes.status})`);
           }
-        }
-        if (!uploadedPdfUrl) {
-          const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-          const r2Base =
-            process.env.NEXT_PUBLIC_R2_PUBLIC_URL ||
-            "https://pub-afe682c6e960401f9f06ea1705e8db77.r2.dev";
-          uploadedPdfUrl = `${r2Base.replace(/\/$/, "")}/epaper_${uploadDate}_${uploadPaper}_${safeName}`;
+        } else {
+          const totalParts = Math.ceil(selectedFile.size / CHUNK_SIZE);
+          const uploadId = `ep_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          for (let partIndex = 0; partIndex < totalParts; partIndex++) {
+            const start = partIndex * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, selectedFile.size);
+            const blob = selectedFile.slice(start, end);
+            const fd = new FormData();
+            fd.append("action", "chunk");
+            fd.append("uploadId", uploadId);
+            fd.append("partIndex", String(partIndex));
+            fd.append("file", blob, `part_${partIndex}`);
+            const chunkRes = await fetch("/api/upload", { method: "POST", body: fd });
+            if (!chunkRes.ok) {
+              throw new Error(`Chunk ${partIndex + 1}/${totalParts} upload failed`);
+            }
+          }
+          const doneFd = new FormData();
+          doneFd.append("action", "complete");
+          doneFd.append("uploadId", uploadId);
+          doneFd.append("totalParts", String(totalParts));
+          doneFd.append("filename", selectedFile.name);
+          doneFd.append("contentType", selectedFile.type || "application/pdf");
+          const doneRes = await fetch("/api/upload", { method: "POST", body: doneFd });
+          const doneData = await doneRes.json().catch(() => ({}));
+          if (doneRes.ok && doneData.url) {
+            uploadedPdfUrl = doneData.url;
+          } else {
+            throw new Error(doneData.error || "Failed to finalize chunked PDF upload");
+          }
         }
       }
 
@@ -197,11 +219,14 @@ export default function AdminEpaperPage() {
 
       const data = await res.json();
       if (data.success) {
+        if (data.edition) {
+          setEditions((prev) => [data.edition, ...prev]);
+        }
         showToast("success", `New ${uploadPaper === "ur" ? "Urdu" : "English"} edition published! 8 pages generated.`);
         setSelectedFile(null);
         setUploadTitle("");
         if (fileInputRef.current) fileInputRef.current.value = "";
-        fetchEditions();
+        await fetchEditions();
       } else {
         showToast("error", data.error || "Failed to upload edition");
       }
@@ -215,6 +240,9 @@ export default function AdminEpaperPage() {
   // Toggle Live / Unpublish
   const handleToggleLive = async (edition) => {
     const newLive = !edition.is_live;
+    setEditions((prev) =>
+      prev.map((e) => (String(e.id) === String(edition.id) ? { ...e, is_live: newLive } : e))
+    );
     try {
       const res = await fetch("/api/epaper", {
         method: "PATCH",
@@ -224,7 +252,9 @@ export default function AdminEpaperPage() {
       const data = await res.json();
       if (data.success) {
         showToast("success", `Edition is now ${newLive ? "Live" : "Unpublished"}`);
-        fetchEditions();
+        await fetchEditions();
+      } else {
+        showToast("error", data.error || "Failed to update edition status");
       }
     } catch (err) {
       showToast("error", "Failed to update edition status");
@@ -399,15 +429,26 @@ export default function AdminEpaperPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchEditions}
-          disabled={loading}
-          className="p-2 text-gray-500 hover:text-gray-900 bg-white border border-[#e5e2da] rounded-lg hover:bg-gray-50 transition-colors shadow-xs self-start sm:self-auto"
-          title="Refresh editions"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin text-[#124e2b]" : ""} />
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <a
+            href={toPublicSiteUrl("/epaper")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold border border-[#e5e2da] bg-white hover:border-[#124e2b] hover:text-[#124e2b] px-3 py-2 rounded-lg transition shadow-xs"
+          >
+            <span>View Public /epaper</span>
+            <ExternalLink size={13} />
+          </a>
+          <button
+            type="button"
+            onClick={fetchEditions}
+            disabled={loading}
+            className="p-2 text-gray-500 hover:text-gray-900 bg-white border border-[#e5e2da] rounded-lg hover:bg-gray-50 transition-colors shadow-xs"
+            title="Refresh editions"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin text-[#124e2b]" : ""} />
+          </button>
+        </div>
       </div>
 
       {/* ======================================================== */}

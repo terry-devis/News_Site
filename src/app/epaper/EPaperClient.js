@@ -65,8 +65,22 @@ export default function EPaperClient({
     { num: 8, title_ur: "آخری صفحہ (تازہ ترین)", title_en: "Back Page" },
   ];
 
-  // Find edition matching page and city, or fallback to first matching page
+  // Find edition matching date, language, page and city, or fallback gracefully
+  const targetPaper = isUrdu ? "ur" : "en";
   const activeEdition =
+    editions.find(
+      (e) =>
+        e.page_number === activePage &&
+        e.edition_date === selectedDate &&
+        (!e.paper || e.paper === targetPaper) &&
+        (e.city_slug === selectedCity || !e.city_slug)
+    ) ||
+    editions.find(
+      (e) =>
+        e.page_number === activePage &&
+        (!e.paper || e.paper === targetPaper) &&
+        (e.city_slug === selectedCity || !e.city_slug)
+    ) ||
     editions.find(
       (e) =>
         e.page_number === activePage &&
@@ -75,6 +89,22 @@ export default function EPaperClient({
     editions.find((e) => e.page_number === activePage) ||
     editions[0] ||
     null;
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/epaper", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!active || !data) return;
+        if (Array.isArray(data.legacyEditions) && data.legacyEditions.length > 0) {
+          setEditions(data.legacyEditions);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Extract stories on this page
   const stories = activeEdition?.stories || [];
@@ -425,25 +455,65 @@ export default function EPaperClient({
           className={isFullscreen ? "bg-[#f7f6f3] p-4 sm:p-6 overflow-y-auto h-screen" : ""}
         >
         {activeEdition?.page_image ? (
-          /* Uploaded High-Res Newspaper Page Image (Click to Zoom, Daily Insaf style) */
+          /* Uploaded High-Res Newspaper Page Image (Click to Zoom + Interactive Hot-Zone Regions) */
           <div
             dir="ltr"
             className="border border-[#dcd8cd] rounded-xl relative bg-white overflow-hidden shadow-xs"
           >
             <div className="w-full overflow-auto">
-              <img
-                src={activeEdition.page_image}
-                alt={`${selectedDate} — ${isUrdu ? `صفحہ ${activePage}` : `Page ${activePage}`}`}
-                onClick={() => setZoomLevel((z) => (z === 100 ? 145 : 100))}
-                draggable={false}
+              <div
                 style={{
                   transform: `scale(${zoomLevel / 100})`,
                   transformOrigin: "top center",
                 }}
-                className={`block w-full h-auto select-none transition-transform duration-200 ${
-                  zoomLevel > 100 ? "cursor-zoom-out" : "cursor-zoom-in"
-                }`}
-              />
+                className="relative w-full transition-transform duration-200"
+              >
+                <img
+                  src={activeEdition.page_image}
+                  alt={`${selectedDate} — ${isUrdu ? `صفحہ ${activePage}` : `Page ${activePage}`}`}
+                  onClick={() => setZoomLevel((z) => (z === 100 ? 145 : 100))}
+                  draggable={false}
+                  className={`block w-full h-auto select-none ${
+                    zoomLevel > 100 ? "cursor-zoom-out" : "cursor-zoom-in"
+                  }`}
+                />
+                {Array.isArray(activeEdition.regions) &&
+                  activeEdition.regions.map((reg, rIdx) => {
+                    const c = reg?.coordinates;
+                    if (!c) return null;
+                    return (
+                      <button
+                        key={reg.id || rIdx}
+                        type="button"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          setActiveClip({
+                            title:
+                              reg.headline ||
+                              (isUrdu ? `ای پیپر کلپنگ — صفحہ ${activePage}` : `ePaper Clipping — Page ${activePage}`),
+                            excerpt: reg.body ? reg.body.slice(0, 140) : "",
+                            content:
+                              reg.body ||
+                              (isUrdu
+                                ? "اس خبر کی مکمل تفصیل پڑھنے کے لیے کلپنگ۔"
+                                : "Full newspaper clipping details."),
+                            byline: isUrdu ? currentCityObj.name_ur : currentCityObj.name_en,
+                            image_url: activeEdition.page_image,
+                            article_id: reg.article_id || "",
+                          });
+                        }}
+                        style={{
+                          left: `${c.x}%`,
+                          top: `${c.y}%`,
+                          width: `${c.width}%`,
+                          height: `${c.height}%`,
+                        }}
+                        title={reg.headline || (isUrdu ? "خبر پڑھنے کے لیے کلک کریں" : "Click to read story clipping")}
+                        className="absolute border-2 border-emerald-600/60 bg-emerald-500/10 hover:bg-emerald-500/25 hover:border-emerald-700 transition-colors cursor-pointer rounded-xs"
+                      />
+                    );
+                  })}
+              </div>
             </div>
           </div>
         ) : (

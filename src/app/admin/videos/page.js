@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import {
   Video,
   PlusCircle,
@@ -227,7 +228,7 @@ export default function AdminVideosPage() {
 
         <div className="flex items-center gap-2.5 shrink-0">
           <Link
-            href="/video"
+            href={toPublicSiteUrl("/video")}
             target="_blank"
             className="inline-flex items-center gap-1.5 border border-[#dcd8cd] bg-[#f7f6f3] text-gray-800 hover:text-emerald-700 font-bold text-xs px-3.5 py-2.5 rounded-none transition"
           >

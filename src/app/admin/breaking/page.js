@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { toPublicSiteUrl } from "@/lib/publicUrl";
 import {
   Flame,
   Plus,
@@ -569,7 +570,7 @@ export default function BreakingNewsAdmin() {
                           />
                         ) : item.link_url ? (
                           <Link
-                            href={item.link_url}
+                            href={toPublicSiteUrl(item.link_url)}
                             target="_blank"
                             className="font-mono text-xs text-gray-600 hover:text-red-700 flex items-center gap-1 truncate max-w-[140px]"
                           >

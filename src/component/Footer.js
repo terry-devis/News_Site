@@ -341,11 +341,15 @@ export default function Footer({ categories = [] }) {
             <Link href="/contact" className="hover:text-white transition-colors">
               {t("contact")}
             </Link>
-            <span aria-hidden="true" className="text-white/35">|</span>
-            <Link href="/admin" className="hover:text-white transition-colors flex items-center gap-1">
-              <Lock size={11} />
-              <span>{t("admin")}</span>
-            </Link>
+            {process.env.NEXT_PUBLIC_APP_ROLE !== "public" && (
+              <>
+                <span aria-hidden="true" className="text-white/35">|</span>
+                <Link href="/admin" className="hover:text-white transition-colors flex items-center gap-1">
+                  <Lock size={11} />
+                  <span>{t("admin")}</span>
+                </Link>
+              </>
+            )}
           </div>
 
           <div>

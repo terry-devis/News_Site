@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidateAll } from "@/lib/revalidatePublic";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { unpackArticleMeta, packArticleMeta } from "@/lib/articleMeta";
 import { requirePermission } from "@/lib/auth";
@@ -33,12 +33,7 @@ export async function POST(_req, { params }) {
       .single();
 
     if (error) throw error;
-    try {
-      revalidatePath("/");
-      revalidatePath(`/story/${id}`);
-      revalidatePath("/rss.xml");
-      revalidatePath("/sitemap.xml");
-    } catch {}
+    await revalidateAll(["/", `/story/${id}`, "/rss.xml", "/sitemap.xml"]);
 
     return NextResponse.json({ success: true, article: { ...data, status: "published" } });
   } catch (error) {

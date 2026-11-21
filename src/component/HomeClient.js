@@ -408,10 +408,14 @@ export default function HomeClient({
                             type="button"
                             onClick={() => setHeroIndex(idx)}
                             aria-label={`Featured ${idx + 1}`}
-                            className={`h-2 rounded-full transition-all cursor-pointer ${
-                              idx === safeHeroIndex ? "w-5 bg-white" : "w-2 bg-white/50 hover:bg-white/80"
-                            }`}
-                          />
+                            className="min-w-[24px] min-h-[24px] flex items-center justify-center cursor-pointer"
+                          >
+                            <span
+                              className={`h-2 rounded-full transition-all block ${
+                                idx === safeHeroIndex ? "w-5 bg-white" : "w-2 bg-white/60 hover:bg-white/90"
+                              }`}
+                            />
+                          </button>
                         ))}
                       </div>
                     )}
@@ -426,11 +430,11 @@ export default function HomeClient({
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-gray-500 font-sans border-t border-[#dcd8cd] pt-2.5 mt-1">
+                <div className="flex items-center justify-between text-xs text-gray-600 font-sans border-t border-[#dcd8cd] pt-2.5 mt-1">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-gray-800">{getAuthor(leadStory)}</span>
                     <span>•</span>
-                    <span className="flex items-center gap-1 text-gray-500">
+                    <span className="flex items-center gap-1 text-gray-600">
                       <Clock size={12} />
                       {new Date(leadStory.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-US", {
                         day: "numeric",
@@ -457,7 +461,7 @@ export default function HomeClient({
                     <TrendingUp size={16} className="text-emerald-600" />
                     <span>{t("trendingNews")}</span>
                   </h2>
-                  <span className="text-xs text-gray-500 font-sans">{t("latestUpdates")}</span>
+                  <span className="text-xs text-gray-600 font-sans">{t("latestUpdates")}</span>
                 </div>
 
                 {secondaryStories.map((story) => (
@@ -484,7 +488,7 @@ export default function HomeClient({
                           {getTitle(story)}
                         </h3>
                       </Link>
-                      <span className="text-[11px] text-gray-400 font-sans mt-0.5 block">
+                      <span className="text-[11px] text-gray-600 font-sans mt-0.5 block">
                         {new Date(story.created_at).toLocaleTimeString(isUrdu ? "ur-PK" : "en-US", {
                           hour: "2-digit",
                           minute: "2-digit",

@@ -262,14 +262,16 @@ export default function Header({ categories = [], breakingNews = [] }) {
 
           {/* Left/End side: Admin + Interactive Language Switcher */}
           <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-1 border border-[#dcd8cd] bg-[#f7f6f3] rounded px-2 py-0.5 text-xs font-semibold text-emerald-800 hover:border-emerald-600 transition"
-              title="ایڈمن CMS پینل"
-            >
-              <Lock size={11} />
-              <span>{t("admin")}</span>
-            </Link>
+            {process.env.NEXT_PUBLIC_APP_ROLE !== "public" && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1 border border-[#dcd8cd] bg-[#f7f6f3] rounded px-2 py-0.5 text-xs font-semibold text-emerald-800 hover:border-emerald-600 transition"
+                title="ایڈمن CMS پینل"
+              >
+                <Lock size={11} />
+                <span>{t("admin")}</span>
+              </Link>
+            )}
 
             {/* Language Toggle Button (Simple, clean neutral style) */}
             <button
@@ -456,7 +458,10 @@ export default function Header({ categories = [], breakingNews = [] }) {
               {searchOpen ? (
                 <div className="flex items-center gap-1 border border-[#184e2d] rounded-none px-2 py-1 bg-white my-1 shadow-sm">
                   <input
+                    id="header-search-input"
+                    name="search"
                     type="text"
+                    aria-label={t("searchPlaceholder")}
                     placeholder={t("searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -646,6 +651,7 @@ export default function Header({ categories = [], breakingNews = [] }) {
                   {b.link_url || b.article_id ? (
                     <Link
                       href={b.link_url || `/story/${b.article_id}`}
+                      tabIndex={-1}
                       dir={isUrdu ? "rtl" : "ltr"}
                       className="urdu-headline font-bold text-xs sm:text-[14px] text-yellow-100 hover:text-white hover:underline transition leading-snug tracking-tight"
                     >
@@ -671,6 +677,7 @@ export default function Header({ categories = [], breakingNews = [] }) {
                   {b.link_url || b.article_id ? (
                     <Link
                       href={b.link_url || `/story/${b.article_id}`}
+                      tabIndex={-1}
                       dir={isUrdu ? "rtl" : "ltr"}
                       className="urdu-headline font-bold text-xs sm:text-[14px] text-yellow-100 hover:text-white hover:underline transition leading-snug tracking-tight"
                     >
@@ -719,7 +726,10 @@ export default function Header({ categories = [], breakingNews = [] }) {
               <div className="flex items-center gap-2 bg-[#f7f6f3] border border-[#dcd8cd] rounded px-3 py-1.5 shadow-inner">
                 <Search size={16} className="text-gray-400" />
                 <input
+                  id="mobile-drawer-search-input"
+                  name="mobileSearch"
                   type="text"
+                  aria-label={t("searchPlaceholder")}
                   placeholder={t("searchPlaceholder")}
                   className={`w-full text-xs outline-none bg-transparent ${isUrdu ? "text-right" : "text-left"} font-sans`}
                 />

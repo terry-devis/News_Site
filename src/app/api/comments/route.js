@@ -8,6 +8,11 @@ export async function GET(req) {
     const articleId = searchParams.get("article_id");
     const all = searchParams.get("all") === "true"; // For admin to see pending
 
+    if (all) {
+      const { errorResponse } = await requirePermission("comment.moderate");
+      if (errorResponse) return errorResponse;
+    }
+
     const comments = await getComments(articleId, all);
     return NextResponse.json({ comments });
   } catch (error) {

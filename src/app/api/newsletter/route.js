@@ -4,6 +4,9 @@ import { requirePermission } from "@/lib/auth";
 import nodemailer from "nodemailer";
 
 export async function GET() {
+  const { errorResponse } = await requirePermission("newsletter.manage");
+  if (errorResponse) return errorResponse;
+
   try {
     const subscribers = await getSubscribers();
     return NextResponse.json({ subscribers });

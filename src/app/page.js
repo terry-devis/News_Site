@@ -3,8 +3,7 @@ import { getVideos, getSiteSetting } from "@/lib/cmsDb";
 import { filterPublishedArticles } from "@/lib/articleMeta";
 import HomeClient from "@/component/HomeClient";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 // 36 Rich, categorized, bilingual fallback seed articles
 const fallbackArticles = [
@@ -86,7 +85,7 @@ const fallbackArticles = [
     summary_ur: "عوامی صحت کے تحفظ کے لیے روزانہ لاکھوں گیلن شفاف پانی کی فراہمی یقینی بنائی جائے گی۔",
     summary_en: "Public health infrastructure expanded with cutting-edge reverse osmosis plants supplying pure water.",
     slug: "clean-drinking-water-filtration-plants",
-    cover_image: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=800&auto=format&fit=crop",
+    cover_image: "https://images.unsplash.com/photo-1584515933487-779824d29309?w=800&auto=format&fit=crop",
     created_at: new Date(Date.now() - 42000000).toISOString(),
     category: { name_ur: "پاکستان", name_en: "Pakistan", slug: "pakistan" },
     author_name: "سٹی رپورٹر",
@@ -216,7 +215,7 @@ const fallbackArticles = [
     summary_ur: "سنسنی خیز فائنل میں حریف کھلاڑیوں کو آؤٹ کلاس کر کے قومی ترانہ ایک بار پھر گونج اٹھا۔",
     summary_en: "National squash stars deliver masterclass performance in championship decider to take continental crown.",
     slug: "asian-team-squash-championship-victory",
-    cover_image: "https://images.unsplash.com/photo-1519766304817-4f37bda74a29?w=800&auto=format&fit=crop",
+    cover_image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&auto=format&fit=crop",
     created_at: new Date(Date.now() - 25200000).toISOString(),
     category: { name_ur: "کھیل", name_en: "Sports", slug: "sports" },
     author_name: "اسکواش رپورٹر",
@@ -230,7 +229,7 @@ const fallbackArticles = [
     summary_ur: "فرنچائز مالکان نے اعلیٰ پائے کے آل راؤنڈرز اور اسپنرز کو اسکواڈ میں شامل کرنے کے لیے حتمی مشاورت مکمل کی۔",
     summary_en: "Franchise managements finalize roster bids as world-class T20 superstars register for upcoming tournament.",
     slug: "psl-season-10-player-draft",
-    cover_image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop",
+    cover_image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&auto=format&fit=crop",
     created_at: new Date(Date.now() - 32400000).toISOString(),
     category: { name_ur: "کھیل", name_en: "Sports", slug: "sports" },
     author_name: "کرکٹ بیورو",

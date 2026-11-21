@@ -165,9 +165,12 @@ export default function NamazWidget({ className = "" }) {
       <div className="px-3.5 py-2 bg-[#f7f6f3] border-b border-[#dcd8cd] flex items-center justify-between text-xs">
         <div className="flex items-center gap-1 text-gray-700 font-medium">
           <MapPin size={13} className="text-[#0d3822]" />
-          <span>{isUrdu ? "شہر:" : "City:"}</span>
+          <label htmlFor="namaz-city-select">{isUrdu ? "شہر:" : "City:"}</label>
         </div>
         <select
+          id="namaz-city-select"
+          name="namazCity"
+          aria-label={isUrdu ? "نماز کے اوقات کے لیے شہر منتخب کریں" : "Select city for prayer times"}
           value={city}
           onChange={(e) => setCity(e.target.value)}
           className="text-xs bg-white border border-[#dcd8cd] rounded-none px-2 py-1 text-gray-900 font-medium focus:outline-none focus:border-[#0d3822] cursor-pointer font-sans"

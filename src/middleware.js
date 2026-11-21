@@ -9,6 +9,18 @@ const PUBLIC_POST_API_PREFIXES = [
   "/api/newsletter",
 ];
 
+const ADMIN_ONLY_API_PREFIXES = [
+  "/api/auth/",
+  "/api/users",
+  "/api/upload",
+  "/api/dashboard",
+  "/api/roles",
+  "/api/inquiries",
+  "/api/notifications",
+  "/api/media",
+  "/api/settings/email",
+];
+
 function isPublicPostApi(pathname) {
   if (PUBLIC_POST_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return true;
@@ -22,6 +34,42 @@ function isPublicPostApi(pathname) {
 
 export async function middleware(req) {
   const { pathname, search } = req.nextUrl;
+  const appRole = (process.env.NEXT_PUBLIC_APP_ROLE || "all").toLowerCase();
+
+  // Mode 1: Public News Site deployment — block /admin and admin-only APIs
+  if (appRole === "public") {
+    if (pathname.startsWith("/admin")) {
+      const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL;
+      if (adminUrl) {
+        return NextResponse.redirect(new URL(`${pathname}${search}`, adminUrl));
+      }
+      return new NextResponse("Not Found", { status: 404 });
+    }
+
+    if (pathname.startsWith("/api/")) {
+      const method = req.method.toUpperCase();
+      if (pathname === "/api/revalidate") {
+        return NextResponse.next();
+      }
+      if (ADMIN_ONLY_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+        return NextResponse.json({ error: "Not Found" }, { status: 404 });
+      }
+      if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+        if (method === "POST" && isPublicPostApi(pathname) && !pathname.startsWith("/api/auth/")) {
+          return NextResponse.next();
+        }
+        return NextResponse.json({ error: "Forbidden on public deployment" }, { status: 403 });
+      }
+    }
+
+    return NextResponse.next();
+  }
+
+  // Mode 2: Admin Panel deployment — redirect root / to /admin
+  if (appRole === "admin" && pathname === "/") {
+    return NextResponse.redirect(new URL("/admin", req.url));
+  }
+
   const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = await verifySessionToken(token);
 
@@ -70,5 +118,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/:path*"],
+  matcher: ["/", "/admin/:path*", "/api/:path*"],
 };

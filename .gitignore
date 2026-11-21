@@ -2,10 +2,6 @@
 
 # dependencies
 /node_modules
-
-# scraped reference folders (local only)
-/scrapped-pulic_site/
-/scraped-site/
 /.pnp
 .pnp.*
 .yarn/*
@@ -47,8 +43,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-node_modules
-
-# scraped reference folders (local only)
-/scrapped-pulic_site/
-/scraped-site/
+# lighthouse reports
+*-lighthouse_test-report.json
+*.lighthouseci/

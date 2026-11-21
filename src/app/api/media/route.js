@@ -8,6 +8,9 @@ import {
 import { requirePermission } from "@/lib/auth";
 
 export async function GET() {
+  const { errorResponse } = await requirePermission("media.view");
+  if (errorResponse) return errorResponse;
+
   try {
     const assets = await getMediaAssets();
     return NextResponse.json({ success: true, assets });

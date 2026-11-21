@@ -102,7 +102,7 @@ function AdminLayoutInner({ children }) {
     { label: "Layout builder", href: "/admin/layout-builder", icon: LayoutGrid, perm: "layout.manage" },
     { label: "Media library", href: "/admin/media", icon: ImageIcon, perm: "media.view" },
     { label: "E-paper", href: "/admin/epaper", icon: Newspaper, perm: "epaper.view" },
-    { label: "Videos", href: "/admin/videos", icon: Video, perm: "article.view" },
+    { label: "Videos", href: "/admin/videos", icon: Video, perm: "video.manage" },
     { label: "Live TV", href: "/admin/live", icon: Tv, perm: "settings.manage" },
     { label: "Services data", href: "/admin/widgets", icon: Activity, perm: "widgets.manage" },
     { label: "Users", href: "/admin/users", icon: Users, perm: "user.view" },
@@ -118,6 +118,26 @@ function AdminLayoutInner({ children }) {
   const visibleNavItems = currentUser
     ? navItems.filter((item) => !item.perm || hasPermission(currentUser, item.perm))
     : navItems;
+
+  const extraRoutePerms = [
+    { prefix: "/admin/newsletter", perm: "newsletter.manage" },
+    { prefix: "/admin/pages", perm: "page.manage" },
+    { prefix: "/admin/sections", perm: "category.manage" },
+    { prefix: "/admin/services", perm: "widgets.manage" },
+  ];
+  const matchedNav =
+    navItems.find(
+      (item) =>
+        item.href !== "/admin" &&
+        (pathname === item.href ||
+          pathname.startsWith(`${item.href}/`) ||
+          (item.altHref && (pathname === item.altHref || pathname.startsWith(`${item.altHref}/`))))
+    ) || extraRoutePerms.find((r) => pathname === r.prefix || pathname.startsWith(`${r.prefix}/`));
+  const routePerm = matchedNav?.perm || null;
+  const isRouteForbidden = Boolean(currentUser && routePerm && !hasPermission(currentUser, routePerm));
+  const publicSiteUrl = process.env.NEXT_PUBLIC_APP_ROLE === "admin" && process.env.NEXT_PUBLIC_SITE_URL
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : "/";
   const userEmail = currentUser?.email || "Loading...";
   const userRole = currentUser?.roles?.[0] || "Staff";
   const userInitial = (currentUser?.full_name_en || currentUser?.email || "A").charAt(0).toUpperCase();
@@ -236,7 +256,7 @@ function AdminLayoutInner({ children }) {
           {/* Right Side: View Site Pill + User Avatar Badge */}
           <div className="flex items-center gap-3">
             <Link
-              href="/"
+              href={publicSiteUrl}
               target="_blank"
               className="border border-[#e5e2da] bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-950 px-3 py-1.5 rounded text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition"
             >
@@ -256,7 +276,25 @@ function AdminLayoutInner({ children }) {
 
         {/* Content Viewport */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-          <div className="max-w-7xl mx-auto">{children}</div>
+          <div className="max-w-7xl mx-auto">
+            {isRouteForbidden ? (
+              <div className="bg-white border border-[#e5e2da] rounded-lg p-8 text-center max-w-lg mx-auto mt-10 shadow-xs">
+                <ShieldCheck size={36} className="mx-auto text-amber-600 mb-3" />
+                <h2 className="text-lg font-bold text-gray-900 mb-1">Access Restricted</h2>
+                <p className="text-sm text-gray-600 mb-5">
+                  Your role ({userRole}) does not have permission (<code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{routePerm}</code>) to access this section.
+                </p>
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center gap-2 bg-[#184e2d] hover:bg-[#113820] text-white text-xs font-bold px-4 py-2 rounded transition"
+                >
+                  Return to Dashboard
+                </Link>
+              </div>
+            ) : (
+              children
+            )}
+          </div>
         </main>
       </div>
     </div>

@@ -178,13 +178,13 @@ export default function AdSlot({ slotKey, title = "اشتہار", className = ""
           <div className="w-10 h-10 rounded-full bg-emerald-700/10 flex items-center justify-center text-emerald-800 mb-2">
             <Megaphone size={18} />
           </div>
-          <span className="text-[11px] font-bold text-gray-400 font-sans uppercase tracking-widest mb-1">
+          <span className="text-[11px] font-bold text-gray-600 font-sans uppercase tracking-widest mb-1">
             ڈیلی افادیت ڈیجیٹل میڈیا
           </span>
-          <h4 className="text-sm font-bold text-gray-900 urdu-headline mb-1.5 max-w-[220px]">
+          <p className="text-sm font-bold text-gray-900 urdu-headline mb-1.5 max-w-[220px]">
             ملک بھر کے لاکھوں قارئین تک اپنا برانڈ پہنچائیں
-          </h4>
-          <p className="text-[11px] text-gray-500 font-sans mb-3">
+          </p>
+          <p className="text-[11px] text-gray-600 font-sans mb-3">
             {isTallSidebar ? "300×600 ہاف پیج" : "300×250 ایم پی یو"} بینر کے لیے دستیاب
           </p>
           <Link

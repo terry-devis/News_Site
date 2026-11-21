@@ -8,6 +8,10 @@ export async function GET(req) {
     const key = searchParams.get("key");
 
     if (key) {
+      if (key === "smtp_config") {
+        const { errorResponse } = await requirePermission("settings.manage");
+        if (errorResponse) return errorResponse;
+      }
       const val = await getSiteSetting(key);
       if (key === "smtp_config" && val) {
         return NextResponse.json({ [key]: { ...val, pass: val.pass ? "••••••••" : "" } });
@@ -30,14 +34,17 @@ export async function GET(req) {
       });
     }
 
+    const { errorResponse: smtpAuthErr } = await requirePermission("settings.manage");
     const [social_links, site_info, rawSmtp] = await Promise.all([
       getSiteSetting("social_links"),
       getSiteSetting("site_info"),
-      getSiteSetting("smtp_config"),
+      smtpAuthErr ? Promise.resolve(null) : getSiteSetting("smtp_config"),
     ]);
     const smtp_config = rawSmtp ? { ...rawSmtp, pass: rawSmtp.pass ? "••••••••" : "" } : null;
 
-    return NextResponse.json({ social_links, site_info, smtp_config });
+    return NextResponse.json(
+      smtpAuthErr ? { social_links, site_info } : { social_links, site_info, smtp_config }
+    );
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

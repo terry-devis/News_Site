@@ -49,7 +49,11 @@ export default function NewsletterBox({ variant = "ribbon", className = "" }) {
         ) : (
           <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <input
+              id="newsletter-email-footer"
+              name="email"
               type="email"
+              autoComplete="email"
+              aria-label={isUrdu ? "ای میل ایڈریس" : "Email address"}
               dir="ltr"
               inputMode="email"
               autoCapitalize="none"
@@ -99,7 +103,11 @@ export default function NewsletterBox({ variant = "ribbon", className = "" }) {
         ) : (
           <form onSubmit={handleSubscribe} className="space-y-2">
             <input
+              id="newsletter-email-sidebar"
+              name="email"
               type="email"
+              autoComplete="email"
+              aria-label={isUrdu ? "ای میل ایڈریس" : "Email address"}
               dir="ltr"
               inputMode="email"
               autoCapitalize="none"
@@ -165,7 +173,11 @@ export default function NewsletterBox({ variant = "ribbon", className = "" }) {
             <form onSubmit={handleSubscribe} className="w-full sm:w-[380px] lg:w-[420px]">
               <div className="flex items-stretch rounded-none border border-[#c8c4b7] focus-within:border-emerald-700 bg-white shadow-2xs">
                 <input
+                  id="newsletter-email-ribbon"
+                  name="email"
                   type="email"
+                  autoComplete="email"
+                  aria-label={isUrdu ? "ای میل ایڈریس" : "Email address"}
                   dir="ltr"
                   inputMode="email"
                   autoCapitalize="none"

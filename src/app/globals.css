@@ -12,7 +12,7 @@
 
   html {
     direction: rtl;
-    font-family: var(--font-noto-naskh), var(--font-inter), "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-family: "Noto Naskh Arabic", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   }
 
   body {

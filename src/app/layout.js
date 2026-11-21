@@ -1,21 +1,6 @@
 import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
-import { Inter, Noto_Naskh_Arabic } from "next/font/google";
 import { SiteLanguageProvider } from "@/context/SiteLanguageContext";
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-  variable: "--font-inter",
-});
-
-const notoNaskh = Noto_Naskh_Arabic({
-  subsets: ["arabic"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-  variable: "--font-noto-naskh",
-});
 
 export const metadata = {
   title: {
@@ -35,9 +20,15 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ur" dir="rtl" translate="no" className={`notranslate ${notoNaskh.variable} ${inter.variable}`}>
+    <html lang="ur" dir="rtl" translate="no" className="notranslate">
       <head>
         <meta name="google" content="notranslate" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link
           rel="alternate"
           type="application/rss+xml"

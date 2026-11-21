@@ -260,19 +260,8 @@ export default function Header({ categories = [], breakingNews = [] }) {
             </nav>
           </div>
 
-          {/* Left/End side: Admin + Interactive Language Switcher */}
+          {/* Left/End side: Interactive Language Switcher */}
           <div className="flex items-center gap-2 shrink-0">
-            {process.env.NEXT_PUBLIC_APP_ROLE !== "public" && (
-              <Link
-                href="/admin"
-                className="inline-flex items-center gap-1 border border-[#dcd8cd] bg-[#f7f6f3] rounded px-2 py-0.5 text-xs font-semibold text-emerald-800 hover:border-emerald-600 transition"
-                title="ایڈمن CMS پینل"
-              >
-                <Lock size={11} />
-                <span>{t("admin")}</span>
-              </Link>
-            )}
-
             {/* Language Toggle Button (Simple, clean neutral style) */}
             <button
               onClick={toggleLanguage}

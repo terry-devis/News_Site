@@ -613,7 +613,13 @@ export default async function Home() {
 
   // Ensure every article is fully bilingual with complete English translations, views_count and valid cover photo
   const newsList = mergedList.map((art, idx) => {
-    const fallbackMatch = fallbackArticles.find(f => f.id === art.id || f.slug === art.slug) || fallbackArticles[idx % fallbackArticles.length];
+    const artCatSlug = (art.categories?.slug || art.category?.slug || "").toLowerCase();
+    const fallbackMatch =
+      fallbackArticles.find((f) => f.id === art.id || f.slug === art.slug) ||
+      (artCatSlug
+        ? fallbackArticles.find((f) => f.category?.slug === artCatSlug)
+        : null) ||
+      fallbackArticles[idx % fallbackArticles.length];
     return {
       ...fallbackMatch,
       ...art,
@@ -623,7 +629,7 @@ export default async function Home() {
       title_ur: art.title_ur || fallbackMatch.title_ur,
       title_en: art.title_en || fallbackMatch.title_en || "Daily Afadiat Verified News Report",
       summary_ur: art.summary_ur || fallbackMatch.summary_ur,
-      summary_en: art.summary_en || fallbackMatch.summary_en || "Read verified in-depth coverage and real-time updates on this developing story from Daily Afadiat.",
+      summary_en: art.summary_en || (art.title_en ? art.title_en : fallbackMatch.summary_en) || "Read verified in-depth coverage and real-time updates on this developing story from Daily Afadiat.",
       author_name: art.author_name || fallbackMatch.author_name || "ایڈیٹوریل بورڈ",
       author_name_en: art.author_name_en || fallbackMatch.author_name_en || "Editorial Board",
       category: art.categories || art.category || fallbackMatch.category,

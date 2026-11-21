@@ -612,25 +612,44 @@ export default function HomeClient({
               <section className="u-block" aria-label={isUrdu ? "کھیل" : "Sports"}>
                 <SectionHeader titleUr="کھیل" titleEn="Sports" href="/category/sports" />
                 <div className="grid gap-4 lg:grid-cols-12 lg:gap-3">
-                  {/* Left Wing (3 cols) */}
-                  <div className="content-start divide-y divide-[#dcd8cd] lg:order-1 lg:col-span-3">
+                  {/* Left Wing (3 cols, with thumbnails + metadata matching Daily Insaf) */}
+                  <div className="content-start space-y-4 lg:order-1 lg:col-span-3">
                     {sportsLeft.map((st) => (
-                      <article key={st.id} className="py-2.5 first:pt-0 last:pb-0 group">
-                        <Link href={storyHref(st)}>
+                      <article key={st.id} className="group">
+                        <Link href={storyHref(st)} className="block space-y-1.5">
+                          <div className="relative w-full aspect-[16/10] overflow-hidden border border-[#dcd8cd] bg-[#dcd8cd]/40">
+                            <Image
+                              src={getFallbackImageForStory(st)}
+                              alt={getTitle(st)}
+                              fill
+                              className="object-cover group-hover:scale-105 transition duration-300"
+                            />
+                          </div>
                           <h3
-                            className={`text-[13px] font-bold text-gray-800 group-hover:text-emerald-700 transition leading-snug line-clamp-2 ${
+                            className={`text-[13px] font-bold text-gray-900 group-hover:text-emerald-700 transition leading-snug line-clamp-2 ${
                               isUrdu ? "urdu-headline" : "font-sans"
                             }`}
                           >
                             {getTitle(st)}
                           </h3>
+                          <p className="text-[11px] font-sans text-gray-500 flex items-center gap-1.5">
+                            <span className="font-semibold text-[#184e2d]">{getCatName(st.category)}</span>
+                            <span>•</span>
+                            <span>
+                              {new Date(st.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-GB", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </p>
                         </Link>
                       </article>
                     ))}
                   </div>
 
                   {/* Center Lead (6 cols with border-x) */}
-                  <article className="order-first lg:order-2 lg:col-span-6 lg:border-x lg:border-[#dcd8cd] lg:px-3 group">
+                  <article className="order-first lg:order-2 lg:col-span-6 lg:border-x lg:border-[#dcd8cd] lg:px-4 group">
                     <Link href={storyHref(sportsCenter)} className="block">
                       <div className="relative w-full aspect-[16/10] overflow-hidden border border-[#dcd8cd] bg-[#dcd8cd]/40 mb-2.5">
                         <Image
@@ -641,7 +660,7 @@ export default function HomeClient({
                         />
                       </div>
                       <h3
-                        className={`text-lg font-bold text-gray-950 group-hover:text-emerald-700 transition leading-snug mb-1.5 ${
+                        className={`text-lg sm:text-xl font-bold text-gray-950 group-hover:text-emerald-700 transition leading-snug mb-1.5 ${
                           isUrdu ? "urdu-headline" : "font-sans"
                         }`}
                       >
@@ -649,26 +668,56 @@ export default function HomeClient({
                       </h3>
                     </Link>
                     <p
-                      className={`text-xs text-gray-600 line-clamp-2 ${
+                      className={`text-xs sm:text-[13px] text-gray-600 line-clamp-2 mb-2 ${
                         isUrdu ? "urdu-body leading-relaxed" : "font-sans"
                       }`}
                     >
                       {getSummary(sportsCenter)}
                     </p>
+                    <p className="text-[11px] font-sans text-gray-500 flex items-center gap-1.5">
+                      <span className="font-semibold text-[#184e2d]">{getCatName(sportsCenter.category)}</span>
+                      <span>•</span>
+                      <span>
+                        {new Date(sportsCenter.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-GB", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </p>
                   </article>
 
-                  {/* Right Wing (3 cols) */}
-                  <div className="content-start divide-y divide-[#dcd8cd] lg:order-3 lg:col-span-3">
+                  {/* Right Wing (3 cols, with thumbnails + metadata matching Daily Insaf) */}
+                  <div className="content-start space-y-4 lg:order-3 lg:col-span-3">
                     {sportsRight.map((st) => (
-                      <article key={st.id} className="py-2.5 first:pt-0 last:pb-0 group">
-                        <Link href={storyHref(st)}>
+                      <article key={st.id} className="group">
+                        <Link href={storyHref(st)} className="block space-y-1.5">
+                          <div className="relative w-full aspect-[16/10] overflow-hidden border border-[#dcd8cd] bg-[#dcd8cd]/40">
+                            <Image
+                              src={getFallbackImageForStory(st)}
+                              alt={getTitle(st)}
+                              fill
+                              className="object-cover group-hover:scale-105 transition duration-300"
+                            />
+                          </div>
                           <h3
-                            className={`text-[13px] font-bold text-gray-800 group-hover:text-emerald-700 transition leading-snug line-clamp-2 ${
+                            className={`text-[13px] font-bold text-gray-900 group-hover:text-emerald-700 transition leading-snug line-clamp-2 ${
                               isUrdu ? "urdu-headline" : "font-sans"
                             }`}
                           >
                             {getTitle(st)}
                           </h3>
+                          <p className="text-[11px] font-sans text-gray-500 flex items-center gap-1.5">
+                            <span className="font-semibold text-[#184e2d]">{getCatName(st.category)}</span>
+                            <span>•</span>
+                            <span>
+                              {new Date(st.created_at).toLocaleDateString(isUrdu ? "ur-PK" : "en-GB", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </p>
                         </Link>
                       </article>
                     ))}

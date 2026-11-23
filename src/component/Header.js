@@ -7,13 +7,38 @@ import { Search, Menu, X, Globe, Tv, Newspaper, Flame, Home, Video, PhoneCall, M
 import AdSlot from "@/component/AdSlot";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
-export default function Header({ categories = [], breakingNews = [] }) {
+export default function Header({ categories = [], breakingNews = [], onToggleLanguage }) {
   const pathname = usePathname();
   const { lang, isUrdu, isEnglish, dir, toggleLanguage, t } = useSiteLanguage();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [tickerEnabled, setTickerEnabled] = useState(true);
+
+  const handleLanguageToggle = () => {
+    if (typeof onToggleLanguage === "function") {
+      onToggleLanguage();
+      return;
+    }
+
+    const targetLang = isUrdu ? "en" : "ur";
+    try {
+      document.cookie = `site_lang=${targetLang}; path=/; max-age=31536000; SameSite=Lax`;
+      localStorage.setItem("site_lang", targetLang);
+    } catch (e) {}
+
+    // If on homepage or /en, navigate so page refreshes and loads the target homepage with articles
+    if (pathname === "/" && targetLang === "en") {
+      window.location.href = "/en";
+      return;
+    }
+    if (pathname === "/en" && targetLang === "ur") {
+      window.location.href = "/";
+      return;
+    }
+
+    toggleLanguage();
+  };
 
   useEffect(() => {
     let active = true;
@@ -268,7 +293,7 @@ export default function Header({ categories = [], breakingNews = [] }) {
           <div className="flex items-center gap-2 shrink-0">
             {/* Language Toggle Button (Simple, clean neutral style) */}
             <button
-              onClick={toggleLanguage}
+              onClick={handleLanguageToggle}
               className="inline-flex items-center gap-1.5 border border-[#dcd8cd] bg-[#f7f6f3] rounded px-2.5 py-0.5 text-xs font-bold text-gray-700 hover:border-emerald-600 hover:text-emerald-700 transition font-sans cursor-pointer"
               title={isUrdu ? "Switch entire site to English" : "تمام ویب سائٹ اردو میں بدلیں"}
             >
@@ -704,7 +729,21 @@ export default function Header({ categories = [], breakingNews = [] }) {
             
             {/* Drawer Header */}
             <div className="bg-emerald-800 text-white p-4 flex items-center justify-between shadow-sm">
-              <span className="font-bold text-base">{isUrdu ? "مینو" : "Menu"}</span>
+              <div className="flex items-center gap-2.5">
+                <span className="font-bold text-base">{isUrdu ? "مینو" : "Menu"}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileDrawerOpen(false);
+                    handleLanguageToggle();
+                  }}
+                  className="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white rounded px-2 py-0.5 text-xs font-bold font-sans transition cursor-pointer"
+                  title={isUrdu ? "Switch to English" : "اردو میں بدلیں"}
+                >
+                  <Globe size={12} />
+                  <span>{isUrdu ? "English" : "اردو"}</span>
+                </button>
+              </div>
               <button
                 onClick={() => setMobileDrawerOpen(false)}
                 className="p-1 rounded-full hover:bg-emerald-700 text-white transition"

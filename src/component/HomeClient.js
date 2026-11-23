@@ -133,7 +133,10 @@ export default function HomeClient({
       : story.author_name || "ایڈیٹوریل بورڈ";
   };
 
-  const storyHref = (story) => `/story/${story?.slug || story?.id}`;
+  const storyHref = (story) =>
+    isEnglish && story?.title_en
+      ? `/en/story/${story?.slug || story?.id}`
+      : `/story/${story?.slug || story?.id}`;
 
   // In English edition, only show articles that have an English version (title_en)
   // In Urdu edition, only show articles that have an Urdu version (title_ur)

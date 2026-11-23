@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { filterPublishedArticles } from "@/lib/articleMeta";
 import {
@@ -19,12 +19,13 @@ export default async function StoryDetail({ params }) {
   let { article, related, categories, breakingNews, isHiddenDraft } =
     await loadStoryPageData(storyIdOrSlug);
 
-  if (isHiddenDraft) {
+  if (isHiddenDraft || !article) {
     notFound();
   }
 
-  if (!article) {
-    notFound();
+  // If article has no Urdu edition (English only), redirect to Urdu homepage
+  if (!(article.title_ur && article.title_ur.trim())) {
+    redirect("/");
   }
 
   if (related.length === 0) {

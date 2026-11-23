@@ -43,6 +43,28 @@ export default function StoryClient({
   const missingEnglishEdition = isEnglish && !(article.title_en && article.title_en.trim());
   const missingUrduEdition = isUrdu && !(article.title_ur && article.title_ur.trim());
 
+  const handleLanguageToggle = () => {
+    const targetLang = isEnglish ? "ur" : "en";
+    const hasTargetArticle = targetLang === "en"
+      ? Boolean(article?.title_en && article.title_en.trim())
+      : Boolean(article?.title_ur && article.title_ur.trim());
+
+    try {
+      document.cookie = `site_lang=${targetLang}; path=/; max-age=31536000; SameSite=Lax`;
+      localStorage.setItem("site_lang", targetLang);
+    } catch (e) {}
+
+    if (hasTargetArticle) {
+      const targetSlug = article.slug || article.id;
+      const targetUrl = targetLang === "en" ? `/en/story/${targetSlug}` : `/story/${targetSlug}`;
+      window.location.href = targetUrl;
+    } else {
+      // If alternate language not available, switch language and refresh to that language's homepage with articles
+      const targetHome = targetLang === "en" ? "/en" : "/";
+      window.location.href = targetHome;
+    }
+  };
+
   const title = isEnglish
     ? (article.title_en || article.title_ur)
     : (article.title_ur || article.title_en);
@@ -68,7 +90,7 @@ export default function StoryClient({
 
   return (
     <div className="min-h-screen text-gray-900" dir={dir}>
-      <Header categories={categories} breakingNews={breakingNews} />
+      <Header categories={categories} breakingNews={breakingNews} onToggleLanguage={handleLanguageToggle} />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Top Leaderboard Ad Banner (Same as Homepage under Header) */}
@@ -103,7 +125,7 @@ export default function StoryClient({
                 <div className="flex items-center justify-center gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={toggleLanguage}
+                    onClick={handleLanguageToggle}
                     className="px-4 py-2 rounded-lg bg-[#184e2d] hover:bg-[#0d542f] text-white text-xs sm:text-sm font-semibold cursor-pointer transition"
                   >
                     {missingEnglishEdition ? "اردو میں پڑھیں (Switch to Urdu)" : "Read in English"}

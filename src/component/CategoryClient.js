@@ -21,6 +21,11 @@ export default function CategoryClient({ slug, category, articles = [], categori
     ? articles.filter((a) => Boolean(a.title_en && a.title_en.trim()))
     : articles.filter((a) => Boolean(a.title_ur && a.title_ur.trim()));
 
+  const storyHref = (story) =>
+    isEnglish && story?.title_en
+      ? `/en/story/${story?.slug || story?.id}`
+      : `/story/${story?.slug || story?.id}`;
+
   return (
     <div className="min-h-screen text-gray-900" dir={dir}>
       <Header categories={categories} />
@@ -64,11 +69,7 @@ export default function CategoryClient({ slug, category, articles = [], categori
                 ? (story.summary_en || story.summary_ur)
                 : (story.summary_ur || story.summary_en);
 
-              const visibleArticles = isEnglish
-    ? articles.filter((a) => Boolean(a.title_en && a.title_en.trim()))
-    : articles.filter((a) => Boolean(a.title_ur && a.title_ur.trim()));
-
-  return (
+              return (
                 <article
                   key={story.id}
                   className="bg-[#efeee9] border border-[#dcd8cd] rounded-xl overflow-hidden hover:border-emerald-600 transition duration-300 group shadow-2xs flex flex-col justify-between"
@@ -94,7 +95,7 @@ export default function CategoryClient({ slug, category, articles = [], categori
                       )}
                     </div>
                     <div className="p-4">
-                      <Link href={`/story/${story.id || story.slug}`}>
+                      <Link href={storyHref(story)}>
                         <h2 className={`text-base font-bold text-gray-900 group-hover:text-emerald-700 transition leading-snug line-clamp-2 mb-2 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
                           {title}
                         </h2>

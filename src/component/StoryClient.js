@@ -40,9 +40,6 @@ export default function StoryClient({
     }
   }, [article?.id]);
 
-  const missingEnglishEdition = isEnglish && !(article.title_en && article.title_en.trim());
-  const missingUrduEdition = isUrdu && !(article.title_ur && article.title_ur.trim());
-
   const handleLanguageToggle = () => {
     const targetLang = isEnglish ? "ur" : "en";
     const hasTargetArticle = targetLang === "en"
@@ -110,36 +107,6 @@ export default function StoryClient({
           
           {/* Article Main Body (8 Cols) */}
           <article className="lg:col-span-8 bg-[#efeee9] border border-[#dcd8cd] rounded-lg p-5 sm:p-7 shadow-sm">
-            {missingEnglishEdition || missingUrduEdition ? (
-              <div className="py-12 text-center space-y-4 font-sans">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {missingEnglishEdition
-                    ? "This story is only published in the Urdu edition"
-                    : "یہ خبر صرف انگریزی ایڈیشن میں شائع ہوئی ہے"}
-                </h1>
-                <p className="text-sm text-gray-600 max-w-md mx-auto">
-                  {missingEnglishEdition
-                    ? "An English version of this article has not been published."
-                    : "اس خبر کا اردو ترجمہ شائع نہیں کیا گیا۔"}
-                </p>
-                <div className="flex items-center justify-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleLanguageToggle}
-                    className="px-4 py-2 rounded-lg bg-[#184e2d] hover:bg-[#0d542f] text-white text-xs sm:text-sm font-semibold cursor-pointer transition"
-                  >
-                    {missingEnglishEdition ? "اردو میں پڑھیں (Switch to Urdu)" : "Read in English"}
-                  </button>
-                  <Link
-                    href="/"
-                    className="px-4 py-2 rounded-lg border border-[#dcd8cd] bg-white text-gray-800 text-xs sm:text-sm font-semibold hover:bg-gray-50 transition"
-                  >
-                    {isEnglish ? "Back to Home" : "صفحہ اول پر جائیں"}
-                  </Link>
-                </div>
-              </div>
-            ) : (
-            <>
             <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-snug mb-4 ${isUrdu ? "urdu-headline" : "font-sans"}`}>
               {title}
             </h1>
@@ -213,8 +180,6 @@ export default function StoryClient({
 
             {/* Verified Comments Section */}
             <CommentSection articleId={article.id} />
-            </>
-            )}
           </article>
 
           {/* Sidebar (4 Cols) */}

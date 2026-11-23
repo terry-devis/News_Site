@@ -5,6 +5,7 @@ import { unpackArticleMeta, packArticleMeta } from "@/lib/articleMeta";
 import { enforceMaxFeaturedLimit } from "@/lib/featuredLimit";
 import { requirePermission } from "@/lib/auth";
 import { generateSeoSlug } from "@/lib/slugify";
+import { resolveValidCategoryId } from "@/lib/cmsDb";
 
 export async function GET(req) {
   try {
@@ -83,6 +84,8 @@ export async function POST(req) {
       contentEn: content_en || "",
     });
 
+    const resolvedCategoryId = category_id ? await resolveValidCategoryId(category_id) : null;
+
     const isRedAlertBreaking = Boolean(is_breaking) && Number(meta?.breakingPriority || 1) === 1;
     const newArticle = {
       title_ur,
@@ -91,7 +94,7 @@ export async function POST(req) {
       summary_ur: summary_ur || title_ur.substring(0, 150),
       content_ur,
       content_en: finalContentEn || null,
-      category_id: category_id ? Number(category_id) : null,
+      category_id: resolvedCategoryId,
       cover_image: cover_image || null,
       is_breaking: Boolean(is_breaking),
       is_featured: Boolean(is_featured) || isRedAlertBreaking,

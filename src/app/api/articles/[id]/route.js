@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseServer";
 import { unpackArticleMeta, packArticleMeta } from "@/lib/articleMeta";
 import { enforceMaxFeaturedLimit } from "@/lib/featuredLimit";
 import { requirePermission } from "@/lib/auth";
+import { resolveValidCategoryId } from "@/lib/cmsDb";
 
 export async function GET(req, { params }) {
   try {
@@ -62,6 +63,12 @@ export async function PUT(req, { params }) {
       ...(isRedAlertBreaking ? { is_featured: true } : {}),
       updated_at: new Date().toISOString(),
     };
+
+    if (updates.category_id !== undefined) {
+      updates.category_id = updates.category_id
+        ? await resolveValidCategoryId(updates.category_id)
+        : null;
+    }
 
     delete updates.id;
     delete updates.categories;

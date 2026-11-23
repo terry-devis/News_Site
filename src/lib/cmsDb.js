@@ -2060,7 +2060,72 @@ const DEFAULT_CATEGORIES = [
   },
 ];
 
+async function loadCategoriesMetaMap() {
+  const remote = await getSiteSetting("categories_meta");
+  if (remote && typeof remote === "object") return remote;
+  return {};
+}
+
+async function saveCategoriesMetaMap(metaMap) {
+  await updateSiteSetting("categories_meta", metaMap);
+}
+
 export async function getCategories() {
+  try {
+    const [{ data: dbRows, error }, metaMap] = await Promise.all([
+      supabaseAdmin.from("categories").select("*").order("display_order", { ascending: true }).order("id", { ascending: true }),
+      loadCategoriesMetaMap(),
+    ]);
+
+    if (!error && Array.isArray(dbRows)) {
+      const bySlug = new Map(dbRows.map((r) => [String(r.slug || "").toLowerCase(), r]));
+      const missingDefaults = DEFAULT_CATEGORIES.filter(
+        (d) => !bySlug.has(String(d.slug || "").toLowerCase())
+      );
+
+      let rows = dbRows;
+      if (missingDefaults.length > 0) {
+        const toInsert = missingDefaults.map((d, idx) => ({
+          name_ur: d.name_ur || d.name_en,
+          name_en: d.name_en || d.name_ur,
+          slug: d.slug,
+          display_order: Number(d.sort_order) || dbRows.length + idx + 1,
+          show_in_header: d.show_in_header !== false,
+        }));
+        const { data: inserted } = await supabaseAdmin.from("categories").insert(toInsert).select();
+        if (Array.isArray(inserted) && inserted.length > 0) {
+          rows = [...dbRows, ...inserted];
+        }
+      }
+
+      const defaultBySlug = new Map(DEFAULT_CATEGORIES.map((d) => [String(d.slug || "").toLowerCase(), d]));
+      const merged = rows.map((row) => {
+        const slugKey = String(row.slug || "").toLowerCase();
+        const def = defaultBySlug.get(slugKey) || {};
+        const extra = metaMap[String(row.id)] || metaMap[slugKey] || {};
+        return {
+          ...def,
+          ...extra,
+          ...row,
+          sort_order: row.display_order ?? extra.sort_order ?? def.sort_order ?? 1,
+          url_path: extra.url_path || def.url_path || `/${row.slug}`,
+          layout: extra.layout || def.layout || "Grid",
+          is_active: extra.is_active !== false,
+          show_in_header: row.show_in_header !== false,
+          show_in_mobile: extra.show_in_mobile !== false,
+          show_in_footer: Boolean(extra.show_in_footer ?? def.show_in_footer),
+        };
+      });
+
+      const local = ensureLocalStore();
+      local.categories_v2 = merged;
+      writeLocalStore(local);
+      return merged;
+    }
+  } catch (e) {
+    console.error("getCategories Supabase sync fallback:", e?.message);
+  }
+
   const local = ensureLocalStore();
   if (!local.categories_v2 || !Array.isArray(local.categories_v2) || local.categories_v2.length === 0) {
     local.categories_v2 = DEFAULT_CATEGORIES;
@@ -2069,14 +2134,65 @@ export async function getCategories() {
   return local.categories_v2;
 }
 
+export async function resolveValidCategoryId(rawCategoryId) {
+  if (!rawCategoryId) return null;
+  const numId = Number(rawCategoryId);
+
+  try {
+    if (Number.isFinite(numId) && numId > 0) {
+      const { data: exact } = await supabaseAdmin
+        .from("categories")
+        .select("id")
+        .eq("id", numId)
+        .maybeSingle();
+      if (exact?.id) return exact.id;
+    }
+
+    // Check local/DEFAULT_CATEGORIES for matching id or slug, then find/insert in Supabase
+    const local = ensureLocalStore();
+    const candidates = [
+      ...(Array.isArray(local.categories_v2) ? local.categories_v2 : []),
+      ...DEFAULT_CATEGORIES,
+    ];
+    const match = candidates.find(
+      (c) => String(c.id) === String(rawCategoryId) || String(c.slug) === String(rawCategoryId)
+    );
+    if (match?.slug) {
+      const { data: bySlug } = await supabaseAdmin
+        .from("categories")
+        .select("id")
+        .eq("slug", match.slug)
+        .maybeSingle();
+      if (bySlug?.id) return bySlug.id;
+
+      const { data: created } = await supabaseAdmin
+        .from("categories")
+        .insert({
+          name_ur: match.name_ur || match.name_en,
+          name_en: match.name_en || match.name_ur,
+          slug: match.slug,
+          display_order: Number(match.sort_order) || 99,
+          show_in_header: match.show_in_header !== false,
+        })
+        .select("id")
+        .single();
+      if (created?.id) return created.id;
+    }
+  } catch (e) {
+    console.error("resolveValidCategoryId error:", e?.message);
+  }
+  return Number.isFinite(numId) && numId > 0 ? numId : null;
+}
+
 export async function createCategory(catData) {
-  const local = ensureLocalStore();
   const categories = await getCategories();
 
-  const cleanSlug = (catData.slug || catData.name_en || "")
+  let cleanSlug = (catData.slug || catData.name_en || catData.name_ur || "")
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9_-]/g, "-");
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!cleanSlug) cleanSlug = `section-${Date.now().toString(36)}`;
 
   let parentName = null;
   let urlPath = `/${cleanSlug}`;
@@ -2089,79 +2205,167 @@ export async function createCategory(catData) {
     }
   }
 
-  const newCat = {
-    id: Date.now(),
-    name_en: catData.name_en || "",
-    name_ur: catData.name_ur || "",
-    slug: cleanSlug,
+  const displayOrder = Number(catData.sort_order) || categories.length + 1;
+  const showInHeader = catData.show_in_header !== false;
+
+  let insertedRow = null;
+  try {
+    // Reuse if slug already exists in DB, otherwise insert cleanly
+    const { data: existing } = await supabaseAdmin
+      .from("categories")
+      .select("*")
+      .eq("slug", cleanSlug)
+      .maybeSingle();
+
+    if (existing) {
+      insertedRow = existing;
+    } else {
+      const { data, error } = await supabaseAdmin
+        .from("categories")
+        .insert({
+          name_en: catData.name_en || catData.name_ur || cleanSlug,
+          name_ur: catData.name_ur || catData.name_en || cleanSlug,
+          slug: cleanSlug,
+          display_order: displayOrder,
+          show_in_header: showInHeader,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      insertedRow = data;
+    }
+  } catch (e) {
+    console.error("createCategory Supabase insert error:", e?.message);
+  }
+
+  const realId = insertedRow?.id || Date.now();
+  const extraMeta = {
     url_path: urlPath,
     parent_id: catData.parent_id ? Number(catData.parent_id) : null,
     parent_name_en: parentName,
     description_ur: catData.description_ur || "",
     description_en: catData.description_en || "",
-    articles_count: 0,
-    show_in_header: catData.show_in_header !== false,
     show_in_mobile: catData.show_in_mobile !== false,
     show_in_footer: Boolean(catData.show_in_footer),
     is_active: catData.is_active !== false,
-    sort_order: Number(catData.sort_order) || categories.length + 1,
     layout: catData.layout || "Grid",
     seo_title: catData.seo_title || "",
     meta_description: catData.meta_description || "",
     no_index: Boolean(catData.no_index),
-    created_at: new Date().toISOString(),
   };
 
-  categories.push(newCat);
-  local.categories_v2 = categories;
+  const metaMap = await loadCategoriesMetaMap();
+  metaMap[String(realId)] = extraMeta;
+  await saveCategoriesMetaMap(metaMap);
+
+  const newCat = {
+    id: realId,
+    name_en: insertedRow?.name_en || catData.name_en || "",
+    name_ur: insertedRow?.name_ur || catData.name_ur || "",
+    slug: insertedRow?.slug || cleanSlug,
+    display_order: insertedRow?.display_order ?? displayOrder,
+    sort_order: insertedRow?.display_order ?? displayOrder,
+    show_in_header: insertedRow?.show_in_header ?? showInHeader,
+    articles_count: 0,
+    created_at: insertedRow?.created_at || new Date().toISOString(),
+    ...extraMeta,
+  };
+
+  const local = ensureLocalStore();
+  local.categories_v2 = [...categories.filter((c) => String(c.id) !== String(realId)), newCat];
   writeLocalStore(local);
   return newCat;
 }
 
 export async function updateCategory(id, updates) {
-  const local = ensureLocalStore();
   const categories = await getCategories();
   const idx = categories.findIndex((c) => String(c.id) === String(id));
-  if (idx >= 0) {
-    const existing = categories[idx];
-    const cleanSlug = updates.slug
-      ? updates.slug.toLowerCase().trim().replace(/[^a-z0-9_-]/g, "-")
-      : existing.slug;
+  const existing = idx >= 0 ? categories[idx] : { id: Number(id), slug: updates.slug || "" };
 
-    let parentName = existing.parent_name_en;
-    let urlPath = updates.url_path || existing.url_path;
+  const cleanSlug = updates.slug
+    ? updates.slug.toLowerCase().trim().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "")
+    : existing.slug;
 
-    if (updates.parent_id !== undefined) {
-      if (updates.parent_id) {
-        const parent = categories.find((c) => String(c.id) === String(updates.parent_id));
-        if (parent) {
-          parentName = parent.name_en;
-          urlPath = `${parent.url_path || `/${parent.slug}`}/${cleanSlug}`;
-        }
-      } else {
-        parentName = null;
-        urlPath = `/${cleanSlug}`;
+  let parentName = existing.parent_name_en || null;
+  let urlPath = updates.url_path || existing.url_path || `/${cleanSlug}`;
+
+  if (updates.parent_id !== undefined) {
+    if (updates.parent_id) {
+      const parent = categories.find((c) => String(c.id) === String(updates.parent_id));
+      if (parent) {
+        parentName = parent.name_en;
+        urlPath = `${parent.url_path || `/${parent.slug}`}/${cleanSlug}`;
       }
+    } else {
+      parentName = null;
+      urlPath = `/${cleanSlug}`;
     }
+  }
 
-    categories[idx] = {
-      ...existing,
-      ...updates,
-      slug: cleanSlug,
-      url_path: urlPath,
-      parent_name_en: parentName,
-      updated_at: new Date().toISOString(),
-    };
+  try {
+    const dbPatch = {};
+    if (updates.name_en !== undefined) dbPatch.name_en = updates.name_en;
+    if (updates.name_ur !== undefined) dbPatch.name_ur = updates.name_ur;
+    if (cleanSlug) dbPatch.slug = cleanSlug;
+    if (updates.sort_order !== undefined || updates.display_order !== undefined) {
+      dbPatch.display_order = Number(updates.sort_order ?? updates.display_order);
+    }
+    if (updates.show_in_header !== undefined) dbPatch.show_in_header = Boolean(updates.show_in_header);
+    if (Object.keys(dbPatch).length > 0) {
+      await supabaseAdmin.from("categories").update(dbPatch).eq("id", Number(id));
+    }
+  } catch (e) {
+    console.error("updateCategory Supabase update error:", e?.message);
+  }
+
+  const updated = {
+    ...existing,
+    ...updates,
+    slug: cleanSlug,
+    url_path: urlPath,
+    parent_name_en: parentName,
+    updated_at: new Date().toISOString(),
+  };
+
+  const metaMap = await loadCategoriesMetaMap();
+  metaMap[String(id)] = {
+    url_path: updated.url_path,
+    parent_id: updated.parent_id ?? null,
+    parent_name_en: updated.parent_name_en ?? null,
+    description_ur: updated.description_ur || "",
+    description_en: updated.description_en || "",
+    show_in_mobile: updated.show_in_mobile !== false,
+    show_in_footer: Boolean(updated.show_in_footer),
+    is_active: updated.is_active !== false,
+    layout: updated.layout || "Grid",
+    seo_title: updated.seo_title || "",
+    meta_description: updated.meta_description || "",
+    no_index: Boolean(updated.no_index),
+  };
+  await saveCategoriesMetaMap(metaMap);
+
+  if (idx >= 0) {
+    const local = ensureLocalStore();
+    categories[idx] = updated;
     local.categories_v2 = categories;
     writeLocalStore(local);
-    return categories[idx];
   }
-  return null;
+  return updated;
 }
 
 export async function deleteCategory(id) {
+  try {
+    await supabaseAdmin.from("categories").delete().eq("id", Number(id));
+  } catch (e) {}
+
+  const metaMap = await loadCategoriesMetaMap();
+  if (metaMap[String(id)]) {
+    delete metaMap[String(id)];
+    await saveCategoriesMetaMap(metaMap);
+  }
+
   const local = ensureLocalStore();
-  let categories = await getCategories();
+  let categories = Array.isArray(local.categories_v2) ? local.categories_v2 : [];
   categories = categories.filter((c) => String(c.id) !== String(id));
   local.categories_v2 = categories;
   writeLocalStore(local);

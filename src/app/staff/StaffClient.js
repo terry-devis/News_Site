@@ -55,7 +55,7 @@ export default function StaffClient({
     });
   }, [staff, selectedCity, searchQuery]);
 
-  const pageTitle = isEnglish ? "Our Staff" : "ہمارا عملہ";
+  const pageTitle = isEnglish ? "Staff" : "اسٹاف";
 
   return (
     <div className="min-h-screen text-gray-900" dir={dir}>

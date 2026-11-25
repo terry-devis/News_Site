@@ -34,6 +34,8 @@ function ArticlesAdminInner() {
   const [toDate, setToDate] = useState("");
   const [showTrash, setShowTrash] = useState(initialStatus === "trashed");
   const [toastMessage, setToastMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     const param = searchParams.get("status");
@@ -50,7 +52,7 @@ function ArticlesAdminInner() {
   async function loadArticles() {
     setLoading(true);
     try {
-      const res = await fetch("/api/articles?limit=50");
+      const res = await fetch("/api/articles?limit=500");
       const data = await res.json();
       if (data.articles) {
         setArticles(data.articles);
@@ -96,6 +98,24 @@ function ArticlesAdminInner() {
       showToast("مضمون کوڑے دان سے بحال کر دیا گیا");
     } catch {
       showToast("بحال کرنے میں خرابی");
+    }
+  };
+
+  // Permanently delete from database
+  const handlePermanentDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to permanently delete this article? This cannot be undone.")) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/articles/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Permanent delete failed");
+      }
+      setArticles((prev) => prev.filter((a) => a.id !== id));
+      showToast("Article permanently deleted");
+    } catch (err) {
+      showToast(err.message || "Failed to delete article permanently");
     }
   };
 
@@ -193,6 +213,15 @@ function ArticlesAdminInner() {
       return true;
     });
   }, [articles, showTrash, activeEdition, statusFilter, categoryFilter, fromDate, toDate, searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [showTrash, activeEdition, statusFilter, categoryFilter, fromDate, toDate, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredArticles.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * PAGE_SIZE;
+  const paginatedArticles = filteredArticles.slice(startIndex, startIndex + PAGE_SIZE);
 
   const getTimeAgo = (index) => {
     const hours = [4, 6, 6, 7, 8, 12, 18, 24];
@@ -414,7 +443,7 @@ function ArticlesAdminInner() {
                   </td>
                 </tr>
               ) : (
-                filteredArticles.map((art, idx) => {
+                paginatedArticles.map((art, idx) => {
                   const seoScore = getSeoScore(art);
                   const isUrduActive = activeEdition === "ur" || (activeEdition === "both" && art.title_ur);
                   const headlineText =
@@ -546,13 +575,22 @@ function ArticlesAdminInner() {
                       <td className="p-3.5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           {isTrashed ? (
-                            <button
-                              onClick={() => handleRestoreFromTrash(art.id)}
-                              className="p-1.5 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded cursor-pointer"
-                              title="Restore story"
-                            >
-                              <RotateCcw size={14} />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleRestoreFromTrash(art.id)}
+                                className="p-1.5 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded cursor-pointer"
+                                title="Restore story"
+                              >
+                                <RotateCcw size={14} />
+                              </button>
+                              <button
+                                onClick={() => handlePermanentDelete(art.id)}
+                                className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded cursor-pointer"
+                                title="Delete permanently"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
                           ) : (
                             <>
                               <button
@@ -603,17 +641,50 @@ function ArticlesAdminInner() {
           </table>
         </div>
 
-        {/* Table Footer with Pagination matching Daily Insaaf */}
-        <div className="p-4 bg-[#fbfaf8] border-t border-[#e5e2da] flex items-center justify-between text-xs text-gray-500">
-          <span>Showing 1 to {filteredArticles.length} of {articles.length} entries</span>
+        {/* Table Footer with Working Pagination */}
+        <div className="p-4 bg-[#fbfaf8] border-t border-[#e5e2da] flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">
+          <span>
+            {filteredArticles.length === 0
+              ? "Showing 0 of 0 entries"
+              : `Showing ${startIndex + 1} to ${Math.min(startIndex + PAGE_SIZE, filteredArticles.length)} of ${filteredArticles.length} entries`}
+          </span>
           <div className="flex items-center gap-1.5">
-            <button className="px-2.5 py-1 border border-[#e5e2da] bg-white rounded text-gray-400 cursor-not-allowed">
+            <button
+              type="button"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className={`px-2.5 py-1 border border-[#e5e2da] bg-white rounded transition ${
+                safePage <= 1
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-gray-700 hover:bg-gray-50 cursor-pointer"
+              }`}
+            >
               Previous
             </button>
-            <button className="px-2.5 py-1 border border-emerald-800 bg-emerald-800 text-white font-bold rounded">
-              1
-            </button>
-            <button className="px-2.5 py-1 border border-[#e5e2da] bg-white rounded text-gray-700 hover:bg-gray-50">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <button
+                key={pageNum}
+                type="button"
+                onClick={() => setCurrentPage(pageNum)}
+                className={`px-2.5 py-1 border rounded font-bold transition cursor-pointer ${
+                  pageNum === safePage
+                    ? "border-emerald-800 bg-emerald-800 text-white"
+                    : "border-[#e5e2da] bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {pageNum}
+              </button>
+            ))}
+            <button
+              type="button"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className={`px-2.5 py-1 border border-[#e5e2da] bg-white rounded transition ${
+                safePage >= totalPages
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-gray-700 hover:bg-gray-50 cursor-pointer"
+              }`}
+            >
               Next
             </button>
           </div>

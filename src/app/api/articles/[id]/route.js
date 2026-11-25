@@ -174,10 +174,17 @@ export async function DELETE(req, { params }) {
     const { error } = await supabaseAdmin.from("articles").delete().eq("id", id);
     if (error) throw error;
 
+    const enLinkUrl = `/en/story/${id}`;
     if (art?.title_ur) {
-      await supabaseAdmin.from("breaking_news").delete().or(`text_ur.eq."${art.title_ur}",link_url.eq."${linkUrl}"`);
+      await supabaseAdmin
+        .from("breaking_news")
+        .delete()
+        .or(`text_ur.eq."${art.title_ur}",link_url.eq."${linkUrl}",link_url.eq."${enLinkUrl}"`);
     } else {
-      await supabaseAdmin.from("breaking_news").delete().eq("link_url", linkUrl);
+      await supabaseAdmin
+        .from("breaking_news")
+        .delete()
+        .or(`link_url.eq."${linkUrl}",link_url.eq."${enLinkUrl}"`);
     }
 
     try {

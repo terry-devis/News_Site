@@ -61,8 +61,8 @@ export default function PreviewArrangeDrawer({
     }
   }, [open, initialLocale]);
 
-  const activeTitle = locale === "ur" ? titleUr || titleEn : titleEn || titleUr;
-  const activeSummary = locale === "ur" ? summaryUr || summaryEn : summaryEn || summaryUr;
+  const activeTitle = locale === "ur" ? titleUr : titleEn;
+  const activeSummary = locale === "ur" ? summaryUr : summaryEn;
   const rawActiveHtml = locale === "ur" ? contentUr : contentEn;
   const activeHtml = useMemo(() => cleanBodyHtml(rawActiveHtml), [rawActiveHtml]);
   const hasBodyContent = Boolean(stripTags(activeHtml)) || /<(img|iframe|video|table)\b/i.test(activeHtml);
@@ -230,11 +230,16 @@ export default function PreviewArrangeDrawer({
               </div>
 
               <h1
-                className={`font-bold text-[#18221b] leading-snug ${
+                className={`font-bold leading-snug ${
+                  activeTitle ? "text-[#18221b]" : "text-gray-400 font-normal italic"
+                } ${
                   locale === "ur" ? "urdu-headline" : "font-sans"
                 } ${viewport === "mobile" ? "text-xl" : "text-2xl"}`}
               >
-                {activeTitle || (locale === "ur" ? "بغیر عنوان خبر" : "Untitled story")}
+                {activeTitle ||
+                  (locale === "ur"
+                    ? "ابھی تک اردو عنوان نہیں لکھا گیا۔"
+                    : "No English headline written yet.")}
               </h1>
 
               {activeSummary && (

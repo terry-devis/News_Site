@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -14,6 +14,9 @@ const TipTapEditor = forwardRef(function TipTapEditor(
   { value, onChange, dir = "rtl", placeholder = "Write your story...", onRequestImage },
   ref
 ) {
+  const placeholderRef = useRef(placeholder);
+  placeholderRef.current = placeholder;
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -32,7 +35,7 @@ const TipTapEditor = forwardRef(function TipTapEditor(
         types: ["heading", "paragraph"],
       }),
       Placeholder.configure({
-        placeholder,
+        placeholder: () => placeholderRef.current,
       }),
     ],
     content: value || "",
@@ -49,9 +52,10 @@ const TipTapEditor = forwardRef(function TipTapEditor(
     },
   });
 
-  // Sync direction when switching between UR and EN tabs
+  // Sync direction & placeholder when switching between UR and EN tabs
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
+    placeholderRef.current = placeholder;
     editor.setOptions({
       editorProps: {
         attributes: {
@@ -62,7 +66,8 @@ const TipTapEditor = forwardRef(function TipTapEditor(
         },
       },
     });
-  }, [editor, dir]);
+    editor.view.dispatch(editor.state.tr);
+  }, [editor, dir, placeholder]);
 
   // Sync external content changes (e.g., tab switch or Preview & arrange reorder)
   useEffect(() => {

@@ -210,78 +210,77 @@ export default function StaffClient({
                   key={m.id}
                   className="group bg-[#efeee9]/70 border border-[#dcd8cd] hover:border-[#184e2d] transition duration-200 shadow-2xs flex flex-col justify-between"
                 >
-                  <div className="p-4 flex items-start gap-3.5">
-                    {/* Crisp Inline Square Portrait */}
-                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 border border-[#dcd8cd] bg-[#dcd8cd]/40 overflow-hidden">
-                      {m.image_url ? (
-                        <img
-                          src={m.image_url}
-                          alt={name}
-                          loading="lazy"
-                          decoding="async"
-                          className="w-full h-full object-cover object-top group-hover:scale-105 transition duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-[#184e2d] text-white flex items-center justify-center text-2xl font-bold font-sans">
-                          {initial}
-                        </div>
-                      )}
-                    </div>
+                  <Link href={`/staff/${m.id}`} className="block flex-1">
+                    <div className="p-4 flex items-start gap-3.5">
+                      {/* Crisp Inline Square Portrait */}
+                      <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 border border-[#dcd8cd] bg-[#dcd8cd]/40 overflow-hidden">
+                        {m.image_url ? (
+                          <img
+                            src={m.image_url}
+                            alt={name}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover object-top group-hover:scale-105 transition duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-[#184e2d] text-white flex items-center justify-center text-2xl font-bold font-sans">
+                            {initial}
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Inline Details */}
-                    <div className="min-w-0 flex-1">
-                      <h2
-                        className={`text-base font-bold text-gray-950 group-hover:text-[#184e2d] transition leading-snug ${
-                          isUrdu ? "urdu-headline" : "font-sans"
-                        }`}
-                      >
-                        {name}
-                      </h2>
-
-                      {role && (
-                        <p
-                          className={`text-xs font-bold text-[#184e2d] mt-0.5 ${
-                            isUrdu ? "urdu-body" : "font-sans"
+                      {/* Inline Details */}
+                      <div className="min-w-0 flex-1">
+                        <h2
+                          className={`text-base font-bold text-gray-950 group-hover:text-[#184e2d] transition leading-snug ${
+                            isUrdu ? "urdu-headline" : "font-sans"
                           }`}
                         >
-                          {role}
-                        </p>
-                      )}
+                          {name}
+                        </h2>
 
-                      {(dept || city) && (
-                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-600 font-sans">
-                          {dept && (
-                            <span className="inline-flex items-center gap-1">
-                              <Briefcase size={11} className="text-gray-400 shrink-0" />
-                              <span>{dept}</span>
-                            </span>
-                          )}
-                          {city && (
-                            <span className="inline-flex items-center gap-1">
-                              <MapPin size={11} className="text-gray-400 shrink-0" />
-                              <span>{city}</span>
-                            </span>
-                          )}
-                        </div>
-                      )}
+                        {role && (
+                          <p
+                            className={`text-xs font-bold text-[#184e2d] mt-0.5 ${
+                              isUrdu ? "urdu-body" : "font-sans"
+                            }`}
+                          >
+                            {role}
+                          </p>
+                        )}
+
+                        {(dept || city) && (
+                          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-600 font-sans">
+                            {dept && (
+                              <span className="inline-flex items-center gap-1">
+                                <Briefcase size={11} className="text-gray-400 shrink-0" />
+                                <span>{dept}</span>
+                              </span>
+                            )}
+                            {city && (
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin size={11} className="text-gray-400 shrink-0" />
+                                <span>{city}</span>
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {bio && (
-                    <p
-                      className={`px-4 pb-3 text-xs text-gray-600 line-clamp-2 ${
-                        isUrdu ? "urdu-body leading-relaxed" : "font-sans leading-normal"
-                      }`}
-                    >
-                      {bio}
-                    </p>
-                  )}
+                    {bio && (
+                      <p
+                        className={`px-4 pb-3 text-xs text-gray-600 line-clamp-2 ${
+                          isUrdu ? "urdu-body leading-relaxed" : "font-sans leading-normal"
+                        }`}
+                      >
+                        {bio}
+                      </p>
+                    )}
+                  </Link>
 
-                  {(m.phone || m.email) && (
-                    <div
-                      dir="ltr"
-                      className="px-4 py-2 bg-[#fbfaf8]/70 border-t border-[#dcd8cd] flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-700 font-sans"
-                    >
+                  <div className="px-4 py-2 bg-[#fbfaf8]/70 border-t border-[#dcd8cd] flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-700 font-sans">
+                    <div dir="ltr" className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
                       {m.phone && (
                         <a
                           href={`tel:${m.phone}`}
@@ -294,14 +293,20 @@ export default function StaffClient({
                       {m.email && (
                         <a
                           href={`mailto:${m.email}`}
-                          className="inline-flex items-center gap-1 hover:text-[#184e2d] transition truncate"
+                          className="inline-flex items-center gap-1 hover:text-[#184e2d] transition truncate max-w-[160px]"
                         >
                           <Mail size={11} className="text-[#184e2d] shrink-0" />
                           <span className="truncate">{m.email}</span>
                         </a>
                       )}
                     </div>
-                  )}
+                    <Link
+                      href={`/staff/${m.id}`}
+                      className="text-[11px] font-bold text-[#184e2d] hover:underline shrink-0"
+                    >
+                      {isEnglish ? "View Profile →" : "تفصیلات دیکھیں ←"}
+                    </Link>
+                  </div>
                 </article>
               );
             })}

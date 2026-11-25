@@ -82,23 +82,35 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
     }, 120);
   }, [clearCloseTimer]);
 
-  const loadCategoryPreview = useCallback((slug) => {
-    if (!slug || fetchedSlugsRef.current.has(slug)) return;
-    fetchedSlugsRef.current.add(slug);
-    setMegaCache((prev) => ({ ...prev, [slug]: { status: "loading", articles: [] } }));
-    fetch(`/api/public/category-preview?slug=${encodeURIComponent(slug)}&limit=4`)
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => {
-        setMegaCache((prev) => ({
-          ...prev,
-          [slug]: { status: "ready", articles: (data.articles || []).slice(0, 4) },
-        }));
-      })
-      .catch(() => {
-        fetchedSlugsRef.current.delete(slug);
-        setMegaCache((prev) => ({ ...prev, [slug]: { status: "error", articles: [] } }));
-      });
-  }, []);
+  const loadCategoryPreview = useCallback(
+    (slug) => {
+      if (!slug) return;
+      const cacheKey = `${lang}:${slug}`;
+      if (fetchedSlugsRef.current.has(cacheKey)) return;
+      fetchedSlugsRef.current.add(cacheKey);
+      setMegaCache((prev) => ({ ...prev, [cacheKey]: { status: "loading", articles: [] } }));
+      fetch(`/api/public/category-preview?slug=${encodeURIComponent(slug)}&limit=4&lang=${encodeURIComponent(lang)}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((data) => {
+          const filtered = (data.articles || [])
+            .filter((a) =>
+              lang === "en"
+                ? Boolean(a.title_en && a.title_en.trim())
+                : Boolean(a.title_ur && a.title_ur.trim())
+            )
+            .slice(0, 4);
+          setMegaCache((prev) => ({
+            ...prev,
+            [cacheKey]: { status: "ready", articles: filtered },
+          }));
+        })
+        .catch(() => {
+          fetchedSlugsRef.current.delete(cacheKey);
+          setMegaCache((prev) => ({ ...prev, [cacheKey]: { status: "error", articles: [] } }));
+        });
+    },
+    [lang]
+  );
 
   const handleCatHover = useCallback(
     (cat) => {
@@ -511,7 +523,9 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
         </div>
 
         {/* Expanding Mega-Menu Panel on Category Hover (Desktop) */}
-        {hoveredCat && (
+        {hoveredCat && (() => {
+          const activeCache = megaCache[`${lang}:${hoveredCat.slug}`];
+          return (
           <div
             role="region"
             aria-label={isEnglish ? hoveredCat.name_en || hoveredCat.name_ur : hoveredCat.name_ur}
@@ -525,7 +539,7 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
                   {isUrdu ? "تازہ ترین خبریں" : "Latest News"}
                 </p>
 
-                {!megaCache[hoveredCat.slug] || megaCache[hoveredCat.slug].status === "loading" ? (
+                {!activeCache || activeCache.status === "loading" ? (
                   <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2" aria-busy="true">
                     {[0, 1, 2, 3].map((idx) => (
                       <li key={idx} className="flex gap-3">
@@ -537,14 +551,18 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
                       </li>
                     ))}
                   </ul>
-                ) : megaCache[hoveredCat.slug].articles.length === 0 ? (
-                  <p className="text-gray-500 py-4 text-sm">—</p>
+                ) : activeCache.articles.length === 0 ? (
+                  <p className="text-gray-500 py-4 text-xs font-sans">
+                    {isEnglish
+                      ? "No English articles published in this section yet."
+                      : "اس سیکشن میں فی الحال کوئی خبر دستیاب نہیں ہے۔"}
+                  </p>
                 ) : (
                   <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-                    {megaCache[hoveredCat.slug].articles.map((art) => (
+                    {activeCache.articles.map((art) => (
                       <li key={art.id}>
                         <Link
-                          href={`/story/${art.slug || art.id}`}
+                          href={isEnglish && art.title_en ? `/en/story/${art.slug || art.id}` : `/story/${art.slug || art.id}`}
                           onClick={closeAllMenus}
                           className="group flex gap-3 items-start"
                         >
@@ -552,7 +570,7 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
                             {art.thumb ? (
                               <Image
                                 src={art.thumb}
-                                alt={isEnglish ? art.title_en || art.title_ur : art.title_ur}
+                                alt={isEnglish ? art.title_en || "" : art.title_ur || ""}
                                 fill
                                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                               />
@@ -562,8 +580,12 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
                               </div>
                             )}
                           </div>
-                          <span className="group-hover:text-[#184e2d] line-clamp-3 flex-1 text-sm font-bold leading-snug text-gray-900 transition-colors urdu-headline">
-                            {isEnglish ? art.title_en || art.title_ur : art.title_ur}
+                          <span
+                            className={`group-hover:text-[#184e2d] line-clamp-3 flex-1 text-sm font-bold leading-snug text-gray-900 transition-colors ${
+                              isUrdu ? "urdu-headline" : "font-sans"
+                            }`}
+                          >
+                            {isEnglish ? art.title_en : art.title_ur}
                           </span>
                         </Link>
                       </li>
@@ -601,7 +623,8 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
       </nav>
 
       {/* 4. MARKET RATES BAR: FULL WIDTH & FLUSH */}

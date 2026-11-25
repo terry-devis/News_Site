@@ -9,6 +9,7 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const slug = (searchParams.get("slug") || "").trim();
+    const lang = (searchParams.get("lang") || "").trim().toLowerCase();
     const limit = Math.min(8, Math.max(1, Number(searchParams.get("limit")) || 4));
 
     if (!slug) {
@@ -27,16 +28,30 @@ export async function GET(req) {
       .map((c) => c.id);
     const targetIds = [cat.id, ...childIds];
 
-    const { data: articles, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from("articles")
       .select("id, title_ur, title_en, slug, cover_image, content_en, created_at")
-      .in("category_id", targetIds)
+      .in("category_id", targetIds);
+
+    if (lang === "en") {
+      query = query.not("title_en", "is", null).neq("title_en", "");
+    } else if (lang === "ur") {
+      query = query.not("title_ur", "is", null).neq("title_ur", "");
+    }
+
+    const { data: articles, error } = await query
       .order("created_at", { ascending: false })
-      .limit(limit * 3);
+      .limit(limit * 4);
 
     if (error) throw error;
 
-    const publishedArticles = filterPublishedArticles(articles || []).slice(0, limit);
+    const publishedArticles = filterPublishedArticles(articles || [])
+      .filter((a) => {
+        if (lang === "en") return Boolean(a.title_en && a.title_en.trim());
+        if (lang === "ur") return Boolean(a.title_ur && a.title_ur.trim());
+        return true;
+      })
+      .slice(0, limit);
 
     return NextResponse.json({
       category: cat,

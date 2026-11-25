@@ -100,7 +100,17 @@ export default function ArticleEditorClient({ initialId = null }) {
 
         if (!isEdit) {
           if (loadedCats[0]?.id) setCategoryId(String(loadedCats[0].id));
-          if (meRes?.user?.byline_name) setAuthorName(meRes.user.byline_name);
+          if (meRes?.user) {
+            const u = meRes.user;
+            const urByline = u.full_name_ur || u.byline_name || "ایڈیٹوریل ڈیسک";
+            const enByline = u.full_name_en || u.byline_name || "Editorial Desk";
+            setAuthorName(urByline);
+            setMeta((prev) => ({
+              ...prev,
+              bylineUr: urByline,
+              bylineEn: enByline,
+            }));
+          }
         }
 
         if (isEdit && initialId) {
@@ -279,8 +289,10 @@ export default function ArticleEditorClient({ initialId = null }) {
     }
   }
 
-  const activeCategoryName =
-    categories.find((c) => String(c.id) === String(categoryId))?.name_ur || "News";
+  const selectedCategoryObj = categories.find((c) => String(c.id) === String(categoryId));
+  const activeCategoryNameUr = selectedCategoryObj?.name_ur || "خبر";
+  const activeCategoryNameEn = selectedCategoryObj?.name_en || selectedCategoryObj?.name_ur || "News";
+  const activeCategoryName = activeCategoryNameUr;
 
   if (loading) {
     return (
@@ -703,37 +715,39 @@ export default function ArticleEditorClient({ initialId = null }) {
               </div>
             )}
 
-            <div>
-              <label className="block text-xs font-semibold text-[#18221b] mb-1">
-                Byline (Urdu)
-              </label>
-              <input
-                type="text"
-                dir="rtl"
-                value={authorName}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setAuthorName(val);
-                  updateMeta("bylineUr", val);
-                }}
-                placeholder="ایڈیٹوریل ڈیسک / نامہ نگار"
-                className="w-full px-3.5 py-2.5 text-sm leading-loose text-right font-nastaliq border border-[#e5e2da] bg-[#fbfaf8] focus:bg-white focus:outline-none focus:border-[#184e2d]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#18221b] mb-1">
-                Byline (English)
-              </label>
-              <input
-                type="text"
-                dir="ltr"
-                value={meta.bylineEn || ""}
-                onChange={(e) => updateMeta("bylineEn", e.target.value)}
-                placeholder="Editorial Desk / Staff Reporter"
-                className="w-full px-3 py-2 text-xs text-left font-sans border border-[#e5e2da] bg-[#fbfaf8] focus:outline-none focus:border-[#184e2d]"
-              />
-            </div>
+            {activeTab === "ur" ? (
+              <div>
+                <label className="block text-xs font-semibold text-[#18221b] mb-1">
+                  Byline (Urdu)
+                </label>
+                <input
+                  type="text"
+                  dir="rtl"
+                  value={authorName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setAuthorName(val);
+                    updateMeta("bylineUr", val);
+                  }}
+                  placeholder="ایڈیٹوریل ڈیسک / نامہ نگار"
+                  className="w-full px-3.5 py-2.5 text-sm leading-loose text-right font-nastaliq border border-[#e5e2da] bg-[#fbfaf8] focus:bg-white focus:outline-none focus:border-[#184e2d]"
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-semibold text-[#18221b] mb-1">
+                  Byline (English)
+                </label>
+                <input
+                  type="text"
+                  dir="ltr"
+                  value={meta.bylineEn || ""}
+                  onChange={(e) => updateMeta("bylineEn", e.target.value)}
+                  placeholder="Editorial Desk / Staff Reporter"
+                  className="w-full px-3 py-2 text-xs text-left font-sans border border-[#e5e2da] bg-[#fbfaf8] focus:bg-white focus:outline-none focus:border-[#184e2d]"
+                />
+              </div>
+            )}
           </div>
 
           {/* 3. Lead Media + Crop & Frame */}
@@ -912,6 +926,7 @@ export default function ArticleEditorClient({ initialId = null }) {
       <PreviewArrangeDrawer
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
+        initialLocale={activeTab}
         titleUr={titleUr}
         titleEn={titleEn}
         summaryUr={summaryUr}
@@ -921,7 +936,11 @@ export default function ArticleEditorClient({ initialId = null }) {
         coverImage={coverImage}
         coverFraming={meta.coverFraming}
         categoryName={activeCategoryName}
+        categoryNameUr={activeCategoryNameUr}
+        categoryNameEn={activeCategoryNameEn}
         authorName={authorName}
+        authorNameUr={authorName}
+        authorNameEn={meta.bylineEn}
         onApplyArrangedContent={(locale, html) => {
           if (locale === "ur") setContentUr(html);
           else setContentEn(html);

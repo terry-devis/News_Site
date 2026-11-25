@@ -1,14 +1,24 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { X, Monitor, Smartphone, ArrowUp, ArrowDown, Trash2, Pin, Layers, Eye } from "lucide-react";
 
+function cleanBodyHtml(html) {
+  if (!html) return "";
+  return String(html)
+    .replace(/<!--excerpt:[\s\S]*?-->\n?/gi, "")
+    .replace(/<!--meta:[\s\S]*?-->\n?/gi, "")
+    .trim();
+}
+
 function splitHtmlIntoBlocks(html) {
-  if (!html || !String(html).trim()) return [];
-  const trimmed = String(html).trim();
+  const trimmed = cleanBodyHtml(html);
+  if (!trimmed) return [];
   const matches = trimmed.match(/<(p|h2|h3|h4|blockquote|ul|ol|figure|table|div)[^>]*>[\s\S]*?<\/\1>|<img[^>]*\/?>|<hr[^>]*\/?>/gi);
   if (matches && matches.length > 0) {
-    return matches.map((m, idx) => ({ id: `blk_${idx}_${m.length}`, html: m }));
+    return matches
+      .filter((m) => stripTags(m).length > 0 || /<(img|hr)\b/i.test(m))
+      .map((m, idx) => ({ id: `blk_${idx}_${m.length}`, html: m }));
   }
   return trimmed
     .split(/\n{2,}/)
@@ -23,6 +33,7 @@ function stripTags(html) {
 export default function PreviewArrangeDrawer({
   open,
   onClose,
+  initialLocale = "ur",
   titleUr,
   titleEn,
   summaryUr,
@@ -32,16 +43,38 @@ export default function PreviewArrangeDrawer({
   coverImage,
   coverFraming,
   categoryName,
+  categoryNameUr,
+  categoryNameEn,
   authorName,
+  authorNameUr,
+  authorNameEn,
   onApplyArrangedContent,
 }) {
   const [viewport, setViewport] = useState("desktop"); // 'desktop' | 'mobile'
-  const [locale, setLocale] = useState("ur"); // 'ur' | 'en'
+  const [locale, setLocale] = useState(initialLocale === "en" ? "en" : "ur"); // 'ur' | 'en'
   const [mode, setMode] = useState("preview"); // 'preview' | 'arrange'
+
+  useEffect(() => {
+    if (open) {
+      setLocale(initialLocale === "en" ? "en" : "ur");
+      setArrangedBlocks(null);
+    }
+  }, [open, initialLocale]);
 
   const activeTitle = locale === "ur" ? titleUr || titleEn : titleEn || titleUr;
   const activeSummary = locale === "ur" ? summaryUr || summaryEn : summaryEn || summaryUr;
-  const activeHtml = locale === "ur" ? contentUr : contentEn;
+  const rawActiveHtml = locale === "ur" ? contentUr : contentEn;
+  const activeHtml = useMemo(() => cleanBodyHtml(rawActiveHtml), [rawActiveHtml]);
+  const hasBodyContent = Boolean(stripTags(activeHtml)) || /<(img|iframe|video|table)\b/i.test(activeHtml);
+
+  const activeCategoryName =
+    locale === "ur"
+      ? categoryNameUr || categoryName || "خبر"
+      : categoryNameEn || categoryName || "News";
+  const activeAuthorName =
+    locale === "ur"
+      ? authorNameUr || authorName || "ایڈیٹوریل ڈیسک"
+      : authorNameEn || authorName || "Daily Afadiat Desk";
 
   const blocks = useMemo(() => splitHtmlIntoBlocks(activeHtml), [activeHtml]);
   const [arrangedBlocks, setArrangedBlocks] = useState(null);
@@ -191,17 +224,25 @@ export default function PreviewArrangeDrawer({
               }`}
             >
               <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#184e2d] mb-2">
-                <span>{categoryName || "News"}</span>
+                <span>{activeCategoryName}</span>
                 <span>•</span>
-                <span className="text-[#5c635b] font-normal">{authorName || "Daily Afadiat Desk"}</span>
+                <span className="text-[#5c635b] font-normal">{activeAuthorName}</span>
               </div>
 
-              <h1 className={`font-bold text-[#18221b] leading-snug ${viewport === "mobile" ? "text-xl" : "text-2xl"}`}>
-                {activeTitle || "Untitled story"}
+              <h1
+                className={`font-bold text-[#18221b] leading-snug ${
+                  locale === "ur" ? "urdu-headline" : "font-sans"
+                } ${viewport === "mobile" ? "text-xl" : "text-2xl"}`}
+              >
+                {activeTitle || (locale === "ur" ? "بغیر عنوان خبر" : "Untitled story")}
               </h1>
 
               {activeSummary && (
-                <p className="mt-2.5 text-sm text-[#5c635b] leading-relaxed border-b border-[#e5e2da] pb-3">
+                <p
+                  className={`mt-2.5 text-sm text-[#5c635b] leading-relaxed border-b border-[#e5e2da] pb-3 ${
+                    locale === "ur" ? "urdu-body" : "font-sans"
+                  }`}
+                >
                   {activeSummary}
                 </p>
               )}
@@ -221,9 +262,17 @@ export default function PreviewArrangeDrawer({
               )}
 
               <div
-                className="mt-5 prose prose-sm max-w-none text-[#18221b] leading-loose space-y-3"
+                className={`mt-5 max-w-none text-[#18221b] space-y-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-5 [&_h2]:mb-2 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:ps-6 [&_ol]:list-decimal [&_ol]:ps-6 [&_blockquote]:border-s-4 [&_blockquote]:border-[#184e2d] [&_blockquote]:ps-4 [&_blockquote]:italic [&_blockquote]:text-[#5c635b] [&_a]:text-[#184e2d] [&_a]:underline [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded [&_img]:my-3 [&_p]:mb-3 ${
+                  locale === "ur" ? "urdu-body leading-loose text-base" : "font-sans leading-relaxed text-sm"
+                }`}
                 dangerouslySetInnerHTML={{
-                  __html: activeHtml || "<p class='text-gray-400'>No body content written yet.</p>",
+                  __html: hasBodyContent
+                    ? activeHtml
+                    : `<p class='text-gray-400'>${
+                        locale === "ur"
+                          ? "ابھی تک اردو متن نہیں لکھا گیا۔"
+                          : "No English body content written yet."
+                      }</p>`,
                 }}
               />
             </div>

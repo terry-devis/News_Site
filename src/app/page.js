@@ -647,7 +647,7 @@ export default async function Home() {
 
   // Extract breaking news directly from articles with is_breaking = true
   const articleBreaking = articles
-    .filter((a) => a.is_breaking)
+    .filter((a) => a.is_breaking && a.title_ur && a.title_ur.trim())
     .map((a) => ({
       id: `art-${a.id}`,
       text_ur: a.title_ur,
@@ -661,6 +661,7 @@ export default async function Home() {
   // Combine with breaking_news table, putting live article breaking headlines first
   const allBreaking = [...articleBreaking];
   for (const b of breakingNews) {
+    if (!b.text_ur || !b.text_ur.trim()) continue;
     const exists = allBreaking.some(
       (item) => item.text_ur?.trim() === b.text_ur?.trim() || (b.link_url && item.link_url === b.link_url)
     );

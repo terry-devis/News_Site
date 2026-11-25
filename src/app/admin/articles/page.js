@@ -147,6 +147,14 @@ function ArticlesAdminInner() {
       if (showTrash && !isTrashed) return false;
       if (!showTrash && isTrashed) return false;
 
+      // Edition filter (UR / EN / Both)
+      if (activeEdition === "ur" && !(art.title_ur && art.title_ur.trim())) {
+        return false;
+      }
+      if (activeEdition === "en" && !(art.title_en && art.title_en.trim())) {
+        return false;
+      }
+
       // Status filter
       if (statusFilter !== "all") {
         const artStatus = art.status || "published";
@@ -184,7 +192,7 @@ function ArticlesAdminInner() {
 
       return true;
     });
-  }, [articles, showTrash, statusFilter, categoryFilter, fromDate, toDate, searchQuery]);
+  }, [articles, showTrash, activeEdition, statusFilter, categoryFilter, fromDate, toDate, searchQuery]);
 
   const getTimeAgo = (index) => {
     const hours = [4, 6, 6, 7, 8, 12, 18, 24];
@@ -496,8 +504,14 @@ function ArticlesAdminInner() {
 
                       {/* 3. SECTION */}
                       <td className="p-3.5 whitespace-nowrap">
-                        <span className="bg-[#f4f2ec] text-gray-800 text-[11px] font-bold px-2.5 py-1 rounded urdu-headline">
-                          {art.category?.name_ur || art.category_slug || art.category || "قومی"}
+                        <span
+                          className={`bg-[#f4f2ec] text-gray-800 text-[11px] font-bold px-2.5 py-1 rounded ${
+                            activeEdition === "en" || !art.title_ur?.trim() ? "font-sans" : "urdu-headline"
+                          }`}
+                        >
+                          {activeEdition === "en" || !art.title_ur?.trim()
+                            ? art.category?.name_en || art.category?.name_ur || art.category_slug || "News"
+                            : art.category?.name_ur || art.category_slug || art.category || "قومی"}
                         </span>
                       </td>
 
@@ -558,7 +572,11 @@ function ArticlesAdminInner() {
                               </Link>
 
                               <Link
-                                href={toPublicSiteUrl(`/story/${art.id || art.slug}`)}
+                                href={toPublicSiteUrl(
+                                  activeEdition === "en" || !art.title_ur?.trim()
+                                    ? `/en/story/${art.slug || art.id}`
+                                    : `/story/${art.slug || art.id}`
+                                )}
                                 target="_blank"
                                 className="p-1.5 text-gray-500 hover:text-emerald-800 hover:bg-gray-100 rounded transition"
                                 title="View public page"

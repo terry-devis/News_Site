@@ -176,17 +176,13 @@ export default function HomeClient({
   const liveFeatured = remainingLive[0] || visibleArticles[0] || null;
   const liveTimeline = remainingLive.slice(1, 7);
 
-  // 2. Category Story Selector with safe fallback
+  // 2. Strict Category Story Selector — only show articles belonging to that category
   const getCategoryStories = (slugs, count = 5) => {
     const slugList = Array.isArray(slugs) ? slugs : [slugs];
     const matched = visibleArticles.filter((a) =>
       slugList.includes((a.category?.slug || a.category_slug || "").toLowerCase())
     );
-    if (matched.length >= count) return matched.slice(0, count);
-    const others = visibleArticles.filter(
-      (a) => !matched.some((m) => m.id === a.id) && a.id !== leadStory?.id
-    );
-    return [...matched, ...others].slice(0, count);
+    return matched.slice(0, count);
   };
 
   const businessStories = getCategoryStories(["business"], 6);
@@ -204,13 +200,7 @@ export default function HomeClient({
       ["opinion", "blogs"].includes((a.category?.slug || a.category_slug || "").toLowerCase()) ||
       ["column", "blog"].includes(a.meta?.articleType)
   );
-  const opinionStories =
-    opinionMatched.length >= 6
-      ? opinionMatched.slice(0, 6)
-      : [
-          ...opinionMatched,
-          ...visibleArticles.filter((a) => !opinionMatched.some((m) => m.id === a.id) && a.id !== leadStory?.id),
-        ].slice(0, 6);
+  const opinionStories = opinionMatched.slice(0, 6);
   const factCheckStories = visibleArticles
     .filter(
       (a) =>

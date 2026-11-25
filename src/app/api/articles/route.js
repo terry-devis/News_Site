@@ -65,40 +65,48 @@ export async function POST(req) {
       meta,
     } = body;
 
-    if (!title_ur || !content_ur) {
+    const safeTitleUr = title_ur ? String(title_ur).trim() : "";
+    const safeTitleEn = title_en ? String(title_en).trim() : "";
+    const safeContentUr = content_ur ? String(content_ur).trim() : "";
+    const safeContentEn = content_en ? String(content_en).trim() : "";
+
+    const hasUrdu = Boolean(safeTitleUr) && Boolean(safeContentUr);
+    const hasEnglish = Boolean(safeTitleEn) && Boolean(safeContentEn);
+
+    if (!hasUrdu && !hasEnglish) {
       return NextResponse.json(
-        { error: "اردو عنوان اور تفصیلی متن لازمی ہیں" },
+        { error: "At least one edition (Urdu or English) headline and body are required" },
         { status: 400 }
       );
     }
 
     const generatedSlug = slug
       ? slug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-")
-      : `${generateSeoSlug({ titleEn: title_en, titleUr: title_ur, focusKeyword: meta?.focusKeyword })}-${Date.now().toString(36)}`;
+      : `${generateSeoSlug({ titleEn: safeTitleEn, titleUr: safeTitleUr, focusKeyword: meta?.focusKeyword })}-${Date.now().toString(36)}`;
 
     const targetStatus = body.status || "published";
     const finalContentEn = packArticleMeta({
       status: targetStatus,
       excerptEn: excerpt_en || "",
       meta: meta || null,
-      contentEn: content_en || "",
+      contentEn: safeContentEn,
     });
 
     const resolvedCategoryId = category_id ? await resolveValidCategoryId(category_id) : null;
 
     const isRedAlertBreaking = Boolean(is_breaking) && Number(meta?.breakingPriority || 1) === 1;
     const newArticle = {
-      title_ur,
-      title_en: title_en || null,
+      title_ur: safeTitleUr,
+      title_en: safeTitleEn || null,
       slug: generatedSlug,
-      summary_ur: summary_ur || title_ur.substring(0, 150),
-      content_ur,
+      summary_ur: summary_ur ? String(summary_ur).trim() : (safeTitleUr ? safeTitleUr.substring(0, 150) : ""),
+      content_ur: safeContentUr,
       content_en: finalContentEn || null,
       category_id: resolvedCategoryId,
       cover_image: cover_image || null,
       is_breaking: Boolean(is_breaking),
       is_featured: Boolean(is_featured) || isRedAlertBreaking,
-      author_name: author_name || "ایڈیٹر ڈیلی افادیت",
+      author_name: author_name || (safeTitleUr ? "ایڈیٹر ڈیلی افادیت" : "Daily Afadiat Desk"),
       updated_at: new Date().toISOString(),
     };
 
@@ -113,9 +121,9 @@ export async function POST(req) {
     if (is_breaking) {
       try {
         await supabaseAdmin.from("breaking_news").insert({
-          text_ur: title_ur,
-          text_en: title_en || null,
-          link_url: `/story/${data[0].id}`,
+          text_ur: safeTitleUr,
+          text_en: safeTitleEn || null,
+          link_url: safeTitleUr ? `/story/${data[0].id}` : `/en/story/${data[0].id}`,
           priority: 0,
           is_active: true,
         });

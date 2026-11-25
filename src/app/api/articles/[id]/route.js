@@ -64,6 +64,12 @@ export async function PUT(req, { params }) {
       updated_at: new Date().toISOString(),
     };
 
+    if (updates.title_ur !== undefined) {
+      updates.title_ur = updates.title_ur ? String(updates.title_ur).trim() : "";
+    }
+    if (updates.content_ur !== undefined) {
+      updates.content_ur = updates.content_ur ? String(updates.content_ur) : "";
+    }
     if (updates.category_id !== undefined) {
       updates.category_id = updates.category_id
         ? await resolveValidCategoryId(updates.category_id)
@@ -97,11 +103,11 @@ export async function PUT(req, { params }) {
 
     // Automatic synchronization with breaking_news ticker
     if (updates.is_breaking !== undefined) {
-      const titleUr = updates.title_ur || data[0]?.title_ur;
-      const titleEn = updates.title_en || data[0]?.title_en || titleUr;
-      const linkUrl = `/story/${id}`;
+      const titleUr = (updates.title_ur !== undefined ? updates.title_ur : data[0]?.title_ur) || "";
+      const titleEn = (updates.title_en !== undefined ? updates.title_en : data[0]?.title_en) || titleUr;
+      const linkUrl = titleUr.trim() ? `/story/${id}` : `/en/story/${id}`;
 
-      if (updates.is_breaking && titleUr) {
+      if (updates.is_breaking && (titleUr.trim() || titleEn.trim())) {
         // Find existing ticker item by text_ur or link_url
         const { data: existing } = await supabaseAdmin
           .from("breaking_news")

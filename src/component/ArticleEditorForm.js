@@ -172,11 +172,13 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!titleUr.trim() || !contentUr.trim()) {
+    const hasUrdu = Boolean(titleUr.trim()) && Boolean(contentUr.trim());
+    const hasEnglish = Boolean(titleEn.trim()) && Boolean(contentEn.trim());
+    if (!hasUrdu && !hasEnglish) {
       setErrorMsg(
         lang === "ur"
-          ? "اردو عنوان اور تفصیلی متن لازمی ہیں۔"
-          : "Urdu headline and article content are required."
+          ? "کم از کم ایک ایڈیشن (اردو یا انگریزی) کا عنوان اور تفصیلی متن لازمی ہیں۔"
+          : "Headline and content are required for at least one edition (Urdu or English)."
       );
       return;
     }
@@ -194,8 +196,8 @@ export default function ArticleEditorForm({ initialData = null, isEdit = false }
       title_en: titleEn.trim() || null,
       slug: slug.trim() || `news-${Date.now()}`,
       category_id: Number(categoryId),
-      summary_ur: summaryUr.trim() || titleUr.trim().substring(0, 150),
-      content_ur: contentUr.trim(),
+      summary_ur: summaryUr.trim() || (titleUr.trim() ? titleUr.trim().substring(0, 150) : ""),
+      content_ur: hasUrdu ? contentUr.trim() : "",
       content_en: finalContentEn,
       cover_image: coverImage || null,
       is_breaking: isBreaking,

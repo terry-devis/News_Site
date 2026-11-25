@@ -167,7 +167,7 @@ export default function ArticleEditorClient({ initialId = null }) {
 
   // Local draft autosave
   useEffect(() => {
-    if (loading || (!titleUr && !contentUr)) return;
+    if (loading || (!titleUr && !contentUr && !titleEn && !contentEn)) return;
     const key = isEdit ? `da_draft_${initialId}` : "da_draft_new";
     const timer = setTimeout(() => {
       try {
@@ -209,12 +209,30 @@ export default function ArticleEditorClient({ initialId = null }) {
   }
 
   async function handleSave(targetStatus = status) {
-    if (!titleUr.trim()) {
-      showToast("Urdu headline (عنوان) is required", "error");
-      return;
-    }
-    if (!contentUr.trim()) {
-      showToast("Urdu article body is required", "error");
+    const stripHtml = (html) => String(html || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const hasUrdu =
+      Boolean(titleUr.trim()) &&
+      Boolean(stripHtml(contentUr) || /<(img|iframe|video|table)\b/i.test(contentUr || ""));
+    const hasEnglish =
+      Boolean(titleEn.trim()) &&
+      Boolean(stripHtml(contentEn) || /<(img|iframe|video|table)\b/i.test(contentEn || ""));
+
+    if (!hasUrdu && !hasEnglish) {
+      if (activeTab === "en") {
+        showToast(
+          !titleEn.trim()
+            ? "English headline is required (or complete the Urdu edition)"
+            : "English article body is required",
+          "error"
+        );
+      } else {
+        showToast(
+          !titleUr.trim()
+            ? "Urdu headline (عنوان) is required (or complete the English edition)"
+            : "Urdu article body is required",
+          "error"
+        );
+      }
       return;
     }
 
@@ -224,10 +242,10 @@ export default function ArticleEditorClient({ initialId = null }) {
         title_ur: titleUr.trim(),
         title_en: titleEn.trim() || null,
         slug: slug.trim() || `news-${Date.now()}`,
-        summary_ur: summaryUr.trim() || titleUr.trim().slice(0, 150),
-        excerpt_en: summaryEn.trim(),
-        content_ur: contentUr,
-        content_en: contentEn,
+        summary_ur: summaryUr.trim() || (titleUr.trim() ? titleUr.trim().slice(0, 150) : ""),
+        excerpt_en: summaryEn.trim() || (titleEn.trim() ? titleEn.trim().slice(0, 150) : ""),
+        content_ur: hasUrdu ? contentUr : "",
+        content_en: hasEnglish ? contentEn : "",
         category_id: categoryId ? Number(categoryId) : null,
         cover_image: coverImage || null,
         is_breaking: isBreaking,

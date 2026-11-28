@@ -3,6 +3,9 @@ import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 import { getSiteSetting, updateSiteSetting } from "@/lib/cmsDb";
 import { requirePermission } from "@/lib/auth";
+import { revalidateAll } from "@/lib/revalidatePublic";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -33,7 +36,8 @@ export async function PATCH(req) {
     const next = Boolean(body?.masterTickerActive);
     await updateSiteSetting("breaking_ticker_enabled", { enabled: next });
     try {
-      revalidatePath("/");
+      revalidatePath("/", "layout");
+      await revalidateAll(["/", "/en", "/latest", "/en/latest", "/live", "/rates", "/contact", "/advertise", "/epaper", "/video", "/staff"]);
     } catch (e) {}
     return NextResponse.json({ success: true, masterTickerActive: next });
   } catch (error) {

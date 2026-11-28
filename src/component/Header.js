@@ -7,13 +7,33 @@ import { Search, Menu, X, Globe, Tv, Newspaper, Flame, Home, Video, PhoneCall, M
 import AdSlot from "@/component/AdSlot";
 import { useSiteLanguage } from "@/context/SiteLanguageContext";
 
-export default function Header({ categories = [], breakingNews = [], onToggleLanguage }) {
+export default function Header({
+  categories = [],
+  breakingNews = [],
+  onToggleLanguage,
+  initialTickerEnabled = null,
+}) {
   const pathname = usePathname();
-  const { lang, isUrdu, isEnglish, dir, toggleLanguage, t } = useSiteLanguage();
+  const {
+    lang,
+    isUrdu,
+    isEnglish,
+    dir,
+    toggleLanguage,
+    t,
+    breakingTickerEnabled: ctxTickerEnabled,
+    setBreakingTickerEnabled,
+  } = useSiteLanguage();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [tickerEnabled, setTickerEnabled] = useState(true);
+  const [tickerEnabled, setTickerEnabled] = useState(
+    typeof initialTickerEnabled === "boolean"
+      ? initialTickerEnabled
+      : typeof ctxTickerEnabled === "boolean"
+      ? ctxTickerEnabled
+      : true
+  );
 
   const handleLanguageToggle = () => {
     if (typeof onToggleLanguage === "function") {
@@ -27,7 +47,7 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
       localStorage.setItem("site_lang", targetLang);
     } catch (e) {}
 
-    // If on homepage or /en, navigate so page refreshes and loads the target homepage with articles
+    // If on homepage or /latest, navigate so page refreshes and loads the target edition with articles
     if (pathname === "/" && targetLang === "en") {
       window.location.href = "/en";
       return;
@@ -36,24 +56,33 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
       window.location.href = "/";
       return;
     }
+    if (pathname === "/latest" && targetLang === "en") {
+      window.location.href = "/en/latest";
+      return;
+    }
+    if (pathname === "/en/latest" && targetLang === "ur") {
+      window.location.href = "/latest";
+      return;
+    }
 
     toggleLanguage();
   };
 
   useEffect(() => {
     let active = true;
-    fetch("/api/settings?public=1")
+    fetch("/api/settings?public=1", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (active && data && typeof data.breaking_ticker_enabled === "boolean") {
           setTickerEnabled(data.breaking_ticker_enabled);
+          setBreakingTickerEnabled?.(data.breaking_ticker_enabled);
         }
       })
       .catch(() => {});
     return () => {
       active = false;
     };
-  }, []);
+  }, [setBreakingTickerEnabled]);
   const [hoveredCat, setHoveredCat] = useState(null);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [megaCache, setMegaCache] = useState({});
@@ -397,14 +426,16 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
             </Link>
 
             <Link
-              href="/latest"
+              href={isEnglish ? "/en/latest" : "/latest"}
               onMouseEnter={closeAllMenus}
               className={`relative px-2.5 sm:px-3 py-2.5 transition whitespace-nowrap shrink-0 ${
-                pathname === "/latest" ? "text-[#184e2d]" : "text-gray-900 hover:text-[#184e2d]"
+                pathname === "/latest" || pathname === "/en/latest"
+                  ? "text-[#184e2d]"
+                  : "text-gray-900 hover:text-[#184e2d]"
               }`}
             >
               {t("latest")}
-              {pathname === "/latest" && (
+              {(pathname === "/latest" || pathname === "/en/latest") && (
                 <span aria-hidden="true" className="bg-[#184e2d] absolute inset-x-2 bottom-0 h-0.5 rounded-full" />
               )}
             </Link>
@@ -801,7 +832,7 @@ export default function Header({ categories = [], breakingNews = [], onToggleLan
                 {t("home")}
               </Link>
               <Link
-                href="/latest"
+                href={isEnglish ? "/en/latest" : "/latest"}
                 onClick={() => setMobileDrawerOpen(false)}
                 className="block px-5 py-2.5 text-gray-800 font-medium text-sm hover:bg-[#efeee9] transition"
               >

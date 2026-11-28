@@ -84,6 +84,7 @@ export default function HomeClient({
   videos = [],
   socialLinks = null,
   initialLang = null,
+  breakingTickerEnabled = null,
 }) {
   const { lang, isUrdu: ctxIsUrdu, isEnglish: ctxIsEnglish, dir: ctxDir, t, setLanguage } = useSiteLanguage();
 
@@ -383,7 +384,11 @@ export default function HomeClient({
   return (
     <div className="min-h-screen text-gray-900 bg-[#f7f6f3]" dir={dir}>
       {/* 1. SITE HEADER */}
-      <Header categories={categories} breakingNews={breakingNews} />
+      <Header
+        categories={categories}
+        breakingNews={breakingNews}
+        initialTickerEnabled={breakingTickerEnabled}
+      />
 
       {/* 2. MAIN CONTENT AREA */}
       <main className="u-shell py-4">

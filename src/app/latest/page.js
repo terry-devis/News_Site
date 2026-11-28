@@ -1,52 +1,46 @@
-import { supabase } from "@/lib/supabase";
-import { filterPublishedArticles } from "@/lib/articleMeta";
-import CategoryClient from "@/component/CategoryClient";
+import { loadLatestPageData } from "@/lib/latestData";
+import { resolvePublicSiteUrl } from "@/lib/seoUrl";
+import LatestClient from "@/component/LatestClient";
 
 export const revalidate = 60;
 
-export const metadata = {
-  title: "تازہ ترین خبریں — ڈیلی افادیت | Latest News",
-  description: "ڈیلی افادیت پر پاکستان اور دنیا بھر کی تازہ ترین اور مصدقہ خبریں۔",
-};
+export async function generateMetadata() {
+  const baseUrl = resolvePublicSiteUrl();
+  return {
+    title: "تازہ ترین خبریں",
+    description: "ڈیلی افادیت پر پاکستان اور دنیا بھر کی تازہ ترین خبریں، لمحہ بہ لمحہ۔",
+    alternates: {
+      canonical: `${baseUrl}/latest`,
+      languages: {
+        ur: `${baseUrl}/latest`,
+        en: `${baseUrl}/en/latest`,
+        "x-default": `${baseUrl}/latest`,
+      },
+    },
+    openGraph: {
+      type: "website",
+      url: `${baseUrl}/latest`,
+      title: "تازہ ترین خبریں — ڈیلی افادیت",
+      description: "ڈیلی افادیت پر پاکستان اور دنیا بھر کی تازہ ترین خبریں، لمحہ بہ لمحہ۔",
+      locale: "ur_PK",
+      siteName: "ڈیلی افادیت",
+    },
+  };
+}
 
 export default async function LatestPage() {
-  let categories = [];
-  let breakingNews = [];
-  let articles = [];
-
-  try {
-    const [catRes, breakRes, artRes] = await Promise.all([
-      supabase.from("categories").select("*").order("display_order"),
-      supabase.from("breaking_news").select("*").eq("is_active", true).order("priority"),
-      supabase
-        .from("articles")
-        .select("*, categories(*)")
-        .order("created_at", { ascending: false })
-        .limit(40),
-    ]);
-
-    if (catRes.data) categories = catRes.data;
-    if (breakRes.data) breakingNews = breakRes.data;
-    if (artRes.data) {
-      articles = filterPublishedArticles(artRes.data).slice(0, 24);
-    }
-  } catch (err) {
-    console.error("Latest page fetch error:", err);
-  }
-
-  const latestCategory = {
-    id: "latest",
-    slug: "latest",
-    name_ur: "تازہ ترین",
-    name_en: "Latest News",
-  };
+  const data = await loadLatestPageData({ lang: "ur", limit: 20 });
 
   return (
-    <CategoryClient
-      category={latestCategory}
-      articles={articles}
-      categories={categories}
-      breakingNews={breakingNews}
+    <LatestClient
+      initialArticles={data.articles}
+      initialHasMore={data.hasMore}
+      initialMostRead={data.mostRead}
+      categories={data.categories}
+      breakingNews={data.breakingNews}
+      socialLinks={data.socialLinks}
+      breakingTickerEnabled={data.breakingTickerEnabled}
+      initialLoadedLang="ur"
     />
   );
 }

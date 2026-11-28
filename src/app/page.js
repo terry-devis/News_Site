@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { getVideos, getSiteSetting } from "@/lib/cmsDb";
+import { getVideos, getSiteSetting, getBreakingTickerEnabled } from "@/lib/cmsDb";
 import { filterPublishedArticles } from "@/lib/articleMeta";
 import { resolvePublicSiteUrl } from "@/lib/seoUrl";
 import HomeClient from "@/component/HomeClient";
@@ -605,14 +605,16 @@ export default async function Home() {
   let articles = [];
   let videos = [];
   let socialLinks = null;
+  let breakingTickerEnabled = true;
 
   try {
-    const [catRes, breakRes, artRes, fetchedVideos, fetchedSocial] = await Promise.all([
+    const [catRes, breakRes, artRes, fetchedVideos, fetchedSocial, tickerEnabled] = await Promise.all([
       supabase.from("categories").select("*").order("display_order"),
       supabase.from("breaking_news").select("*").eq("is_active", true).order("priority"),
       supabase.from("articles").select("*, categories(*)").order("created_at", { ascending: false }).limit(60),
       getVideos().catch(() => []),
       getSiteSetting("social_links").catch(() => null),
+      getBreakingTickerEnabled({ fresh: true }).catch(() => true),
     ]);
 
     if (catRes.data && catRes.data.length > 0) categories = catRes.data;
@@ -622,6 +624,7 @@ export default async function Home() {
     }
     videos = fetchedVideos || [];
     socialLinks = fetchedSocial || null;
+    breakingTickerEnabled = tickerEnabled;
   } catch (err) {
     console.error("Supabase fetch error, using fallback data:", err);
   }
@@ -680,6 +683,7 @@ export default async function Home() {
       breakingNews={allBreaking}
       videos={videos}
       socialLinks={socialLinks}
+      breakingTickerEnabled={breakingTickerEnabled}
     />
   );
 }

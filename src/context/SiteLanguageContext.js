@@ -242,8 +242,15 @@ export const siteTranslations = {
   },
 };
 
-export function SiteLanguageProvider({ children, initialLang = "ur" }) {
+export function SiteLanguageProvider({
+  children,
+  initialLang = "ur",
+  initialBreakingTickerEnabled = true,
+}) {
   const [lang, setLangState] = useState(initialLang === "en" ? "en" : "ur");
+  const [breakingTickerEnabled, setBreakingTickerEnabled] = useState(
+    Boolean(initialBreakingTickerEnabled)
+  );
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -298,6 +305,8 @@ export function SiteLanguageProvider({ children, initialLang = "ur" }) {
     toggleLanguage,
     setLanguage,
     t,
+    breakingTickerEnabled,
+    setBreakingTickerEnabled,
   };
 
   return (
@@ -319,6 +328,8 @@ export function useSiteLanguage() {
       toggleLanguage: () => {},
       setLanguage: () => {},
       t: (key) => (siteTranslations.ur[key] !== undefined ? siteTranslations.ur[key] : key),
+      breakingTickerEnabled: true,
+      setBreakingTickerEnabled: () => {},
     };
   }
   return context;

@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { getVideos, getSiteSetting } from "@/lib/cmsDb";
+import { getVideos, getSiteSetting, getBreakingTickerEnabled } from "@/lib/cmsDb";
 import { filterPublishedArticles } from "@/lib/articleMeta";
 import { resolvePublicSiteUrl } from "@/lib/seoUrl";
 import HomeClient from "@/component/HomeClient";
@@ -38,9 +38,10 @@ export default async function EnglishHomePage() {
   let articles = [];
   let videos = [];
   let socialLinks = null;
+  let breakingTickerEnabled = true;
 
   try {
-    const [catRes, breakRes, artRes, fetchedVideos, fetchedSocial] = await Promise.all([
+    const [catRes, breakRes, artRes, fetchedVideos, fetchedSocial, tickerEnabled] = await Promise.all([
       supabase.from("categories").select("*").order("display_order"),
       supabase.from("breaking_news").select("*").eq("is_active", true).order("priority"),
       supabase
@@ -50,6 +51,7 @@ export default async function EnglishHomePage() {
         .limit(60),
       getVideos().catch(() => []),
       getSiteSetting("social_links").catch(() => null),
+      getBreakingTickerEnabled({ fresh: true }).catch(() => true),
     ]);
 
     if (catRes.data?.length) categories = catRes.data;
@@ -57,6 +59,7 @@ export default async function EnglishHomePage() {
     if (artRes.data?.length) articles = filterPublishedArticles(artRes.data);
     videos = fetchedVideos || [];
     socialLinks = fetchedSocial || null;
+    breakingTickerEnabled = tickerEnabled;
   } catch (err) {
     console.error("English homepage fetch error:", err);
   }
@@ -105,6 +108,7 @@ export default async function EnglishHomePage() {
       videos={videos}
       socialLinks={socialLinks}
       initialLang="en"
+      breakingTickerEnabled={breakingTickerEnabled}
     />
   );
 }

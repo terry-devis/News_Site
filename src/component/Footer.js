@@ -270,7 +270,7 @@ export default function Footer({ categories = [] }) {
               </Link>
             </li>
             <li>
-              <Link href="/latest" className="hover:text-white transition-colors">
+              <Link href={isEnglish ? "/en/latest" : "/latest"} className="hover:text-white transition-colors">
                 {t("latest")}
               </Link>
             </li>

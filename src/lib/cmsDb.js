@@ -1116,6 +1116,39 @@ export async function getSiteSetting(key) {
   return local.site_settings?.[key] ?? null;
 }
 
+export async function getBreakingTickerEnabled({ fresh = false } = {}) {
+  try {
+    if (fresh) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceKey =
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && serviceKey) {
+        const res = await fetch(
+          `${supabaseUrl.replace(/\/$/, "")}/rest/v1/site_settings?setting_key=eq.breaking_ticker_enabled&select=setting_value&limit=1`,
+          {
+            cache: "no-store",
+            headers: {
+              apikey: serviceKey,
+              Authorization: `Bearer ${serviceKey}`,
+            },
+          }
+        );
+        if (res.ok) {
+          const rows = await res.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            const val = rows[0]?.setting_value;
+            return val !== false && val?.enabled !== false;
+          }
+        }
+      }
+    }
+    const val = await getSiteSetting("breaking_ticker_enabled");
+    return val !== false && val?.enabled !== false;
+  } catch {
+    return true;
+  }
+}
+
 export async function updateSiteSetting(key, value) {
   // 1. Prefer dedicated public.site_settings table
   try {

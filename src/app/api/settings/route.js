@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getSiteSetting, updateSiteSetting } from "@/lib/cmsDb";
 import { requirePermission } from "@/lib/auth";
+import { revalidateAll } from "@/lib/revalidatePublic";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req) {
   try {
@@ -72,6 +76,12 @@ export async function POST(req) {
     }
 
     const updated = await updateSiteSetting(key, finalValue);
+    if (key === "breaking_ticker_enabled" || key === "social_links" || key === "site_info") {
+      try {
+        revalidatePath("/", "layout");
+        await revalidateAll(["/", "/en", "/latest", "/en/latest", "/live", "/rates", "/contact", "/advertise", "/epaper", "/video", "/staff"]);
+      } catch {}
+    }
     return NextResponse.json({ success: true, [key]: updated });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

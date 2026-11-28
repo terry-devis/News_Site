@@ -19,6 +19,7 @@ export async function POST(req) {
         revalidatePath(p);
       }
     }
+    revalidatePath("/", "layout");
     return NextResponse.json({ revalidated: true, paths });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });

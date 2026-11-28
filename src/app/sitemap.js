@@ -38,6 +38,24 @@ export default async function sitemap() {
       lastModified: new Date(),
       changeFrequency: "always",
       priority: 0.9,
+      alternates: {
+        languages: {
+          ur: `${baseUrl}/latest`,
+          en: `${baseUrl}/en/latest`,
+        },
+      },
+    },
+    {
+      url: `${baseUrl}/en/latest`,
+      lastModified: new Date(),
+      changeFrequency: "always",
+      priority: 0.85,
+      alternates: {
+        languages: {
+          ur: `${baseUrl}/latest`,
+          en: `${baseUrl}/en/latest`,
+        },
+      },
     },
     {
       url: `${baseUrl}/rates`,

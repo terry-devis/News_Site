@@ -2,6 +2,7 @@ import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
 import { SiteLanguageProvider } from "@/context/SiteLanguageContext";
 import GlobalAdOverlay from "@/component/GlobalAdOverlay";
+import { getBreakingTickerEnabled } from "@/lib/cmsDb";
 
 const isAdminApp = process.env.NEXT_PUBLIC_APP_ROLE === "admin";
 
@@ -28,7 +29,11 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const initialBreakingTickerEnabled = isAdminApp
+    ? true
+    : await getBreakingTickerEnabled().catch(() => true);
+
   return (
     <html lang="ur" dir="rtl" translate="no" className="notranslate" suppressHydrationWarning>
       <head>
@@ -51,7 +56,10 @@ export default function RootLayout({ children }) {
           easing="ease"
           speed={1000}
         />
-        <SiteLanguageProvider initialLang="ur">
+        <SiteLanguageProvider
+          initialLang="ur"
+          initialBreakingTickerEnabled={initialBreakingTickerEnabled}
+        >
           <div className="min-h-screen flex flex-col">
             {children}
           </div>

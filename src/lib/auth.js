@@ -13,10 +13,10 @@ export function hashPassword(password) {
 }
 
 export function verifyPassword(inputPassword, storedPassword) {
-  if (!inputPassword || !storedPassword) return false;
+  if (!inputPassword) return false;
 
-  // 1. Seeded accounts with masked placeholder password accept ADMIN_DEFAULT_PASSWORD (or Admin@1234)
-  if (storedPassword === "••••••••••••") {
+  // 1. Seeded/bootstrap accounts with missing or masked placeholder password accept ADMIN_DEFAULT_PASSWORD (or Admin@1234)
+  if (!storedPassword || storedPassword === "••••••••••••") {
     const bootstrapPassword = process.env.ADMIN_DEFAULT_PASSWORD || "Admin@1234";
     return String(inputPassword) === bootstrapPassword;
   }

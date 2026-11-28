@@ -3421,11 +3421,27 @@ async function syncUserRolesInDb(userId, roleNames = []) {
       if (found) matchedIds.push(found.id);
     }
 
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
-    if (matchedIds.length > 0) {
+    const { data: currentRows } = await supabaseAdmin
+      .from("user_roles")
+      .select("role_id")
+      .eq("user_id", userId);
+    const currentSet = new Set((currentRows || []).map((r) => r.role_id));
+    const desiredSet = new Set(matchedIds);
+
+    const toAdd = matchedIds.filter((id) => !currentSet.has(id));
+    const toRemove = Array.from(currentSet).filter((id) => !desiredSet.has(id));
+
+    if (toAdd.length > 0) {
       await supabaseAdmin
         .from("user_roles")
-        .insert(matchedIds.map((roleId) => ({ user_id: userId, role_id: roleId })));
+        .insert(toAdd.map((roleId) => ({ user_id: userId, role_id: roleId })));
+    }
+    if (toRemove.length > 0) {
+      await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .in("role_id", toRemove);
     }
   } catch (e) {}
 }
@@ -3452,29 +3468,27 @@ async function loadNewsroomUsersFromDb() {
   }
 }
 
-async function loadNewsroomUsers() {
-  const dbUsers = await loadNewsroomUsersFromDb();
-  if (Array.isArray(dbUsers) && dbUsers.length > 0) {
-    return dbUsers;
-  }
-  const remoteUsers = await getSiteSetting("newsroom_users");
-  if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
-    return remoteUsers;
-  }
-  const local = ensureLocalStore();
-  const seed =
-    Array.isArray(local.newsroom_users) && local.newsroom_users.length > 0
-      ? local.newsroom_users
-      : DEFAULT_NEWSROOM_USERS;
-  await updateSiteSetting("newsroom_users", seed);
-  return seed;
+function isSuperAdminRoleList(roleNames = []) {
+  return (Array.isArray(roleNames) ? roleNames : []).some((r) => {
+    const k = String(r || "").trim().toLowerCase();
+    return k === "super admin" || k === "super_admin";
+  });
 }
 
-async function saveNewsroomUsers(users) {
-  await updateSiteSetting("newsroom_users", users);
-  const local = ensureLocalStore();
-  local.newsroom_users = users;
-  writeLocalStore(local);
+async function countActiveSuperAdminsInDb() {
+  const dbUsers = await loadNewsroomUsersFromDb();
+  if (!Array.isArray(dbUsers)) return 0;
+  return dbUsers.filter(
+    (u) => String(u.status || "Active").toLowerCase() === "active" && isSuperAdminRoleList(u.roles)
+  ).length;
+}
+
+async function loadNewsroomUsers() {
+  const dbUsers = await loadNewsroomUsersFromDb();
+  if (Array.isArray(dbUsers)) {
+    return dbUsers;
+  }
+  return [];
 }
 
 export async function getNewsroomUsers() {
@@ -3496,55 +3510,42 @@ export async function authenticateNewsroomUser(email, password) {
     minute: "2-digit",
   });
 
-  // 1. Prefer dedicated public.newsroom_users table (single-row lookup + atomic last_active update)
-  try {
-    const { data: row, error } = await supabaseAdmin
-      .from("newsroom_users")
-      .select("*, user_roles(role_id, roles(id, role_key, name_en))")
-      .ilike("email", normalizedEmail)
-      .maybeSingle();
+  // Strictly authenticate against dedicated public.newsroom_users SQL table (no raw JSON fallback)
+  const { data: row, error } = await supabaseAdmin
+    .from("newsroom_users")
+    .select("*, user_roles(role_id, roles(id, role_key, name_en))")
+    .ilike("email", normalizedEmail)
+    .maybeSingle();
 
-    if (!error) {
-      if (!row) return { error: "Invalid email or password" };
-      if (String(row.status || "Active").toLowerCase() !== "active") {
-        return { error: "Account is disabled. Contact Super Admin." };
-      }
-      if (!verifyPassword(password, row.password_hash)) {
-        return { error: "Invalid email or password" };
-      }
-      await supabaseAdmin
-        .from("newsroom_users")
-        .update({ last_active: nowStr, updated_at: new Date().toISOString() })
-        .eq("id", row.id);
-      const roleNames = (row.user_roles || [])
-        .map((ur) => ur.roles?.name_en || ur.roles?.role_key)
-        .filter(Boolean);
-      return { user: sanitizeUser(mapDbUserRow({ ...row, last_active: nowStr }, roleNames)) };
+  if (error) {
+    if (isMissingTableError(error)) {
+      return {
+        error: "Users database table not initialized. Run supabase_rbac_settings_ads_migration.sql in Supabase.",
+      };
     }
-    if (!isMissingTableError(error)) {
-      console.error("newsroom_users auth error:", error);
-    }
-  } catch (e) {}
+    console.error("newsroom_users auth error:", error);
+    return { error: "Authentication service error" };
+  }
 
-  // 2. Legacy fallback
-  const users = [...(await loadNewsroomUsers())];
-  const idx = users.findIndex(
-    (u) => String(u.email).toLowerCase() === normalizedEmail
-  );
-  if (idx < 0) {
+  if (!row) {
     return { error: "Invalid email or password" };
   }
-  const user = users[idx];
-  if (String(user.status || "Active").toLowerCase() !== "active") {
+  if (String(row.status || "Active").toLowerCase() !== "active") {
     return { error: "Account is disabled. Contact Super Admin." };
   }
-  const valid = verifyPassword(password, user.starting_password);
-  if (!valid) {
+  if (!verifyPassword(password, row.password_hash)) {
     return { error: "Invalid email or password" };
   }
-  users[idx] = { ...user, last_active: nowStr };
-  await saveNewsroomUsers(users);
-  return { user: sanitizeUser(users[idx]) };
+
+  await supabaseAdmin
+    .from("newsroom_users")
+    .update({ last_active: nowStr, updated_at: new Date().toISOString() })
+    .eq("id", row.id);
+
+  const roleNames = (row.user_roles || [])
+    .map((ur) => ur.roles?.name_en || ur.roles?.role_key)
+    .filter(Boolean);
+  return { user: sanitizeUser(mapDbUserRow({ ...row, last_active: nowStr }, roleNames)) };
 }
 
 export async function createNewsroomUser(userData) {
@@ -3555,56 +3556,39 @@ export async function createNewsroomUser(userData) {
   const normalizedEmail = String(userData.email || "").trim().toLowerCase();
   const roles = Array.isArray(userData.roles) ? userData.roles : ["Reporter"];
 
-  // 1. Prefer dedicated public.newsroom_users + public.user_roles
-  try {
-    const { data: inserted, error } = await supabaseAdmin
-      .from("newsroom_users")
-      .insert({
-        id: newId,
-        email: normalizedEmail,
-        password_hash: hashedPassword,
-        full_name_ur: userData.full_name_ur || "",
-        full_name_en: userData.full_name_en || "",
-        byline_name: userData.byline_name || "",
-        designation_ur: userData.designation_ur || "",
-        designation_en: userData.designation_en || "",
-        bio_ur: userData.bio_ur || "",
-        bio_en: userData.bio_en || "",
-        desk_scope: Array.isArray(userData.desk_scope) ? userData.desk_scope : [],
-        is_public_author: Boolean(userData.is_public_author),
-        status: userData.status || "Active",
-        last_active: "never signed in",
-      })
-      .select()
-      .single();
+  const { data: inserted, error } = await supabaseAdmin
+    .from("newsroom_users")
+    .insert({
+      id: newId,
+      email: normalizedEmail,
+      password_hash: hashedPassword,
+      full_name_ur: userData.full_name_ur || "",
+      full_name_en: userData.full_name_en || "",
+      byline_name: userData.byline_name || "",
+      designation_ur: userData.designation_ur || "",
+      designation_en: userData.designation_en || "",
+      bio_ur: userData.bio_ur || "",
+      bio_en: userData.bio_en || "",
+      desk_scope: Array.isArray(userData.desk_scope) ? userData.desk_scope : [],
+      is_public_author: Boolean(userData.is_public_author),
+      status: userData.status || "Active",
+      last_active: "never signed in",
+    })
+    .select()
+    .single();
 
-    if (!error && inserted) {
-      await syncUserRolesInDb(inserted.id, roles);
-      return { ...mapDbUserRow(inserted, roles), starting_password: "••••••••••••" };
-    }
-    if (error && !isMissingTableError(error)) {
-      const err = new Error(error.message || "Could not create user");
-      if (error.code === "23505") err.statusCode = 409;
-      throw err;
-    }
-  } catch (e) {
-    if (e.statusCode) throw e;
+  if (error) {
+    const err = new Error(
+      error.code === "23505"
+        ? "Another user already uses this email address"
+        : error.message || "Could not create user"
+    );
+    err.statusCode = error.code === "23505" ? 409 : 500;
+    throw err;
   }
 
-  // 2. Legacy fallback
-  const users = [...(await loadNewsroomUsers())];
-  const newUser = {
-    ...userData,
-    email: normalizedEmail || userData.email,
-    starting_password: hashedPassword,
-    id: newId,
-    status: userData.status || "Active",
-    last_active: "never signed in",
-    created_at: new Date().toISOString(),
-  };
-  users.unshift(newUser);
-  await saveNewsroomUsers(users);
-  return { ...newUser, starting_password: "••••••••••••" };
+  await syncUserRolesInDb(inserted.id, roles);
+  return { ...mapDbUserRow(inserted, roles), starting_password: "••••••••••••" };
 }
 
 export async function updateNewsroomUser(idOrEmail, updates) {
@@ -3619,148 +3603,158 @@ export async function updateNewsroomUser(idOrEmail, updates) {
     safeUpdates.email = normalizedEmail;
   }
 
-  // 1. Prefer dedicated public.newsroom_users + public.user_roles
-  try {
-    const { data: existing, error: findErr } = await supabaseAdmin
-      .from("newsroom_users")
-      .select("id")
-      .or(`id.eq."${idOrEmail}",email.ilike."${idOrEmail}"`)
-      .maybeSingle();
+  const { data: existing, error: findErr } = await supabaseAdmin
+    .from("newsroom_users")
+    .select("*, user_roles(role_id, roles(id, role_key, name_en))")
+    .or(`id.eq."${idOrEmail}",email.ilike."${idOrEmail}"`)
+    .maybeSingle();
 
-    if (!findErr) {
-      if (!existing) return null;
-      const dbUpdates = { updated_at: new Date().toISOString() };
-      const copyFields = [
-        "email", "full_name_ur", "full_name_en", "byline_name",
-        "designation_ur", "designation_en", "bio_ur", "bio_en",
-        "desk_scope", "is_public_author", "status",
-      ];
-      for (const f of copyFields) {
-        if (safeUpdates[f] !== undefined) dbUpdates[f] = safeUpdates[f];
-      }
-      if (safeUpdates.starting_password && safeUpdates.starting_password !== "••••••••••••") {
-        dbUpdates.password_hash = hashPassword(safeUpdates.starting_password);
-      }
-
-      const { data: updated, error: updErr } = await supabaseAdmin
-        .from("newsroom_users")
-        .update(dbUpdates)
-        .eq("id", existing.id)
-        .select()
-        .single();
-      if (updErr) {
-        const err = new Error(updErr.message || "Update failed");
-        if (updErr.code === "23505") {
-          err.message = "Another user already uses this email address";
-          err.statusCode = 409;
-        }
-        throw err;
-      }
-      if (Array.isArray(safeUpdates.roles)) {
-        await syncUserRolesInDb(existing.id, safeUpdates.roles);
-      }
-      const { data: fullRow } = await supabaseAdmin
-        .from("newsroom_users")
-        .select("*, user_roles(role_id, roles(id, role_key, name_en))")
-        .eq("id", existing.id)
-        .single();
-      const roleNames = (fullRow?.user_roles || [])
-        .map((ur) => ur.roles?.name_en || ur.roles?.role_key)
-        .filter(Boolean);
-      return { ...mapDbUserRow(updated, roleNames), starting_password: "••••••••••••" };
-    }
-  } catch (e) {
-    if (e.statusCode) throw e;
+  if (findErr) {
+    const err = new Error(findErr.message || "Failed to look up user");
+    err.statusCode = 500;
+    throw err;
   }
+  if (!existing) return null;
 
-  // 2. Legacy fallback
-  const users = [...(await loadNewsroomUsers())];
-  const idx = users.findIndex(
-    (u) => String(u.id) === String(idOrEmail) || String(u.email).toLowerCase() === String(idOrEmail).toLowerCase()
-  );
-  if (idx >= 0) {
-    if (safeUpdates.email !== undefined) {
-      const duplicate = users.find(
-        (u, i) => i !== idx && String(u.email).trim().toLowerCase() === safeUpdates.email
-      );
-      if (duplicate) {
-        const err = new Error("Another user already uses this email address");
-        err.statusCode = 409;
+  const existingRoles = (existing.user_roles || [])
+    .map((ur) => ur.roles?.name_en || ur.roles?.role_key)
+    .filter(Boolean);
+  const wasActiveSuperAdmin =
+    String(existing.status || "Active").toLowerCase() === "active" &&
+    isSuperAdminRoleList(existingRoles);
+
+  if (wasActiveSuperAdmin) {
+    const willDisable =
+      safeUpdates.status !== undefined &&
+      String(safeUpdates.status).toLowerCase() !== "active";
+    const willDemote =
+      Array.isArray(safeUpdates.roles) && !isSuperAdminRoleList(safeUpdates.roles);
+
+    if (willDisable || willDemote) {
+      const activeAdmins = await countActiveSuperAdminsInDb();
+      if (activeAdmins <= 1) {
+        const err = new Error(
+          "Cannot disable or remove the Super Admin role from the last active Super Admin account."
+        );
+        err.statusCode = 403;
         throw err;
       }
     }
-    if (safeUpdates.starting_password && safeUpdates.starting_password !== "••••••••••••") {
-      safeUpdates.starting_password = hashPassword(safeUpdates.starting_password);
-    } else {
-      delete safeUpdates.starting_password;
-    }
-    users[idx] = {
-      ...users[idx],
-      ...safeUpdates,
-      updated_at: new Date().toISOString(),
-    };
-    await saveNewsroomUsers(users);
-    return { ...users[idx], starting_password: "••••••••••••" };
   }
-  return null;
+
+  const dbUpdates = { updated_at: new Date().toISOString() };
+  const copyFields = [
+    "email", "full_name_ur", "full_name_en", "byline_name",
+    "designation_ur", "designation_en", "bio_ur", "bio_en",
+    "desk_scope", "is_public_author", "status",
+  ];
+  for (const f of copyFields) {
+    if (safeUpdates[f] !== undefined) dbUpdates[f] = safeUpdates[f];
+  }
+  if (safeUpdates.starting_password && safeUpdates.starting_password !== "••••••••••••") {
+    dbUpdates.password_hash = hashPassword(safeUpdates.starting_password);
+  }
+
+  const { data: updated, error: updErr } = await supabaseAdmin
+    .from("newsroom_users")
+    .update(dbUpdates)
+    .eq("id", existing.id)
+    .select()
+    .single();
+  if (updErr) {
+    const err = new Error(updErr.message || "Update failed");
+    if (updErr.code === "23505") {
+      err.message = "Another user already uses this email address";
+      err.statusCode = 409;
+    }
+    throw err;
+  }
+
+  if (Array.isArray(safeUpdates.roles)) {
+    await syncUserRolesInDb(existing.id, safeUpdates.roles);
+  }
+  const { data: fullRow } = await supabaseAdmin
+    .from("newsroom_users")
+    .select("*, user_roles(role_id, roles(id, role_key, name_en))")
+    .eq("id", existing.id)
+    .single();
+  const roleNames = (fullRow?.user_roles || [])
+    .map((ur) => ur.roles?.name_en || ur.roles?.role_key)
+    .filter(Boolean);
+  return { ...mapDbUserRow(updated, roleNames), starting_password: "••••••••••••" };
 }
 
 export async function resetNewsroomUserPassword(idOrEmail, newPassword) {
   const newHash = hashPassword(newPassword);
-  try {
-    const { data: existing, error: findErr } = await supabaseAdmin
-      .from("newsroom_users")
-      .select("id, email")
-      .or(`id.eq."${idOrEmail}",email.ilike."${idOrEmail}"`)
-      .maybeSingle();
-    if (!findErr) {
-      if (!existing) return null;
-      const { error: updErr } = await supabaseAdmin
-        .from("newsroom_users")
-        .update({
-          password_hash: newHash,
-          last_active: "Password reset · signed out",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", existing.id);
-      if (!updErr) return { success: true, email: existing.email };
-    }
-  } catch (e) {}
+  const { data: existing, error: findErr } = await supabaseAdmin
+    .from("newsroom_users")
+    .select("id, email")
+    .or(`id.eq."${idOrEmail}",email.ilike."${idOrEmail}"`)
+    .maybeSingle();
+  if (findErr || !existing) return null;
 
-  const users = [...(await loadNewsroomUsers())];
-  const idx = users.findIndex(
-    (u) => String(u.id) === String(idOrEmail) || String(u.email).toLowerCase() === String(idOrEmail).toLowerCase()
-  );
-  if (idx >= 0) {
-    users[idx] = {
-      ...users[idx],
-      starting_password: newHash,
+  const { error: updErr } = await supabaseAdmin
+    .from("newsroom_users")
+    .update({
+      password_hash: newHash,
       last_active: "Password reset · signed out",
       updated_at: new Date().toISOString(),
-    };
-    await saveNewsroomUsers(users);
-    return { success: true, email: users[idx].email };
-  }
-  return null;
+    })
+    .eq("id", existing.id);
+  if (updErr) return null;
+  return { success: true, email: existing.email };
 }
 
 export async function deleteNewsroomUser(idOrEmail) {
-  try {
-    const { data: existing, error: findErr } = await supabaseAdmin
-      .from("newsroom_users")
-      .select("id")
-      .or(`id.eq."${idOrEmail}",email.ilike."${idOrEmail}"`)
-      .maybeSingle();
-    if (!findErr && existing) {
-      await supabaseAdmin.from("newsroom_users").delete().eq("id", existing.id);
-      return { success: true };
-    }
-  } catch (e) {}
+  const { data: existing, error: findErr } = await supabaseAdmin
+    .from("newsroom_users")
+    .select("id, email, status, user_roles(role_id, roles(id, role_key, name_en))")
+    .or(`id.eq."${idOrEmail}",email.ilike."${idOrEmail}"`)
+    .maybeSingle();
 
-  const users = (await loadNewsroomUsers()).filter(
-    (u) => String(u.id) !== String(idOrEmail) && String(u.email).toLowerCase() !== String(idOrEmail).toLowerCase()
-  );
-  await saveNewsroomUsers(users);
+  if (findErr) {
+    const err = new Error(findErr.message || "Failed to look up user");
+    err.statusCode = 500;
+    throw err;
+  }
+  if (!existing) {
+    const err = new Error("User not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const existingRoles = (existing.user_roles || [])
+    .map((ur) => ur.roles?.name_en || ur.roles?.role_key)
+    .filter(Boolean);
+
+  if (isSuperAdminRoleList(existingRoles)) {
+    const activeAdmins = await countActiveSuperAdminsInDb();
+    const isTargetActive = String(existing.status || "Active").toLowerCase() === "active";
+    if (!isTargetActive && activeAdmins === 0) {
+      const err = new Error(
+        "Cannot delete Super Admin account when no other active Super Admin exists."
+      );
+      err.statusCode = 403;
+      throw err;
+    }
+    if (isTargetActive && activeAdmins <= 1) {
+      const err = new Error(
+        "Cannot delete the last active Super Admin account. At least one active Super Admin must remain."
+      );
+      err.statusCode = 403;
+      throw err;
+    }
+  }
+
+  const { error: delErr } = await supabaseAdmin
+    .from("newsroom_users")
+    .delete()
+    .eq("id", existing.id);
+  if (delErr) {
+    const err = new Error(delErr.message || "Failed to delete user");
+    err.statusCode = delErr.code === "P0001" ? 403 : 500;
+    throw err;
+  }
   return { success: true };
 }
 

@@ -370,3 +370,90 @@ END $$;
 
 -- 7. REMOVE __cms_kv__:* CLUTTER FROM public.ad_slots
 DELETE FROM public.ad_slots WHERE slot_key LIKE '__cms_kv__:%';
+
+-- 8. DATABASE-LEVEL GUARD: PREVENT DELETING/DISABLING/DEMOTING THE LAST ACTIVE SUPER ADMIN
+CREATE OR REPLACE FUNCTION public.guard_last_super_admin_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    target_is_super boolean;
+    remaining_active_super int;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.user_roles ur
+        JOIN public.roles r ON r.id = ur.role_id
+        WHERE ur.user_id = OLD.id
+          AND LOWER(r.role_key) = 'super_admin'
+    ) INTO target_is_super;
+
+    IF NOT target_is_super THEN
+        IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
+    END IF;
+
+    IF TG_OP = 'DELETE' OR (TG_OP = 'UPDATE' AND LOWER(COALESCE(NEW.status, 'Active')) <> 'active') THEN
+        SELECT COUNT(DISTINCT u.id) INTO remaining_active_super
+        FROM public.newsroom_users u
+        JOIN public.user_roles ur ON ur.user_id = u.id
+        JOIN public.roles r ON r.id = ur.role_id
+        WHERE LOWER(r.role_key) = 'super_admin'
+          AND LOWER(u.status) = 'active'
+          AND u.id <> OLD.id;
+
+        IF remaining_active_super < 1 THEN
+            RAISE EXCEPTION 'Cannot delete or disable the last active Super Admin account'
+                USING ERRCODE = 'P0001';
+        END IF;
+    END IF;
+
+    IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_guard_last_super_admin_user ON public.newsroom_users;
+CREATE TRIGGER trg_guard_last_super_admin_user
+    BEFORE DELETE OR UPDATE OF status ON public.newsroom_users
+    FOR EACH ROW
+    EXECUTE FUNCTION public.guard_last_super_admin_user();
+
+CREATE OR REPLACE FUNCTION public.guard_last_super_admin_role()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    removed_role_is_super boolean;
+    remaining_active_super int;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1 FROM public.roles r
+        WHERE r.id = OLD.role_id AND LOWER(r.role_key) = 'super_admin'
+    ) INTO removed_role_is_super;
+
+    IF NOT removed_role_is_super THEN
+        RETURN OLD;
+    END IF;
+
+    -- Allow if the user row itself is not active or is being deleted via cascade? Check remaining active super admins:
+    SELECT COUNT(DISTINCT u.id) INTO remaining_active_super
+    FROM public.newsroom_users u
+    JOIN public.user_roles ur ON ur.user_id = u.id
+    JOIN public.roles r ON r.id = ur.role_id
+    WHERE LOWER(r.role_key) = 'super_admin'
+      AND LOWER(u.status) = 'active'
+      AND u.id <> OLD.user_id;
+
+    IF remaining_active_super < 1 THEN
+        RAISE EXCEPTION 'Cannot remove Super Admin role from the last active Super Admin account'
+            USING ERRCODE = 'P0001';
+    END IF;
+
+    RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_guard_last_super_admin_role ON public.user_roles;
+CREATE TRIGGER trg_guard_last_super_admin_role
+    BEFORE DELETE ON public.user_roles
+    FOR EACH ROW
+    EXECUTE FUNCTION public.guard_last_super_admin_role();

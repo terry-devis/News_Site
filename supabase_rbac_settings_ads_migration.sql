@@ -187,9 +187,9 @@ unnest(ARRAY['article.view','article.create','article.edit_own','media.upload'])
 ON CONFLICT DO NOTHING;
 
 -- 6. MIGRATE EXISTING __cms_kv__:* DATA FROM ad_slots INTO PROPER TABLES
--- 6a. Migrate general site_settings
+-- 6a. Migrate general site_settings (use DISTINCT ON in case duplicate __cms_kv__ rows exist)
 INSERT INTO public.site_settings (setting_key, setting_value)
-SELECT
+SELECT DISTINCT ON (slot_key)
     REPLACE(slot_key, '__cms_kv__:', ''),
     target_url::jsonb
 FROM public.ad_slots
@@ -197,6 +197,7 @@ WHERE slot_key LIKE '__cms_kv__:%'
   AND slot_key NOT IN ('__cms_kv__:newsroom_users', '__cms_kv__:ad_slots_v2', '__cms_kv__:ad_creatives')
   AND target_url IS NOT NULL
   AND target_url <> ''
+ORDER BY slot_key, id DESC
 ON CONFLICT (setting_key) DO UPDATE
 SET setting_value = EXCLUDED.setting_value,
     updated_at = NOW();
@@ -291,16 +292,16 @@ BEGIN
                 image_url, target_url, code_snippet, is_active, is_enabled
             ) VALUES (
                 s->>'slot_key',
-                COALESCE(s->>'labelEn', s->>'title', s->>'slot_key'),
+                COALESCE(s->>'name', s->>'labelEn', s->>'title', s->>'slot_key'),
                 COALESCE(s->>'labelUr', ''),
-                COALESCE(s->>'dimensions', ''),
+                COALESCE(s->>'sizes', s->>'dimensions', ''),
                 COALESCE(s->>'pageScope', 'all'),
                 'image',
                 NULL,
                 NULL,
                 NULL,
-                COALESCE((s->>'is_enabled')::boolean, TRUE),
-                COALESCE((s->>'is_enabled')::boolean, TRUE)
+                COALESCE((s->>'is_active')::boolean, (s->>'is_enabled')::boolean, TRUE),
+                COALESCE((s->>'is_active')::boolean, (s->>'is_enabled')::boolean, TRUE)
             )
             ON CONFLICT (slot_key) DO UPDATE SET
                 title = EXCLUDED.title,
@@ -324,7 +325,7 @@ BEGIN
         LOOP
             SELECT id INTO resolved_slot_id
             FROM public.ad_slots
-            WHERE slot_key = COALESCE(c->>'slotKey', '')
+            WHERE slot_key = COALESCE(c->>'slot_key', c->>'slotKey', '')
             LIMIT 1;
 
             INSERT INTO public.ad_creatives (
@@ -334,20 +335,23 @@ BEGIN
             ) VALUES (
                 COALESCE(c->>'id', 'ad_' || extract(epoch from now())::bigint::text),
                 resolved_slot_id,
-                COALESCE(c->>'slotKey', ''),
+                COALESCE(c->>'slot_key', c->>'slotKey', ''),
                 COALESCE(c->>'name', 'Ad Creative'),
-                COALESCE(c->>'advertiser', ''),
+                COALESCE(c->>'image_alt', c->>'advertiser', ''),
                 CASE WHEN (c->>'type') IN ('image', 'html', 'adsense') THEN c->>'type' ELSE 'image' END,
-                NULLIF(c->>'imageUrl', ''),
-                NULLIF(c->>'targetUrl', ''),
-                NULLIF(c->>'htmlCode', ''),
+                NULLIF(COALESCE(c->>'image_url', c->>'imageUrl', ''), ''),
+                NULLIF(COALESCE(c->>'click_url', c->>'targetUrl', ''), ''),
+                NULLIF(COALESCE(c->>'html_code', c->>'htmlCode', ''), ''),
                 COALESCE((c->>'weight')::int, 1),
                 COALESCE((c->>'impressions')::int, 0),
                 COALESCE((c->>'clicks')::int, 0),
-                NULLIF(c->>'startDate', '')::timestamptz,
-                NULLIF(c->>'endDate', '')::timestamptz,
-                COALESCE((c->>'active')::boolean, TRUE),
-                COALESCE((c->>'createdAt')::timestamptz, NOW())
+                NULLIF(COALESCE(c->>'starts_at', c->>'startDate', ''), '')::timestamptz,
+                NULLIF(COALESCE(c->>'ends_at', c->>'endDate', ''), '')::timestamptz,
+                CASE
+                    WHEN c ? 'status' THEN (c->>'status') = 'run'
+                    ELSE COALESCE((c->>'active')::boolean, TRUE)
+                END,
+                COALESCE(NULLIF(COALESCE(c->>'created_at', c->>'createdAt', ''), '')::timestamptz, NOW())
             )
             ON CONFLICT (id) DO UPDATE SET
                 slot_id = EXCLUDED.slot_id,

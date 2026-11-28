@@ -83,12 +83,27 @@ CREATE TABLE IF NOT EXISTS public.ad_creatives (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Helpful indexes
+-- Helpful indexes (RBAC, Settings, Ads, Articles, Categories, Breaking News & Comments)
 CREATE INDEX IF NOT EXISTS idx_newsroom_users_email ON public.newsroom_users (LOWER(email));
+CREATE INDEX IF NOT EXISTS idx_newsroom_users_status ON public.newsroom_users (status);
 CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON public.user_roles (role_id);
+CREATE INDEX IF NOT EXISTS idx_roles_key ON public.roles (LOWER(role_key));
+CREATE INDEX IF NOT EXISTS idx_role_permissions_key ON public.role_permissions (permission_key);
+CREATE INDEX IF NOT EXISTS idx_site_settings_key ON public.site_settings (setting_key);
+
+CREATE INDEX IF NOT EXISTS idx_ad_slots_active ON public.ad_slots (slot_key, is_active, is_enabled);
 CREATE INDEX IF NOT EXISTS idx_ad_creatives_slot_id ON public.ad_creatives (slot_id);
 CREATE INDEX IF NOT EXISTS idx_ad_creatives_slot_key ON public.ad_creatives (slot_key);
-CREATE INDEX IF NOT EXISTS idx_site_settings_key ON public.site_settings (setting_key);
+CREATE INDEX IF NOT EXISTS idx_ad_creatives_active_slot ON public.ad_creatives (slot_key, is_active, weight DESC);
+
+CREATE INDEX IF NOT EXISTS idx_articles_created_at_desc ON public.articles (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_articles_category_created ON public.articles (category_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_articles_breaking ON public.articles (is_breaking, created_at DESC) WHERE is_breaking = TRUE;
+CREATE INDEX IF NOT EXISTS idx_articles_featured ON public.articles (is_featured, created_at DESC) WHERE is_featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_articles_views_desc ON public.articles (views_count DESC);
+CREATE INDEX IF NOT EXISTS idx_categories_display_order ON public.categories (display_order ASC);
+CREATE INDEX IF NOT EXISTS idx_breaking_news_active_priority ON public.breaking_news (is_active, priority ASC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_comments_article_status ON public.comments (article_id, status, created_at DESC);
 
 -- 4. DATABASE-LEVEL SECURITY (ROW LEVEL SECURITY)
 -- Note: Server routes use SUPABASE_SERVICE_ROLE_KEY which bypasses RLS.

@@ -326,7 +326,9 @@ export default function LatestClient({
                         suppressHydrationWarning
                         className="text-gray-500 col-span-2 mb-3 border-t border-[#dcd8cd] pt-3 text-xs font-semibold tracking-[0.14em] uppercase first:border-t-0 first:pt-0 font-sans"
                       >
-                        {group.dateLabel}
+                        <span dir="ltr" className="inline-block">
+                          {group.dateLabel}
+                        </span>
                       </h2>
 
                       {group.items.map((story) => {

@@ -556,7 +556,62 @@ const DEFAULT_AD_CREATIVES = [
 
 const SYSTEM_AD_SLOT_KEYS = new Set(DEFAULT_AD_SLOTS.map((s) => s.slot_key));
 
+function mapDbAdSlotRow(row) {
+  return {
+    id: row.id,
+    slot_key: row.slot_key,
+    name: row.title || row.slot_key,
+    labelUr: row.label_ur || "",
+    sizes: row.dimensions || "728x90, 300x250",
+    pages: row.page_scope
+      ? String(row.page_scope).split(",").map((s) => s.trim()).filter(Boolean)
+      : ["all"],
+    is_active: row.is_enabled !== undefined ? Boolean(row.is_enabled) : Boolean(row.is_active),
+    is_system: Boolean(SYSTEM_AD_SLOT_KEYS.has(row.slot_key)),
+    impressions: 0,
+    clicks: 0,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function mapDbAdCreativeRow(row) {
+  return {
+    id: row.id,
+    slot_id: row.slot_id || null,
+    slot_key: row.slot_key,
+    name: row.name || "Ad Creative",
+    type: row.ad_type === "image" ? "direct" : row.ad_type || "direct",
+    runs_on: "both",
+    weight: Number(row.weight) || 1,
+    image_url: row.image_url || "",
+    image_alt: row.advertiser || "",
+    html_code: row.html_code || "",
+    click_url: row.target_url || "",
+    starts_at: row.start_date || null,
+    ends_at: row.end_date || null,
+    status: row.is_active !== false ? "run" : "paused",
+    impressions: Number(row.impressions) || 0,
+    clicks: Number(row.clicks) || 0,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
 export async function getAdSlots() {
+  // 1. Prefer dedicated public.ad_slots rows (excluding legacy __cms_kv__:* rows)
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("ad_slots")
+      .select("*")
+      .not("slot_key", "like", "__cms_kv__:%")
+      .order("id", { ascending: true });
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data.map(mapDbAdSlotRow);
+    }
+  } catch (e) {}
+
+  // 2. Legacy fallback
   const remote = await getSiteSetting("ad_slots_v2");
   if (Array.isArray(remote) && remote.length > 0) {
     return remote.map((s) => ({
@@ -588,6 +643,20 @@ async function saveAdSlotsList(slots) {
 }
 
 export async function getAdCreatives(slotKey = null) {
+  // 1. Prefer dedicated public.ad_creatives table
+  try {
+    let query = supabaseAdmin
+      .from("ad_creatives")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (slotKey) query = query.eq("slot_key", slotKey);
+    const { data, error } = await query;
+    if (!error && Array.isArray(data)) {
+      return data.map(mapDbAdCreativeRow);
+    }
+  } catch (e) {}
+
+  // 2. Legacy fallback
   let list = await getSiteSetting("ad_creatives");
   if (!Array.isArray(list)) {
     const local = ensureLocalStore();
@@ -612,13 +681,38 @@ async function saveAdCreativesList(creatives) {
 }
 
 export async function createAdSlot(slotData) {
+  const slotKey = (slotData.slot_key || "").toLowerCase().trim().replace(/[^a-z0-9_-]/g, "-");
+  const pagesArr = Array.isArray(slotData.pages)
+    ? slotData.pages
+    : (slotData.pages || "all").split(",").map((s) => s.trim()).filter(Boolean);
+
+  try {
+    const { data: inserted, error } = await supabaseAdmin
+      .from("ad_slots")
+      .insert({
+        slot_key: slotKey,
+        title: slotData.name || slotKey,
+        label_ur: slotData.labelUr || "",
+        dimensions: slotData.sizes || "728x90, 300x250",
+        page_scope: pagesArr.join(","),
+        ad_type: "image",
+        is_active: slotData.is_active !== false,
+        is_enabled: slotData.is_active !== false,
+      })
+      .select()
+      .single();
+    if (!error && inserted) {
+      return mapDbAdSlotRow(inserted);
+    }
+  } catch (e) {}
+
   const slots = [...(await getAdSlots())];
   const newSlot = {
     id: Date.now(),
-    slot_key: (slotData.slot_key || "").toLowerCase().trim().replace(/[^a-z0-9_-]/g, "-"),
+    slot_key: slotKey,
     name: slotData.name || slotData.slot_key,
     sizes: slotData.sizes || "728x90, 300x250",
-    pages: Array.isArray(slotData.pages) ? slotData.pages : (slotData.pages || "all").split(",").map((s) => s.trim()),
+    pages: pagesArr,
     is_active: slotData.is_active !== false,
     is_system: false,
     impressions: 0,
@@ -631,6 +725,28 @@ export async function createAdSlot(slotData) {
 }
 
 export async function updateAdSlot(slotKey, updates) {
+  try {
+    const dbUpdates = { updated_at: new Date().toISOString() };
+    if (updates.name !== undefined) dbUpdates.title = updates.name;
+    if (updates.sizes !== undefined) dbUpdates.dimensions = updates.sizes;
+    if (updates.pages !== undefined) {
+      dbUpdates.page_scope = Array.isArray(updates.pages) ? updates.pages.join(",") : String(updates.pages);
+    }
+    if (updates.is_active !== undefined) {
+      dbUpdates.is_active = Boolean(updates.is_active);
+      dbUpdates.is_enabled = Boolean(updates.is_active);
+    }
+    const { data: updated, error } = await supabaseAdmin
+      .from("ad_slots")
+      .update(dbUpdates)
+      .eq("slot_key", slotKey)
+      .select()
+      .maybeSingle();
+    if (!error && updated) {
+      return mapDbAdSlotRow(updated);
+    }
+  } catch (e) {}
+
   const slots = [...(await getAdSlots())];
   const idx = slots.findIndex((s) => s.slot_key === slotKey);
   if (idx >= 0) {
@@ -654,6 +770,17 @@ export async function deleteAdSlot(slotKey) {
       error: "Default fallback ad slots cannot be deleted. You can disable them instead.",
     };
   }
+
+  try {
+    const { error } = await supabaseAdmin
+      .from("ad_slots")
+      .delete()
+      .eq("slot_key", slotKey);
+    if (!error) {
+      return { success: true };
+    }
+  } catch (e) {}
+
   slots = slots.filter((s) => s.slot_key !== slotKey);
   await saveAdSlotsList(slots);
   const creatives = (await getAdCreatives()).filter((c) => c.slot_key !== slotKey);
@@ -662,6 +789,41 @@ export async function deleteAdSlot(slotKey) {
 }
 
 export async function createAdCreative(creativeData) {
+  const newId = `ad_${Date.now()}`;
+  const dbType =
+    creativeData.type === "html" || creativeData.type === "adsense" ? creativeData.type : "image";
+
+  try {
+    const { data: slotRow } = await supabaseAdmin
+      .from("ad_slots")
+      .select("id")
+      .eq("slot_key", creativeData.slot_key)
+      .maybeSingle();
+
+    const { data: inserted, error } = await supabaseAdmin
+      .from("ad_creatives")
+      .insert({
+        id: newId,
+        slot_id: slotRow?.id || null,
+        slot_key: creativeData.slot_key,
+        name: creativeData.name,
+        advertiser: creativeData.image_alt || "",
+        ad_type: dbType,
+        image_url: creativeData.image_url || null,
+        target_url: creativeData.click_url || null,
+        html_code: creativeData.html_code || null,
+        weight: Number(creativeData.weight) || 1,
+        start_date: creativeData.starts_at || null,
+        end_date: creativeData.ends_at || null,
+        is_active: (creativeData.status || "run") === "run",
+      })
+      .select()
+      .single();
+    if (!error && inserted) {
+      return mapDbAdCreativeRow(inserted);
+    }
+  } catch (e) {}
+
   const creatives = [...(await getAdCreatives())];
   const newCreative = {
     id: Date.now(),
@@ -687,6 +849,29 @@ export async function createAdCreative(creativeData) {
 }
 
 export async function updateAdCreative(id, updates) {
+  try {
+    const dbUpdates = { updated_at: new Date().toISOString() };
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.slot_key !== undefined) dbUpdates.slot_key = updates.slot_key;
+    if (updates.image_url !== undefined) dbUpdates.image_url = updates.image_url || null;
+    if (updates.click_url !== undefined) dbUpdates.target_url = updates.click_url || null;
+    if (updates.html_code !== undefined) dbUpdates.html_code = updates.html_code || null;
+    if (updates.weight !== undefined) dbUpdates.weight = Number(updates.weight) || 1;
+    if (updates.status !== undefined) dbUpdates.is_active = updates.status === "run";
+    if (updates.impressions !== undefined) dbUpdates.impressions = Number(updates.impressions) || 0;
+    if (updates.clicks !== undefined) dbUpdates.clicks = Number(updates.clicks) || 0;
+
+    const { data: updated, error } = await supabaseAdmin
+      .from("ad_creatives")
+      .update(dbUpdates)
+      .eq("id", String(id))
+      .select()
+      .maybeSingle();
+    if (!error && updated) {
+      return mapDbAdCreativeRow(updated);
+    }
+  } catch (e) {}
+
   const creatives = [...(await getAdCreatives())];
   const idx = creatives.findIndex((c) => String(c.id) === String(id));
   if (idx >= 0) {
@@ -698,6 +883,14 @@ export async function updateAdCreative(id, updates) {
 }
 
 export async function deleteAdCreative(id) {
+  try {
+    const { error } = await supabaseAdmin
+      .from("ad_creatives")
+      .delete()
+      .eq("id", String(id));
+    if (!error) return { success: true };
+  } catch (e) {}
+
   let creatives = await getAdCreatives();
   creatives = creatives.filter((c) => String(c.id) !== String(id));
   await saveAdCreativesList(creatives);
@@ -705,6 +898,14 @@ export async function deleteAdCreative(id) {
 }
 
 export async function clearAllAdCreatives() {
+  try {
+    const { error } = await supabaseAdmin
+      .from("ad_creatives")
+      .delete()
+      .neq("id", "");
+    if (!error) return { success: true };
+  } catch (e) {}
+
   await saveAdCreativesList([]);
   return { success: true };
 }
@@ -872,7 +1073,32 @@ export async function deleteComment(commentId) {
 // ==========================================
 const KV_SLOT_PREFIX = "__cms_kv__:";
 
+function isMissingTableError(err) {
+  if (!err) return false;
+  return (
+    err.code === "PGRST205" ||
+    err.code === "42P01" ||
+    /Could not find the table/i.test(err.message || "")
+  );
+}
+
 export async function getSiteSetting(key) {
+  // 1. Prefer dedicated public.site_settings table
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("site_settings")
+      .select("setting_value")
+      .eq("setting_key", key)
+      .maybeSingle();
+    if (!error && data && data.setting_value !== undefined) {
+      return data.setting_value;
+    }
+    if (!error && !data) {
+      // Table exists, key not yet in site_settings — check legacy ad_slots KV once
+    }
+  } catch (e) {}
+
+  // 2. Legacy fallback: ad_slots __cms_kv__:<key>
   const slotKey = `${KV_SLOT_PREFIX}${key}`;
   try {
     const { data, error } = await supabaseAdmin
@@ -891,6 +1117,27 @@ export async function getSiteSetting(key) {
 }
 
 export async function updateSiteSetting(key, value) {
+  // 1. Prefer dedicated public.site_settings table
+  try {
+    const { error: upsertErr } = await supabaseAdmin
+      .from("site_settings")
+      .upsert(
+        { setting_key: key, setting_value: value, updated_at: new Date().toISOString() },
+        { onConflict: "setting_key" }
+      );
+    if (!upsertErr) {
+      const local = ensureLocalStore();
+      if (!local.site_settings) local.site_settings = {};
+      local.site_settings[key] = value;
+      writeLocalStore(local);
+      return value;
+    }
+    if (!isMissingTableError(upsertErr)) {
+      console.error("site_settings upsert error:", upsertErr);
+    }
+  } catch (e) {}
+
+  // 2. Legacy fallback: ad_slots __cms_kv__:<key>
   const slotKey = `${KV_SLOT_PREFIX}${key}`;
   const serialized = JSON.stringify(value);
   try {
@@ -3135,7 +3382,81 @@ const DEFAULT_NEWSROOM_USERS = [
   },
 ];
 
+function mapDbUserRow(row, roleNames = []) {
+  return {
+    id: row.id,
+    email: row.email,
+    starting_password: row.password_hash || "••••••••••••",
+    full_name_ur: row.full_name_ur || "",
+    full_name_en: row.full_name_en || "",
+    byline_name: row.byline_name || "",
+    designation_ur: row.designation_ur || "",
+    designation_en: row.designation_en || "",
+    bio_ur: row.bio_ur || "",
+    bio_en: row.bio_en || "",
+    desk_scope: Array.isArray(row.desk_scope) ? row.desk_scope : [],
+    is_public_author: Boolean(row.is_public_author),
+    status: row.status || "Active",
+    last_active: row.last_active || "never signed in",
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    roles: roleNames,
+  };
+}
+
+async function syncUserRolesInDb(userId, roleNames = []) {
+  if (!userId || !Array.isArray(roleNames)) return;
+  try {
+    const { data: allRoles, error: roleErr } = await supabaseAdmin
+      .from("roles")
+      .select("id, role_key, name_en");
+    if (roleErr || !Array.isArray(allRoles)) return;
+
+    const matchedIds = [];
+    for (const rName of roleNames) {
+      const target = String(rName || "").trim().toLowerCase();
+      const found = allRoles.find(
+        (r) => r.name_en.toLowerCase() === target || r.role_key.toLowerCase() === target
+      );
+      if (found) matchedIds.push(found.id);
+    }
+
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+    if (matchedIds.length > 0) {
+      await supabaseAdmin
+        .from("user_roles")
+        .insert(matchedIds.map((roleId) => ({ user_id: userId, role_id: roleId })));
+    }
+  } catch (e) {}
+}
+
+async function loadNewsroomUsersFromDb() {
+  try {
+    const { data: rows, error } = await supabaseAdmin
+      .from("newsroom_users")
+      .select("*, user_roles(role_id, roles(id, role_key, name_en))")
+      .order("created_at", { ascending: false });
+    if (error) {
+      if (isMissingTableError(error)) return null;
+      return null;
+    }
+    if (!Array.isArray(rows)) return null;
+    return rows.map((row) => {
+      const roleNames = (row.user_roles || [])
+        .map((ur) => ur.roles?.name_en || ur.roles?.role_key)
+        .filter(Boolean);
+      return mapDbUserRow(row, roleNames);
+    });
+  } catch {
+    return null;
+  }
+}
+
 async function loadNewsroomUsers() {
+  const dbUsers = await loadNewsroomUsersFromDb();
+  if (Array.isArray(dbUsers) && dbUsers.length > 0) {
+    return dbUsers;
+  }
   const remoteUsers = await getSiteSetting("newsroom_users");
   if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
     return remoteUsers;
@@ -3166,9 +3487,49 @@ export async function getNewsroomUsers() {
 
 export async function authenticateNewsroomUser(email, password) {
   if (!email || !password) return { error: "Email and password are required" };
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const nowStr = new Date().toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // 1. Prefer dedicated public.newsroom_users table (single-row lookup + atomic last_active update)
+  try {
+    const { data: row, error } = await supabaseAdmin
+      .from("newsroom_users")
+      .select("*, user_roles(role_id, roles(id, role_key, name_en))")
+      .ilike("email", normalizedEmail)
+      .maybeSingle();
+
+    if (!error) {
+      if (!row) return { error: "Invalid email or password" };
+      if (String(row.status || "Active").toLowerCase() !== "active") {
+        return { error: "Account is disabled. Contact Super Admin." };
+      }
+      if (!verifyPassword(password, row.password_hash)) {
+        return { error: "Invalid email or password" };
+      }
+      await supabaseAdmin
+        .from("newsroom_users")
+        .update({ last_active: nowStr, updated_at: new Date().toISOString() })
+        .eq("id", row.id);
+      const roleNames = (row.user_roles || [])
+        .map((ur) => ur.roles?.name_en || ur.roles?.role_key)
+        .filter(Boolean);
+      return { user: sanitizeUser(mapDbUserRow({ ...row, last_active: nowStr }, roleNames)) };
+    }
+    if (!isMissingTableError(error)) {
+      console.error("newsroom_users auth error:", error);
+    }
+  } catch (e) {}
+
+  // 2. Legacy fallback
   const users = [...(await loadNewsroomUsers())];
   const idx = users.findIndex(
-    (u) => String(u.email).toLowerCase() === String(email).trim().toLowerCase()
+    (u) => String(u.email).toLowerCase() === normalizedEmail
   );
   if (idx < 0) {
     return { error: "Invalid email or password" };
@@ -3181,29 +3542,62 @@ export async function authenticateNewsroomUser(email, password) {
   if (!valid) {
     return { error: "Invalid email or password" };
   }
-  users[idx] = {
-    ...user,
-    last_active: new Date().toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  };
+  users[idx] = { ...user, last_active: nowStr };
   await saveNewsroomUsers(users);
   return { user: sanitizeUser(users[idx]) };
 }
 
 export async function createNewsroomUser(userData) {
-  const users = [...(await loadNewsroomUsers())];
   const hashedPassword = userData.starting_password
     ? hashPassword(userData.starting_password)
     : "••••••••••••";
+  const newId = userData.id || `usr_${Date.now()}`;
+  const normalizedEmail = String(userData.email || "").trim().toLowerCase();
+  const roles = Array.isArray(userData.roles) ? userData.roles : ["Reporter"];
+
+  // 1. Prefer dedicated public.newsroom_users + public.user_roles
+  try {
+    const { data: inserted, error } = await supabaseAdmin
+      .from("newsroom_users")
+      .insert({
+        id: newId,
+        email: normalizedEmail,
+        password_hash: hashedPassword,
+        full_name_ur: userData.full_name_ur || "",
+        full_name_en: userData.full_name_en || "",
+        byline_name: userData.byline_name || "",
+        designation_ur: userData.designation_ur || "",
+        designation_en: userData.designation_en || "",
+        bio_ur: userData.bio_ur || "",
+        bio_en: userData.bio_en || "",
+        desk_scope: Array.isArray(userData.desk_scope) ? userData.desk_scope : [],
+        is_public_author: Boolean(userData.is_public_author),
+        status: userData.status || "Active",
+        last_active: "never signed in",
+      })
+      .select()
+      .single();
+
+    if (!error && inserted) {
+      await syncUserRolesInDb(inserted.id, roles);
+      return { ...mapDbUserRow(inserted, roles), starting_password: "••••••••••••" };
+    }
+    if (error && !isMissingTableError(error)) {
+      const err = new Error(error.message || "Could not create user");
+      if (error.code === "23505") err.statusCode = 409;
+      throw err;
+    }
+  } catch (e) {
+    if (e.statusCode) throw e;
+  }
+
+  // 2. Legacy fallback
+  const users = [...(await loadNewsroomUsers())];
   const newUser = {
     ...userData,
+    email: normalizedEmail || userData.email,
     starting_password: hashedPassword,
-    id: userData.id || `usr_${Date.now()}`,
+    id: newId,
     status: userData.status || "Active",
     last_active: "never signed in",
     created_at: new Date().toISOString(),
@@ -3214,28 +3608,86 @@ export async function createNewsroomUser(userData) {
 }
 
 export async function updateNewsroomUser(idOrEmail, updates) {
+  const safeUpdates = { ...updates };
+  if (safeUpdates.email !== undefined) {
+    const normalizedEmail = String(safeUpdates.email).trim().toLowerCase();
+    if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      const err = new Error("Please enter a valid email address");
+      err.statusCode = 400;
+      throw err;
+    }
+    safeUpdates.email = normalizedEmail;
+  }
+
+  // 1. Prefer dedicated public.newsroom_users + public.user_roles
+  try {
+    const { data: existing, error: findErr } = await supabaseAdmin
+      .from("newsroom_users")
+      .select("id")
+      .or(`id.eq."${idOrEmail}",email.ilike."${idOrEmail}"`)
+      .maybeSingle();
+
+    if (!findErr) {
+      if (!existing) return null;
+      const dbUpdates = { updated_at: new Date().toISOString() };
+      const copyFields = [
+        "email", "full_name_ur", "full_name_en", "byline_name",
+        "designation_ur", "designation_en", "bio_ur", "bio_en",
+        "desk_scope", "is_public_author", "status",
+      ];
+      for (const f of copyFields) {
+        if (safeUpdates[f] !== undefined) dbUpdates[f] = safeUpdates[f];
+      }
+      if (safeUpdates.starting_password && safeUpdates.starting_password !== "••••••••••••") {
+        dbUpdates.password_hash = hashPassword(safeUpdates.starting_password);
+      }
+
+      const { data: updated, error: updErr } = await supabaseAdmin
+        .from("newsroom_users")
+        .update(dbUpdates)
+        .eq("id", existing.id)
+        .select()
+        .single();
+      if (updErr) {
+        const err = new Error(updErr.message || "Update failed");
+        if (updErr.code === "23505") {
+          err.message = "Another user already uses this email address";
+          err.statusCode = 409;
+        }
+        throw err;
+      }
+      if (Array.isArray(safeUpdates.roles)) {
+        await syncUserRolesInDb(existing.id, safeUpdates.roles);
+      }
+      const { data: fullRow } = await supabaseAdmin
+        .from("newsroom_users")
+        .select("*, user_roles(role_id, roles(id, role_key, name_en))")
+        .eq("id", existing.id)
+        .single();
+      const roleNames = (fullRow?.user_roles || [])
+        .map((ur) => ur.roles?.name_en || ur.roles?.role_key)
+        .filter(Boolean);
+      return { ...mapDbUserRow(updated, roleNames), starting_password: "••••••••••••" };
+    }
+  } catch (e) {
+    if (e.statusCode) throw e;
+  }
+
+  // 2. Legacy fallback
   const users = [...(await loadNewsroomUsers())];
   const idx = users.findIndex(
     (u) => String(u.id) === String(idOrEmail) || String(u.email).toLowerCase() === String(idOrEmail).toLowerCase()
   );
   if (idx >= 0) {
-    const safeUpdates = { ...updates };
     if (safeUpdates.email !== undefined) {
-      const normalizedEmail = String(safeUpdates.email).trim().toLowerCase();
-      if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-        const err = new Error("Please enter a valid email address");
-        err.statusCode = 400;
-        throw err;
-      }
       const duplicate = users.find(
-        (u, i) => i !== idx && String(u.email).trim().toLowerCase() === normalizedEmail
+        (u, i) => i !== idx && String(u.email).trim().toLowerCase() === safeUpdates.email
       );
       if (duplicate) {
         const err = new Error("Another user already uses this email address");
         err.statusCode = 409;
         throw err;
       }
-      safeUpdates.email = normalizedEmail;
     }
     if (safeUpdates.starting_password && safeUpdates.starting_password !== "••••••••••••") {
       safeUpdates.starting_password = hashPassword(safeUpdates.starting_password);
@@ -3254,6 +3706,27 @@ export async function updateNewsroomUser(idOrEmail, updates) {
 }
 
 export async function resetNewsroomUserPassword(idOrEmail, newPassword) {
+  const newHash = hashPassword(newPassword);
+  try {
+    const { data: existing, error: findErr } = await supabaseAdmin
+      .from("newsroom_users")
+      .select("id, email")
+      .or(`id.eq."${idOrEmail}",email.ilike."${idOrEmail}"`)
+      .maybeSingle();
+    if (!findErr) {
+      if (!existing) return null;
+      const { error: updErr } = await supabaseAdmin
+        .from("newsroom_users")
+        .update({
+          password_hash: newHash,
+          last_active: "Password reset · signed out",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id);
+      if (!updErr) return { success: true, email: existing.email };
+    }
+  } catch (e) {}
+
   const users = [...(await loadNewsroomUsers())];
   const idx = users.findIndex(
     (u) => String(u.id) === String(idOrEmail) || String(u.email).toLowerCase() === String(idOrEmail).toLowerCase()
@@ -3261,7 +3734,7 @@ export async function resetNewsroomUserPassword(idOrEmail, newPassword) {
   if (idx >= 0) {
     users[idx] = {
       ...users[idx],
-      starting_password: hashPassword(newPassword),
+      starting_password: newHash,
       last_active: "Password reset · signed out",
       updated_at: new Date().toISOString(),
     };
@@ -3272,6 +3745,18 @@ export async function resetNewsroomUserPassword(idOrEmail, newPassword) {
 }
 
 export async function deleteNewsroomUser(idOrEmail) {
+  try {
+    const { data: existing, error: findErr } = await supabaseAdmin
+      .from("newsroom_users")
+      .select("id")
+      .or(`id.eq."${idOrEmail}",email.ilike."${idOrEmail}"`)
+      .maybeSingle();
+    if (!findErr && existing) {
+      await supabaseAdmin.from("newsroom_users").delete().eq("id", existing.id);
+      return { success: true };
+    }
+  } catch (e) {}
+
   const users = (await loadNewsroomUsers()).filter(
     (u) => String(u.id) !== String(idOrEmail) && String(u.email).toLowerCase() !== String(idOrEmail).toLowerCase()
   );
@@ -3295,10 +3780,42 @@ function ensureRolesStore(local) {
 }
 
 export async function getNewsroomRoles() {
-  const local = ensureLocalStore();
-  const roles = ensureRolesStore(local);
   const users = await loadNewsroomUsers();
 
+  // 1. Prefer dedicated public.roles + public.role_permissions
+  try {
+    const { data: roleRows, error } = await supabaseAdmin
+      .from("roles")
+      .select("*, role_permissions(permission_key)")
+      .order("created_at", { ascending: true });
+    if (!error && Array.isArray(roleRows) && roleRows.length > 0) {
+      return roleRows.map((r) => {
+        const perms =
+          r.role_key === "super_admin"
+            ? [...ALL_PERMISSIONS]
+            : (r.role_permissions || []).map((rp) => rp.permission_key);
+        const userCount = users.filter(
+          (u) => Array.isArray(u.roles) && (u.roles.includes(r.name_en) || u.roles.includes(r.role_key))
+        ).length;
+        return {
+          id: r.id,
+          key: r.role_key,
+          nameEn: r.name_en,
+          nameUr: r.name_ur || "",
+          description: r.description || "",
+          isSystem: Boolean(r.is_system),
+          permissions: perms,
+          userCount,
+          created_at: r.created_at,
+          updated_at: r.updated_at,
+        };
+      });
+    }
+  } catch (e) {}
+
+  // 2. Legacy fallback
+  const local = ensureLocalStore();
+  const roles = ensureRolesStore(local);
   return roles.map((role) => {
     const userCount = users.filter(
       (u) => Array.isArray(u.roles) && (u.roles.includes(role.nameEn) || u.roles.includes(role.key))
@@ -3322,6 +3839,44 @@ export async function getRolePermissionMap() {
 }
 
 export async function updateNewsroomRolePermissions(idOrKey, permissionKeys) {
+  const validSet = new Set(ALL_PERMISSIONS);
+  const cleaned = Array.from(new Set((permissionKeys || []).filter((k) => validSet.has(k))));
+
+  // 1. Prefer dedicated public.roles + public.role_permissions
+  try {
+    const { data: roleRow, error } = await supabaseAdmin
+      .from("roles")
+      .select("*")
+      .or(`id.eq."${idOrKey}",role_key.eq."${idOrKey}"`)
+      .maybeSingle();
+    if (!error) {
+      if (!roleRow) return null;
+      if (roleRow.role_key === "super_admin") {
+        return { error: "Super Admin permissions cannot be modified" };
+      }
+      await supabaseAdmin.from("role_permissions").delete().eq("role_id", roleRow.id);
+      if (cleaned.length > 0) {
+        await supabaseAdmin
+          .from("role_permissions")
+          .insert(cleaned.map((p) => ({ role_id: roleRow.id, permission_key: p })));
+      }
+      await supabaseAdmin
+        .from("roles")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", roleRow.id);
+      return {
+        id: roleRow.id,
+        key: roleRow.role_key,
+        nameEn: roleRow.name_en,
+        nameUr: roleRow.name_ur || "",
+        description: roleRow.description || "",
+        isSystem: Boolean(roleRow.is_system),
+        permissions: cleaned,
+      };
+    }
+  } catch (e) {}
+
+  // 2. Legacy fallback
   const local = ensureLocalStore();
   const roles = ensureRolesStore(local);
   const idx = roles.findIndex(
@@ -3331,10 +3886,6 @@ export async function updateNewsroomRolePermissions(idOrKey, permissionKeys) {
   if (roles[idx].key === "super_admin") {
     return { error: "Super Admin permissions cannot be modified" };
   }
-
-  const validSet = new Set(ALL_PERMISSIONS);
-  const cleaned = Array.from(new Set((permissionKeys || []).filter((k) => validSet.has(k))));
-
   roles[idx] = {
     ...roles[idx],
     permissions: cleaned,
@@ -3346,18 +3897,54 @@ export async function updateNewsroomRolePermissions(idOrKey, permissionKeys) {
 }
 
 export async function createNewsroomRole({ nameEn, nameUr = "", description = "" }) {
-  const local = ensureLocalStore();
-  const roles = ensureRolesStore(local);
   const key = String(nameEn || "")
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_|_$/g, "");
   if (!key) return { error: "Role name is required" };
+
+  // 1. Prefer dedicated public.roles + public.role_permissions
+  try {
+    const newId = `role_${Date.now()}`;
+    const { data: inserted, error } = await supabaseAdmin
+      .from("roles")
+      .insert({
+        id: newId,
+        role_key: key,
+        name_en: nameEn.trim(),
+        name_ur: nameUr.trim(),
+        description: description.trim(),
+        is_system: false,
+      })
+      .select()
+      .single();
+    if (!error && inserted) {
+      await supabaseAdmin
+        .from("role_permissions")
+        .insert({ role_id: inserted.id, permission_key: "article.view" });
+      return {
+        id: inserted.id,
+        key: inserted.role_key,
+        nameEn: inserted.name_en,
+        nameUr: inserted.name_ur || "",
+        description: inserted.description || "",
+        isSystem: false,
+        permissions: ["article.view"],
+        created_at: inserted.created_at,
+      };
+    }
+    if (error && error.code === "23505") {
+      return { error: "A role with this name already exists" };
+    }
+  } catch (e) {}
+
+  // 2. Legacy fallback
+  const local = ensureLocalStore();
+  const roles = ensureRolesStore(local);
   if (roles.some((r) => r.key === key || r.nameEn.toLowerCase() === nameEn.trim().toLowerCase())) {
     return { error: "A role with this name already exists" };
   }
-
   const newRole = {
     id: `role_${Date.now()}`,
     key,

@@ -301,30 +301,41 @@ BEGIN
     IF slots_json IS NOT NULL AND jsonb_typeof(slots_json) = 'array' THEN
         FOR s IN SELECT * FROM jsonb_array_elements(slots_json)
         LOOP
-            INSERT INTO public.ad_slots (
-                slot_key, title, label_ur, dimensions, page_scope, ad_type,
-                image_url, target_url, code_snippet, is_active, is_enabled
-            ) VALUES (
-                s->>'slot_key',
-                COALESCE(s->>'name', s->>'labelEn', s->>'title', s->>'slot_key'),
-                COALESCE(s->>'labelUr', ''),
-                COALESCE(s->>'sizes', s->>'dimensions', ''),
-                COALESCE(s->>'pageScope', 'all'),
-                'image',
-                NULL,
-                NULL,
-                NULL,
-                COALESCE((s->>'is_active')::boolean, (s->>'is_enabled')::boolean, TRUE),
-                COALESCE((s->>'is_active')::boolean, (s->>'is_enabled')::boolean, TRUE)
-            )
-            ON CONFLICT (slot_key) DO UPDATE SET
-                title = EXCLUDED.title,
-                label_ur = EXCLUDED.label_ur,
-                dimensions = EXCLUDED.dimensions,
-                page_scope = EXCLUDED.page_scope,
-                is_enabled = EXCLUDED.is_enabled,
-                is_active = EXCLUDED.is_active,
-                updated_at = NOW();
+            SELECT id INTO resolved_slot_id
+            FROM public.ad_slots
+            WHERE slot_key = (s->>'slot_key')
+            ORDER BY id DESC
+            LIMIT 1;
+
+            IF resolved_slot_id IS NOT NULL THEN
+                UPDATE public.ad_slots SET
+                    title = COALESCE(s->>'name', s->>'labelEn', s->>'title', s->>'slot_key'),
+                    label_ur = COALESCE(s->>'labelUr', ''),
+                    dimensions = COALESCE(s->>'sizes', s->>'dimensions', ''),
+                    page_scope = COALESCE(s->>'pageScope', 'all'),
+                    ad_type = COALESCE(ad_type, 'image'),
+                    is_enabled = COALESCE((s->>'is_active')::boolean, (s->>'is_enabled')::boolean, TRUE),
+                    is_active = COALESCE((s->>'is_active')::boolean, (s->>'is_enabled')::boolean, TRUE),
+                    updated_at = NOW()
+                WHERE id = resolved_slot_id;
+            ELSE
+                INSERT INTO public.ad_slots (
+                    slot_key, title, label_ur, dimensions, page_scope, ad_type,
+                    image_url, target_url, code_snippet, is_active, is_enabled
+                ) VALUES (
+                    s->>'slot_key',
+                    COALESCE(s->>'name', s->>'labelEn', s->>'title', s->>'slot_key'),
+                    COALESCE(s->>'labelUr', ''),
+                    COALESCE(s->>'sizes', s->>'dimensions', ''),
+                    COALESCE(s->>'pageScope', 'all'),
+                    'image',
+                    NULL,
+                    NULL,
+                    NULL,
+                    COALESCE((s->>'is_active')::boolean, (s->>'is_enabled')::boolean, TRUE),
+                    COALESCE((s->>'is_active')::boolean, (s->>'is_enabled')::boolean, TRUE)
+                );
+            END IF;
         END LOOP;
     END IF;
 
@@ -382,8 +393,15 @@ BEGIN
     END IF;
 END $$;
 
--- 7. REMOVE __cms_kv__:* CLUTTER FROM public.ad_slots
+-- 7. REMOVE __cms_kv__:* CLUTTER FROM public.ad_slots & ENFORCE UNIQUE slot_key
 DELETE FROM public.ad_slots WHERE slot_key LIKE '__cms_kv__:%';
+
+DELETE FROM public.ad_slots a
+USING public.ad_slots b
+WHERE a.slot_key = b.slot_key
+  AND a.id < b.id;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_ad_slots_slot_key ON public.ad_slots (slot_key);
 
 -- 8. DATABASE-LEVEL GUARD: PREVENT DELETING/DISABLING/DEMOTING THE LAST ACTIVE SUPER ADMIN
 CREATE OR REPLACE FUNCTION public.guard_last_super_admin_user()

@@ -3117,7 +3117,7 @@ export async function fetchLiveServiceData(serviceType) {
 const DEFAULT_NEWSROOM_USERS = [
   {
     id: "usr_admin",
-    email: "admin@dailyafadiat.com",
+    email: "admin@dailyafadiat.pk",
     starting_password: "••••••••••••",
     full_name_ur: "ایڈمن",
     full_name_en: "System Administrator",

@@ -96,14 +96,25 @@ CREATE INDEX IF NOT EXISTS idx_ad_creatives_slot_id ON public.ad_creatives (slot
 CREATE INDEX IF NOT EXISTS idx_ad_creatives_slot_key ON public.ad_creatives (slot_key);
 CREATE INDEX IF NOT EXISTS idx_ad_creatives_active_slot ON public.ad_creatives (slot_key, is_active, weight DESC);
 
-CREATE INDEX IF NOT EXISTS idx_articles_created_at_desc ON public.articles (created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_articles_category_created ON public.articles (category_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_articles_breaking ON public.articles (is_breaking, created_at DESC) WHERE is_breaking = TRUE;
-CREATE INDEX IF NOT EXISTS idx_articles_featured ON public.articles (is_featured, created_at DESC) WHERE is_featured = TRUE;
-CREATE INDEX IF NOT EXISTS idx_articles_views_desc ON public.articles (views_count DESC);
-CREATE INDEX IF NOT EXISTS idx_categories_display_order ON public.categories (display_order ASC);
-CREATE INDEX IF NOT EXISTS idx_breaking_news_active_priority ON public.breaking_news (is_active, priority ASC, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_comments_article_status ON public.comments (article_id, status, created_at DESC);
+DO $$
+BEGIN
+    IF to_regclass('public.articles') IS NOT NULL THEN
+        CREATE INDEX IF NOT EXISTS idx_articles_created_at_desc ON public.articles (created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_articles_category_created ON public.articles (category_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_articles_breaking ON public.articles (is_breaking, created_at DESC) WHERE is_breaking = TRUE;
+        CREATE INDEX IF NOT EXISTS idx_articles_featured ON public.articles (is_featured, created_at DESC) WHERE is_featured = TRUE;
+        CREATE INDEX IF NOT EXISTS idx_articles_views_desc ON public.articles (views_count DESC);
+    END IF;
+    IF to_regclass('public.categories') IS NOT NULL THEN
+        CREATE INDEX IF NOT EXISTS idx_categories_display_order ON public.categories (display_order ASC);
+    END IF;
+    IF to_regclass('public.breaking_news') IS NOT NULL THEN
+        CREATE INDEX IF NOT EXISTS idx_breaking_news_active_priority ON public.breaking_news (is_active, priority ASC, created_at DESC);
+    END IF;
+    IF to_regclass('public.comments') IS NOT NULL THEN
+        CREATE INDEX IF NOT EXISTS idx_comments_article_status ON public.comments (article_id, status, created_at DESC);
+    END IF;
+END $$;
 
 -- 4. DATABASE-LEVEL SECURITY (ROW LEVEL SECURITY)
 -- Note: Server routes use SUPABASE_SERVICE_ROLE_KEY which bypasses RLS.
